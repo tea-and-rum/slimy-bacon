@@ -13,20 +13,20 @@ const locations = {
         lon:-76.33
     },
 
-    "Hart-Miller Island":{
-        lat:39.23,
-        lon:-76.37
-    },
-
     "Tolchester Marina Area":{
         lat:39.21,
         lon:-76.24
     },
 
-    "Fort Smallwood":{
-        lat:39.16,
-        lon:-76.42
-    },
+    "Hart-Miller Island":{
+    lat:39.2512,
+    lon:-76.3769
+},
+
+"Fort Smallwood":{
+    lat:39.1634,
+    lon:-76.4800
+},
 
     "Bay Bridge":{
         lat:38.99,
