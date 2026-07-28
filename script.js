@@ -1088,7 +1088,7 @@ function createWhySection(results){
 
 
 
-function getHourlyWeather(){
+async function getHourlyWeather(location){
 
 
     let hours=[];
