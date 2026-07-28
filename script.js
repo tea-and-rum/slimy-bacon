@@ -276,10 +276,20 @@ async function checkConditions(){
 
 
     const forecast =
-        await getHourlyWeather(location);
+    await getHourlyWeather(location);
 
 
-    allWeather.push(forecast);
+if(!forecast){
+
+    document.getElementById("message").innerHTML =
+    "Weather data unavailable. Please try again.";
+
+    return;
+
+}
+
+
+allWeather.push(forecast);
 
 
     const evaluated =
@@ -1085,53 +1095,86 @@ function createWhySection(results){
 async function getHourlyWeather(location){
 
 
-    const coords = locations[location];
+    try {
 
 
-    const pointResponse =
-        await fetch(
-            `https://api.weather.gov/points/${coords.lat},${coords.lon}`
-        );
+        const coords = locations[location];
 
 
-    const pointData =
-        await pointResponse.json();
+        const pointResponse =
+            await fetch(
+                `https://api.weather.gov/points/${coords.lat},${coords.lon}`
+            );
 
 
-    const hourlyResponse =
-        await fetch(
-            pointData.properties.forecastHourly
-        );
+        if(!pointResponse.ok){
+
+            throw new Error("NOAA location lookup failed");
+
+        }
 
 
-    const hourlyData =
-        await hourlyResponse.json();
+        const pointData =
+            await pointResponse.json();
 
 
 
-    return hourlyData.properties.periods
-    .slice(0,24)
-    .map(period => {
+        const hourlyResponse =
+            await fetch(
+                pointData.properties.forecastHourly
+            );
 
 
-        return {
+        if(!hourlyResponse.ok){
 
-            wind:
-            parseInt(period.windSpeed),
+            throw new Error("NOAA forecast lookup failed");
 
-
-            waves:
-            1,
+        }
 
 
-            precip:
-            period.probabilityOfPrecipitation.value || 0
+        const hourlyData =
+            await hourlyResponse.json();
 
 
-        };
+
+        return hourlyData.properties.periods
+        .slice(0,24)
+        .map(period => {
 
 
-    });
+            return {
+
+                wind:
+                parseInt(period.windSpeed),
+
+
+                waves:
+                1,
+
+
+                precip:
+                period.probabilityOfPrecipitation.value || 0
+
+
+            };
+
+
+        });
+
+
+    }
+
+
+    catch(error){
+
+
+        console.error(error);
+
+
+        return null;
+
+
+    }
 
 
 }
