@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Chesapeake Bay Boating Conditions</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
+<h1>Chesapeake Bay Boating Conditions</h1>
+
+
+
+
+
+<div class="card">
+
+
+<h2>Where will you be boating?</h2>
+
+
+<div id="message"></div>
+
+
+<div class="locations">
+
+
+<div class="location-item">
+<label>
+<input type="checkbox" value="Gunpowder River / Mariner Point">
+Gunpowder River / Mariner Point
+</label>
+</div>
+
+
+<div class="location-item">
+<label>
+<input type="checkbox" value="Hart-Miller Island">
+Hart-Miller Island
+</label>
+</div>
+
+
+<div class="location-item">
+<label>
+<input type="checkbox" value="Tolchester Marina Area">
+Tolchester Marina Area
+</label>
+</div>
+
+
+<div class="location-item">
+<label>
+<input type="checkbox" value="Fort Smallwood">
+Fort Smallwood
+</label>
+</div>
+
+
+<div class="location-item">
+<label>
+<input type="checkbox" value="Bay Bridge">
+Bay Bridge
+</label>
+</div>
+
+
+<div class="location-item">
+<label>
+<input type="checkbox" value="Annapolis">
+Annapolis
+</label>
+</div>
+
+
+<div class="location-item">
+<label>
+<input type="checkbox" value="Kent Narrows">
+Kent Narrows
+</label>
+</div>
+
+
+<div class="location-item">
+<label>
+<input type="checkbox" value="Poplar Island">
+Poplar Island
+</label>
+</div>
+
+
+</div>
+
+
+
+
+
+
+<h2>What day are you boating?</h2>
+
+
+<input type="date" id="date">
+
+
+
+
+
+
+<h2>What are you taking out?</h2>
+
+
+<div class="vessel-selector">
+
+
+<div class="vessel-card" data-size="small">
+
+<div class="vessel-icon">
+🛵
+</div>
+
+<div class="vessel-name">
+PWC
+</div>
+
+<div class="vessel-size">
+Under 16 ft
+</div>
+
+</div>
+
+
+
+
+
+<div class="vessel-card" data-size="medium">
+
+<div class="vessel-icon">
+🚤
+</div>
+
+<div class="vessel-name">
+Small Boat
+</div>
+
+<div class="vessel-size">
+16-26 ft
+</div>
+
+</div>
+
+
+
+
+
+<div class="vessel-card" data-size="large">
+
+<div class="vessel-icon">
+⛴️
+</div>
+
+<div class="vessel-name">
+Medium Boat
+</div>
+
+<div class="vessel-size">
+26-40 ft
+</div>
+
+</div>
+
+
+
+
+
+<div class="vessel-card" data-size="xlarge">
+
+<div class="vessel-icon">
+🛥️
+</div>
+
+<div class="vessel-name">
+Large Boat
+</div>
+
+<div class="vessel-size">
+40+ ft
+</div>
+
+</div>
+
+
+</div>
+
+
+
+
+
+<input type="hidden" id="boatSize" value="medium">
+
+
+
+
+
+
+<button onclick="checkConditions()">
+CHECK CONDITIONS
+</button>
+
+
+<button class="secondaryButton" onclick="clearSelections()">
+CLEAR SELECTIONS
+</button>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<div id="results" class="card hidden">
+
+
+
+
+
+<div id="decisionCard">
+
+
+<h1 id="decision"></h1>
+
+
+<p id="decisionSummary"></p>
+
+
+</div>
+
+
+
+
+
+
+
+
+<div class="why-section">
+
+
+<h2>Why?</h2>
+
+
+<div id="whyResults"></div>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+<h2>24-Hour Conditions</h2>
+
+
+
+<div class="timeline-container">
+
+
+
+<div class="timeline-wrapper">
+
+
+<div id="timelineBar"></div>
+
+
+
+<div id="sunriseMarker" class="sun-marker">
+
+☀
+
+<span>Sunrise</span>
+
+</div>
+
+
+
+<div id="sunsetMarker" class="sun-marker">
+
+🌙
+
+<span>Sunset</span>
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+<div class="timeline-labels">
+
+<span>12a</span>
+<span>3a</span>
+<span>6a</span>
+<span>9a</span>
+<span>12p</span>
+<span>3p</span>
+<span>6p</span>
+<span>9p</span>
+<span>12a</span>
+
+</div>
+
+
+
+
+
+
+
+<div class="timeline-legend">
+
+
+<div>
+<span class="legend-color legend-go"></span>
+Go
+</div>
+
+
+<div>
+<span class="legend-color legend-sporty"></span>
+Sporty
+</div>
+
+
+<div>
+<span class="legend-color legend-no-go"></span>
+No-Go
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="summary">
+
+
+<div>
+🌅 Sunrise:
+<strong id="sunrise"></strong>
+</div>
+
+
+<div>
+🌇 Sunset:
+<strong id="sunset"></strong>
+</div>
+
+
+<div>
+🚤 Best Conditions:
+<strong id="window"></strong>
+</div>
+
+
+<div>
+🕒 Forecast Checked:
+<strong id="checked"></strong>
+</div>
+
+
+</div>
+
+
+<!-- CONDITION EVIDENCE TILES -->
+
+<div class="evidence-grid">
+
+
+
+<div class="evidence-card">
+
+<h3>🌬 Wind</h3>
+
+<div class="evidence-summary" id="windSummary">
+Max: -- mph
+</div>
+
+<canvas id="windChart"></canvas>
+
+</div>
+
+
+
+
+
+<div class="evidence-card">
+
+<h3>🌊 Waves</h3>
+
+<div class="evidence-summary" id="waveSummary">
+Max: -- ft
+</div>
+
+<canvas id="waveChart"></canvas>
+
+</div>
+
+
+
+
+
+<div class="evidence-card">
+
+<h3>🌧 Precipitation</h3>
+
+<div class="evidence-summary" id="precipSummary">
+Peak: --%
+</div>
+
+<canvas id="precipChart"></canvas>
+
+</div>
+
+
+
+
+
+<div class="evidence-card">
+
+<h3>⚠️ Advisories</h3>
+
+<div id="advisoryText">
+
+No active advisories
+
+</div>
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+<h2>Location Summary</h2>
+
+
+<div id="locationResults"></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+
+
+
+
+
+
+
+<script src="script.js"></script>
+
+
+</body>
+
+
+</html>
