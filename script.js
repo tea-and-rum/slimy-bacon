@@ -272,66 +272,61 @@ async function checkConditions(){
 
 
 
-    selectedLocations.forEach(location=>{
+   for (const location of selectedLocations) {
 
 
-        const forecast =
-    await getHourlyWeather(location);
+    const forecast =
+        await getHourlyWeather(location);
 
 
-
-        allWeather.push(forecast);
-
+    allWeather.push(forecast);
 
 
-
-        const evaluated =
-            evaluateLocation(
-                forecast,
-                boatSize
-            );
-
-
-
-        allResults.push(
-            evaluated.hourlyResults
+    const evaluated =
+        evaluateLocation(
+            forecast,
+            boatSize
         );
 
 
-
-        locationHTML += `
-
-        <div class="locationCard ${backgroundClass(evaluated.result)}">
-
-
-        <strong>
-        ${emoji(evaluated.result)}
-        ${location}
-        </strong>
+    allResults.push(
+        evaluated.hourlyResults
+    );
 
 
-        <br><br>
+    locationHTML += `
+
+    <div class="locationCard ${backgroundClass(evaluated.result)}">
 
 
-        <b>Best conditions:</b><br>
-
-        ${findGoodWindow(evaluated.hourlyResults)}
-
-
-        <br><br>
+    <strong>
+    ${emoji(evaluated.result)}
+    ${location}
+    </strong>
 
 
-        <b>Watch:</b><br>
-
-        ${evaluated.reason}
+    <br><br>
 
 
-        </div>
+    <b>Best conditions:</b><br>
 
-        `;
+    ${findGoodWindow(evaluated.hourlyResults)}
 
 
-    });
+    <br><br>
+
+
+    <b>Watch:</b><br>
+
+    ${evaluated.reason}
+
+
+    </div>
+
+    `;
+
+
+}
 
 
 
