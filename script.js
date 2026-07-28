@@ -211,8 +211,7 @@ function clearSelections(){
 
 
 
-function checkConditions(){
-
+async function checkConditions(){
 
     const selectedLocations =
     [...document.querySelectorAll(".locations input:checked")]
@@ -277,7 +276,7 @@ function checkConditions(){
 
 
         const forecast =
-            getHourlyWeather(location);
+    await getHourlyWeather(location);
 
 
 
@@ -1091,35 +1090,54 @@ function createWhySection(results){
 async function getHourlyWeather(location){
 
 
-    let hours=[];
+    const coords = locations[location];
+
+
+    const pointResponse =
+        await fetch(
+            `https://api.weather.gov/points/${coords.lat},${coords.lon}`
+        );
+
+
+    const pointData =
+        await pointResponse.json();
+
+
+    const hourlyResponse =
+        await fetch(
+            pointData.properties.forecastHourly
+        );
+
+
+    const hourlyData =
+        await hourlyResponse.json();
 
 
 
-    for(let i=0;i<24;i++){
+    return hourlyData.properties.periods
+    .slice(0,24)
+    .map(period => {
 
 
-        hours.push({
+        return {
 
             wind:
-            10+(i>=14?5:0),
+            parseInt(period.windSpeed),
 
 
             waves:
-            1+(i>=18?.5:0),
+            1,
 
 
             precip:
-            i>=18 ? 40 : 0
+            period.probabilityOfPrecipitation.value || 0
 
 
-        });
+        };
 
 
-    }
+    });
 
-
-
-    return hours;
 
 }
 
