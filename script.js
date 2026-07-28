@@ -6,7 +6,49 @@ let windChart;
 let waveChart;
 let precipChart;
 
+const locations = {
 
+    "Gunpowder River / Mariner Point":{
+        lat:39.42,
+        lon:-76.33
+    },
+
+    "Hart-Miller Island":{
+        lat:39.23,
+        lon:-76.37
+    },
+
+    "Tolchester Marina Area":{
+        lat:39.21,
+        lon:-76.24
+    },
+
+    "Fort Smallwood":{
+        lat:39.16,
+        lon:-76.42
+    },
+
+    "Bay Bridge":{
+        lat:38.99,
+        lon:-76.53
+    },
+
+    "Annapolis":{
+        lat:38.97,
+        lon:-76.49
+    },
+
+    "Kent Narrows":{
+        lat:38.96,
+        lon:-76.24
+    },
+
+    "Poplar Island":{
+        lat:38.76,
+        lon:-76.38
+    }
+
+};
 
 window.onload = function(){
 
