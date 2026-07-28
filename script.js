@@ -237,9 +237,15 @@ async function checkConditions(){
 
 
 
+const selectedDate =
+    document.getElementById("date").value;
 
-    const sun =
-        getSunTimes();
+
+const sun =
+    getSunTimes(
+        selectedLocations,
+        selectedDate
+    );
 
 
 
@@ -1187,27 +1193,159 @@ async function getHourlyWeather(location){
 
 
 
-function getSunTimes(){
+function getSunTimes(selectedLocations, selectedDate){
+
+
+    const date =
+        new Date(selectedDate + "T12:00:00");
+
+
+    const sunriseTimes = [];
+
+    const sunsetTimes = [];
+
+
+    selectedLocations.forEach(location => {
+
+
+        const coords =
+            locations[location];
+
+
+        const times =
+            SunCalc.getTimes(
+                date,
+                coords.lat,
+                coords.lon
+            );
+
+
+        sunriseTimes.push(times.sunrise);
+
+        sunsetTimes.push(times.sunset);
+
+
+    });
+
+
+
+    const earliestSunrise =
+        new Date(
+            Math.min(
+                ...sunriseTimes.map(time => time.getTime())
+            )
+        );
+
+
+    const latestSunrise =
+        new Date(
+            Math.max(
+                ...sunriseTimes.map(time => time.getTime())
+            )
+        );
+
+
+    const earliestSunset =
+        new Date(
+            Math.min(
+                ...sunsetTimes.map(time => time.getTime())
+            )
+        );
+
+
+    const latestSunset =
+        new Date(
+            Math.max(
+                ...sunsetTimes.map(time => time.getTime())
+            )
+        );
+
 
 
     return {
 
-        sunrise:"6:00 AM",
+        sunrise:
+            formatTimeRange(
+                earliestSunrise,
+                latestSunrise
+            ),
 
-        sunset:"8:15 PM",
+        sunset:
+            formatTimeRange(
+                earliestSunset,
+                latestSunset
+            ),
 
-        sunrisePercent:25,
+        sunrisePercent:
+            timeToPercent(earliestSunrise),
 
-        sunsetPercent:84
+        sunsetPercent:
+            timeToPercent(latestSunset)
 
     };
+
 
 }
 
 
 
 
+function formatTimeRange(earliest, latest){
 
+
+    const earliestText =
+        formatClockTime(earliest);
+
+
+    const latestText =
+        formatClockTime(latest);
+
+
+    if(earliestText === latestText){
+
+        return earliestText;
+
+    }
+
+
+    return earliestText + " - " + latestText;
+
+
+}
+
+
+
+function formatClockTime(date){
+
+
+    return date.toLocaleTimeString(
+        [],
+        {
+            hour:"numeric",
+            minute:"2-digit"
+        }
+    );
+
+
+}
+
+
+
+function timeToPercent(date){
+
+
+    const totalMinutes =
+        date.getHours() * 60 +
+        date.getMinutes();
+
+
+    return (
+        totalMinutes /
+        (24 * 60)
+    ) * 100;
+
+
+}
 
 
 
