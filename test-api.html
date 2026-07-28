@@ -1,11 +1,17 @@
 <!DOCTYPE html>
 <html>
 
+<head>
+<title>NOAA Test</title>
+</head>
+
 <body>
 
-<h1>NOAA Test</h1>
+<h1>NOAA Connection Test</h1>
 
-<pre id="output"></pre>
+<pre id="output">
+Loading...
+</pre>
 
 
 <script>
@@ -21,8 +27,14 @@ fetch(
 document.getElementById("output").innerHTML =
 JSON.stringify(data,null,2);
 
-});
+})
 
+.catch(error => {
+
+document.getElementById("output").innerHTML =
+"Error: " + error;
+
+});
 
 </script>
 
