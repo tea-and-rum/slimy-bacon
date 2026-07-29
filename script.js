@@ -213,19 +213,19 @@ function clearSelections(){
 
 async function checkConditions(){
 
-    const selectedLocations =
-        [...document.querySelectorAll(".locations input:checked")]
-            .map(input => input.value);
+ const hasForecastData =
+    Array.isArray(forecast) &&
+    forecast.some(hour => hour !== null);
 
 
-    if(selectedLocations.length === 0){
+if(!hasForecastData){
 
-        document.getElementById("message").innerHTML =
-            "Please select at least one location.";
+    document.getElementById("message").innerHTML =
+        `Weather data is unavailable for ${location} on the selected date.`;
 
-        return;
+    return;
 
-    }
+}
 
 
     const boatSize =
@@ -275,6 +275,8 @@ async function checkConditions(){
 
     let allWeather = [];
 
+
+  try {
 
     for(const location of selectedLocations){
 
@@ -342,92 +344,91 @@ async function checkConditions(){
 
     }
 
+}
+catch(error){
 
-
-
-    const timeline =
-        combineTimelineResults(allResults);
-
-
-
-
-
-    const overall =
-        determineDailyResult(timeline);
-
-
-
-
-
-    createTimeline(
-        timeline,
-        sun
+    console.error(
+        "Condition evaluation failed:",
+        error
     );
 
 
+    document.getElementById("message").innerHTML =
+        `Unable to finish checking conditions: ${error.message}`;
+
+
+    return;
+
+}
 
 
 
-    document.getElementById("decision").innerHTML =
-        emoji(overall)+" "+overall;
+   const timeline =
+    combineTimelineResults(allResults);
 
 
-
-    document.getElementById("decision").className =
-        overallClass(overall);
-
-
-
-
-
-    document.getElementById("decisionSummary").innerHTML =
-        getDecisionSummary(overall);
+const validTimeline =
+    timeline.filter(value =>
+        value === "GO" ||
+        value === "SPORTY" ||
+        value === "NO-GO"
+    );
 
 
+if(validTimeline.length === 0){
+
+    document.getElementById("message").innerHTML =
+        "No remaining forecast hours are available for today.";
+
+    return;
+
+}
 
 
-
-    document.getElementById("whyResults").innerHTML =
-        createWhySection(timeline);
-
+const overall =
+    determineDailyResult(validTimeline);
 
 
+createTimeline(
+    timeline,
+    sun
+);
 
 
-    document.getElementById("locationResults").innerHTML =
-        locationHTML;
+document.getElementById("decision").innerHTML =
+    emoji(overall) + " " + overall;
 
 
+document.getElementById("decision").className =
+    overallClass(overall);
 
 
-
-    document.getElementById("window").innerHTML =
-        findGoodWindow(timeline);
-
+document.getElementById("decisionSummary").innerHTML =
+    getDecisionSummary(overall);
 
 
+document.getElementById("whyResults").innerHTML =
+    createWhySection(validTimeline);
 
 
-
-    createEvidenceCharts(allWeather);
-
-
+document.getElementById("locationResults").innerHTML =
+    locationHTML;
 
 
-
-    
-
-
+document.getElementById("window").innerHTML =
+    findGoodWindow(timeline);
 
 
-    document
+createEvidenceCharts(allWeather);
+
+
+document
     .getElementById("results")
     .classList
     .remove("hidden");
 
 
-}
-
+document.getElementById("message").innerHTML = "";
 
 
 
@@ -438,82 +439,105 @@ async function checkConditions(){
 
 function createEvidenceCharts(weatherData){
 
-
-    let maxWind=[];
-
-    let maxWaves=[];
-
-    let maxPrecip=[];
+    const maxWind = [];
+    const maxWaves = [];
+    const maxPrecip = [];
 
 
+    for(let hour = 0; hour < 24; hour++){
 
-    for(let hour=0;hour<24;hour++){
-
-
-        let wind=0;
-
-        let waves=0;
-
-        let precip=0;
+        let windValues = [];
+        let waveValues = [];
+        let precipValues = [];
 
 
+        weatherData.forEach(location => {
 
-        weatherData.forEach(location=>{
+            const hourData =
+                location[hour];
 
 
-            wind =
-            Math.max(
-                wind,
-                location[hour].wind
+            if(!hourData){
+
+                return;
+
+            }
+
+
+            windValues.push(
+                hourData.wind ?? 0
             );
 
 
-
-            waves =
-            Math.max(
-                waves,
-                location[hour].waves
+            waveValues.push(
+                hourData.waves ?? 0
             );
 
 
-
-            precip =
-            Math.max(
-                precip,
-                location[hour].precip
+            precipValues.push(
+                hourData.precip ?? 0
             );
-
 
         });
 
 
+        maxWind.push(
+            windValues.length
+                ? Math.max(...windValues)
+                : null
+        );
 
-        maxWind.push(wind);
 
-        maxWaves.push(waves);
+        maxWaves.push(
+            waveValues.length
+                ? Math.max(...waveValues)
+                : null
+        );
 
-        maxPrecip.push(precip);
 
+        maxPrecip.push(
+            precipValues.length
+                ? Math.max(...precipValues)
+                : null
+        );
 
     }
 
 
+    const validWind =
+        maxWind.filter(
+            value => value !== null
+        );
 
+
+    const validWaves =
+        maxWaves.filter(
+            value => value !== null
+        );
+
+
+    const validPrecip =
+        maxPrecip.filter(
+            value => value !== null
+        );
 
 
     document.getElementById("windSummary").innerHTML =
-        "Max: "+Math.max(...maxWind)+" mph";
+        validWind.length
+            ? "Max: " + Math.max(...validWind) + " mph"
+            : "No data available";
 
 
     document.getElementById("waveSummary").innerHTML =
-        "Max: "+Math.max(...maxWaves)+" ft";
+        validWaves.length
+            ? "Max: " + Math.max(...validWaves) + " ft"
+            : "No data available";
 
 
     document.getElementById("precipSummary").innerHTML =
-        "Peak: "+Math.max(...maxPrecip)+"%";
-
-
-
+        validPrecip.length
+            ? "Peak: " + Math.max(...validPrecip) + "%"
+            : "No data available";
 
 
     createWindChart(maxWind);
@@ -523,15 +547,10 @@ function createEvidenceCharts(weatherData){
     createPrecipChart(maxPrecip);
 
 
-
-
-
     document.getElementById("advisoryText").innerHTML =
         "No active advisories";
 
 }
-
-
 
 
 
@@ -740,32 +759,40 @@ function hourLabels(){
 
 function evaluateLocation(hours, boatSize){
 
-    const results =
-        new Array(24).fill(null);
+    const results = [];
 
 
-    hours.forEach((hour, index) => {
+    hours.forEach(hour => {
 
         if(hour === null){
+
+            results.push("PAST");
 
             return;
 
         }
 
 
-        results[index] =
+        const checkedHour =
             checkHour(
                 hour,
                 boatSize
-            ).status;
+            );
+
+
+        results.push(
+            checkedHour.status
+        );
 
     });
 
 
     const validResults =
-        results.filter(
-            result => result !== null
-        );
+        results.filter(result => {
+
+            return result !== "PAST";
+
+        });
 
 
     return {
@@ -786,7 +813,6 @@ function evaluateLocation(hours, boatSize){
     };
 
 }
-
 
 
 
@@ -890,42 +916,53 @@ function determineDailyResult(results){
 
 function combineTimelineResults(allResults){
 
-
-    let timeline=[];
-
+    const timeline = [];
 
 
-    for(let i=0;i<24;i++){
+    for(let i = 0; i < 24; i++){
+
+        const hourlyValues =
+            allResults.map(location => location[i]);
 
 
-        let result="GO";
+        const validValues =
+            hourlyValues.filter(value =>
+                value !== "PAST" &&
+                value !== null &&
+                value !== undefined
+            );
 
 
+        if(validValues.length === 0){
 
-        allResults.forEach(location=>{
+            timeline.push("PAST");
 
+            continue;
 
-            if(location[i]=="NO-GO")
-                result="NO-GO";
-
-
-            else if(
-                location[i]=="SPORTY"
-                &&
-                result=="GO"
-            )
-                result="SPORTY";
+        }
 
 
-        });
+        if(validValues.includes("NO-GO")){
+
+            timeline.push("NO-GO");
+
+            continue;
+
+        }
 
 
+        if(validValues.includes("SPORTY")){
 
-        timeline.push(result);
+            timeline.push("SPORTY");
 
+            continue;
+
+        }
+
+
+        timeline.push("GO");
 
     }
-
 
 
     return timeline;
@@ -938,63 +975,73 @@ function combineTimelineResults(allResults){
 
 
 
-
-
-function createTimeline(results,sun){
-
+function createTimeline(results, sun){
 
     const bar =
-    document.getElementById("timelineBar");
+        document.getElementById("timelineBar");
 
 
-    bar.innerHTML="";
+    bar.innerHTML = "";
 
 
+    results.forEach(hour => {
 
-    results.forEach(hour=>{
-
-
-        let block =
-        document.createElement("div");
+        const block =
+            document.createElement("div");
 
 
-
-        block.className =
-        "timeline-hour "+
-        (
-        hour=="GO"
-        ?
-        "timeline-go"
-        :
-        hour=="SPORTY"
-        ?
-        "timeline-sporty"
-        :
-        "timeline-no-go"
+        block.classList.add(
+            "timeline-hour"
         );
 
+
+        if(hour === "GO"){
+
+            block.classList.add(
+                "timeline-go"
+            );
+
+        }
+        else if(hour === "SPORTY"){
+
+            block.classList.add(
+                "timeline-sporty"
+            );
+
+        }
+        else if(hour === "NO-GO"){
+
+            block.classList.add(
+                "timeline-no-go"
+            );
+
+        }
+        else{
+
+            block.classList.add(
+                "timeline-past"
+            );
+
+        }
 
 
         bar.appendChild(block);
 
-
     });
 
 
+    document
+        .getElementById("sunriseMarker")
+        .style.left =
+        sun.sunrisePercent + "%";
 
-    document.getElementById("sunriseMarker").style.left =
-    sun.sunrisePercent+"%";
 
-
-    document.getElementById("sunsetMarker").style.left =
-    sun.sunsetPercent+"%";
-
+    document
+        .getElementById("sunsetMarker")
+        .style.left =
+        sun.sunsetPercent + "%";
 
 }
-
-
-
-
 
 
 
@@ -1002,54 +1049,55 @@ function createTimeline(results,sun){
 
 function findGoodWindow(results){
 
+    const windows = [];
 
-    let windows=[];
-
-    let start=null;
-
+    let start = null;
 
 
-    results.forEach((value,index)=>{
+    results.forEach((value, index) => {
+
+        const isGo =
+            value === "GO";
 
 
-        if(value=="GO" && start===null)
-            start=index;
+        if(isGo && start === null){
 
-
-
-        if(value!="GO" && start!==null){
-
-            windows.push(
-            formatHour(start)+" - "+formatHour(index)
-            );
-
-            start=null;
+            start = index;
 
         }
 
 
+        if(!isGo && start !== null){
+
+            windows.push(
+                formatHour(start) +
+                " - " +
+                formatHour(index)
+            );
+
+            start = null;
+
+        }
+
     });
 
 
-
-    if(start!==null){
+    if(start !== null){
 
         windows.push(
-        formatHour(start)+" - "+formatHour(24)
+            formatHour(start) +
+            " - " +
+            formatHour(24)
         );
 
     }
 
 
-
-    return windows.length
-    ?
-    windows.join("<br>")
-    :
-    "No GO periods available.";
+    return windows.length > 0
+        ? windows.join("<br>")
+        : "No GO periods available.";
 
 }
-
 
 
 
