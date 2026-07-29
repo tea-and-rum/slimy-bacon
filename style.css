@@ -484,7 +484,17 @@ button:hover {
 
 }
 
-
+.timeline-past {
+    background-color: #e5e7eb;
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 4px,
+        rgba(0, 0, 0, 0.04) 4px,
+        rgba(0, 0, 0, 0.04) 8px
+    );
+    opacity: 1;
+}
 
 .timeline-go {
 
