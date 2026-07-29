@@ -874,3 +874,64 @@ button:hover {
 
 
 }
+
+/* Main action buttons */
+
+.action-buttons {
+    display: flex;
+    width: 100%;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.action-buttons button {
+    min-height: 52px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+}
+
+
+/* Check Conditions takes more space */
+
+.check-button {
+    flex: 2;
+    background: #1479c9;
+    color: #ffffff;
+}
+
+.check-button:hover {
+    background: #0f68ae;
+}
+
+
+/* Reset button */
+
+.reset-button {
+    flex: 1;
+    background: #e7ebef;
+    color: #263746;
+}
+
+.reset-button:hover {
+    background: #d9dfe5;
+}
+
+
+/* Forecast timestamp under buttons */
+
+.forecast-checked {
+    width: 100%;
+    margin-top: 10px;
+    text-align: center;
+    color: #687783;
+    font-size: 13px;
+}
+
+.forecast-checked span {
+    font-weight: 600;
+    color: #42515d;
+}
