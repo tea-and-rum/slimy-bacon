@@ -936,3 +936,6 @@ button:hover {
     font-weight: 600;
     color: #42515d;
 }
+#results {
+    scroll-margin-top: 20px;
+}
