@@ -855,65 +855,119 @@ function evaluateLocation(hours, boatSize){
 
 
 
-function checkHour(hour,boatSize){
+function checkHour(hour, boatSize){
 
+    const thresholds = {
 
-    const limits={
-
-
-        small:{
-            wind:12,
-            wave:1
+        small: {
+            wind: {
+                sporty: 11,
+                noGo: 18
+            },
+            waves: {
+                sporty: 1,
+                noGo: 2
+            }
         },
 
-
-        medium:{
-            wind:15,
-            wave:2
+        medium: {
+            wind: {
+                sporty: 16,
+                noGo: 23
+            },
+            waves: {
+                sporty: 2,
+                noGo: 4
+            }
         },
 
-
-        large:{
-            wind:20,
-            wave:3
+        large: {
+            wind: {
+                sporty: 21,
+                noGo: 31
+            },
+            waves: {
+                sporty: 4,
+                noGo: 6
+            }
         },
 
-
-        xlarge:{
-            wind:25,
-            wave:4
+        xlarge: {
+            wind: {
+                sporty: 26,
+                noGo: 36
+            },
+            waves: {
+                sporty: 6,
+                noGo: 8
+            }
         }
-
 
     };
 
 
-
-    let status="GO";
-
+    const limits = thresholds[boatSize];
 
 
-    if(hour.wind > limits[boatSize].wind+5)
-        return {status:"NO-GO"};
+    if(!limits){
+
+        console.error("Unknown vessel size:", boatSize);
+
+        return {
+            status: "NO-GO"
+        };
+
+    }
 
 
-
-    if(hour.wind > limits[boatSize].wind)
-        status="SPORTY";
-
-
-
-    if(hour.waves > limits[boatSize].wave+1)
-        return {status:"NO-GO"};
+    const wind = Number(hour.wind) || 0;
+    const waves = Number(hour.waves) || 0;
+    const precip = Number(hour.precip) || 0;
 
 
+    /*
+    NO-GO takes priority.
+    If any one condition is unsafe, the hour is red.
+    */
 
-    if(hour.waves > limits[boatSize].wave)
-        status="SPORTY";
+    if(
+        wind >= limits.wind.noGo ||
+        waves >= limits.waves.noGo ||
+        precip >= 61
+    ){
+
+        return {
+            status: "NO-GO"
+        };
+
+    }
 
 
+    /*
+    SPORTY is used when at least one condition
+    falls in the sporty range.
+    */
 
-    return {status:status};
+    if(
+        wind >= limits.wind.sporty ||
+        waves >= limits.waves.sporty ||
+        precip >= 31
+    ){
+
+        return {
+            status: "SPORTY"
+        };
+
+    }
+
+
+    /*
+    Everything else is GO.
+    */
+
+    return {
+        status: "GO"
+    };
 
 }
 
