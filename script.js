@@ -415,7 +415,15 @@ async function checkConditions(){
             .classList
             .remove("hidden");
 
+setTimeout(() => {
 
+    document.getElementById("results").scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+
+}, 150);
+       
         document.getElementById("message").innerHTML = "";
 
     }
