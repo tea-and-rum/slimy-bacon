@@ -659,11 +659,8 @@ function createWaveChart(data){
 
 function createPrecipChart(data){
 
-
     if(precipChart)
         precipChart.destroy();
-
-
 
     precipChart =
     new Chart(
@@ -688,10 +685,36 @@ function createPrecipChart(data){
 
         },
 
-        options:simpleChartOptions()
+        options:{
 
-        });
+            ...simpleChartOptions(),
 
+            scales:{
+
+                x:{
+                    ticks:{
+                        maxTicksLimit:5
+                    }
+                },
+
+                y:{
+
+                    min:0,
+
+                    max:100,
+
+                    ticks:{
+                        stepSize:20,
+                        callback:value => value + "%"
+                    }
+
+                }
+
+            }
+
+        }
+
+    });
 
 }
 
