@@ -217,14 +217,30 @@ Large Boat
 
 
 
-<button onclick="checkConditions()">
-CHECK CONDITIONS
-</button>
+<div class="action-buttons">
 
+    <button
+        type="button"
+        class="check-button"
+        onclick="checkConditions()"
+    >
+        ✓ CHECK CONDITIONS
+    </button>
 
-<button class="secondaryButton" onclick="clearSelections()">
-CLEAR SELECTIONS
-</button>
+    <button
+        type="button"
+        class="reset-button"
+        onclick="clearSelections()"
+    >
+        RESET
+    </button>
+
+</div>
+
+<div class="forecast-checked">
+    Forecast checked:
+    <span id="checked">--</span>
+</div>
 
 
 
@@ -411,10 +427,7 @@ No-Go
 </div>
 
 
-<div>
-🕒 Forecast Checked:
-<strong id="checked"></strong>
-</div>
+
 
 
 </div>
