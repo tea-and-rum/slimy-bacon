@@ -214,39 +214,47 @@ function clearSelections(){
 async function checkConditions(){
 
     const selectedLocations =
-    [...document.querySelectorAll(".locations input:checked")]
-    .map(x=>x.value);
+        [...document.querySelectorAll(".locations input:checked")]
+            .map(input => input.value);
 
 
-
-    if(selectedLocations.length===0){
+    if(selectedLocations.length === 0){
 
         document.getElementById("message").innerHTML =
-        "Please select at least one location.";
+            "Please select at least one location.";
 
         return;
 
     }
 
 
-
-
-
     const boatSize =
         document.getElementById("boatSize").value;
 
 
+    const selectedDate =
+        document.getElementById("date").value;
 
-const selectedDate =
-    document.getElementById("date").value;
+
+    if(!selectedDate){
+
+        document.getElementById("message").innerHTML =
+            "Please select a date.";
+
+        return;
+
+    }
 
 
-const sun =
-    getSunTimes(
-        selectedLocations,
-        selectedDate
-    );
+    document.getElementById("message").innerHTML =
+        "Checking conditions...";
 
+
+    const sun =
+        getSunTimes(
+            selectedLocations,
+            selectedDate
+        );
 
 
     document.getElementById("sunrise").innerHTML =
@@ -261,94 +269,78 @@ const sun =
         new Date().toLocaleString();
 
 
+    let allResults = [];
+
+    let locationHTML = "";
+
+    let allWeather = [];
 
 
+    for(const location of selectedLocations){
 
-    let allResults=[];
-
-    let locationHTML="";
-
-
-
-    let allWeather=[];
-
+        const forecast =
+            await getHourlyWeather(
+                location,
+                selectedDate
+            );
 
 
+        const hasForecastData =
+            Array.isArray(forecast) &&
+            forecast.some(hour => hour !== null);
 
 
+        if(!hasForecastData){
+
+            document.getElementById("message").innerHTML =
+                `Weather data is unavailable for ${location} on the selected date.`;
+
+            return;
+
+        }
 
 
-   for (const location of selectedLocations) {
+        allWeather.push(forecast);
 
 
-    const forecast =
-await getHourlyWeather(
-    location,
-    selectedDate
-);
-
-if(!forecast){
-
-    document.getElementById("message").innerHTML =
-    "Weather data unavailable. Please try again.";
-
-    return;
-
-}
+        const evaluated =
+            evaluateLocation(
+                forecast,
+                boatSize
+            );
 
 
-allWeather.push(forecast);
-
-
-    const evaluated =
-        evaluateLocation(
-            forecast,
-            boatSize
+        allResults.push(
+            evaluated.hourlyResults
         );
 
 
-    allResults.push(
-        evaluated.hourlyResults
-    );
+        locationHTML += `
 
+            <div class="locationCard ${backgroundClass(evaluated.result)}">
 
-    locationHTML += `
+                <strong>
+                    ${emoji(evaluated.result)}
+                    ${location}
+                </strong>
 
-    <div class="locationCard ${backgroundClass(evaluated.result)}">
+                <br><br>
 
+                <b>Best conditions:</b><br>
 
-    <strong>
-    ${emoji(evaluated.result)}
-    ${location}
-    </strong>
+                ${findGoodWindow(evaluated.hourlyResults)}
 
+                <br><br>
 
-    <br><br>
+                <b>Watch:</b><br>
 
+                ${evaluated.reason}
 
-    <b>Best conditions:</b><br>
+            </div>
 
-    ${findGoodWindow(evaluated.hourlyResults)}
+        `;
 
-
-    <br><br>
-
-
-    <b>Watch:</b><br>
-
-    ${evaluated.reason}
-
-
-    </div>
-
-    `;
-
-
-}
-
-
-
-
+    }
 
 
 
@@ -746,40 +738,52 @@ function hourLabels(){
 
 
 
-function evaluateLocation(hours,boatSize){
+function evaluateLocation(hours, boatSize){
+
+    const results =
+        new Array(24).fill(null);
 
 
-    let results=[];
+    hours.forEach((hour, index) => {
+
+        if(hour === null){
+
+            return;
+
+        }
 
 
-    hours.forEach(hour=>{
-
-
-        results.push(
-            checkHour(hour,boatSize).status
-        );
-
+        results[index] =
+            checkHour(
+                hour,
+                boatSize
+            ).status;
 
     });
 
 
+    const validResults =
+        results.filter(
+            result => result !== null
+        );
+
 
     return {
 
-
         result:
-        determineDailyResult(results),
-
+            validResults.length > 0
+                ? determineDailyResult(validResults)
+                : "NO DATA",
 
         hourlyResults:
-        results,
-
+            results,
 
         reason:
-        "Conditions may become less favorable later in the day."
+            validResults.length > 0
+                ? "Conditions may become less favorable later in the day."
+                : "No forecast hours are currently available for the selected date."
 
     };
-
 
 }
 
@@ -1104,67 +1108,157 @@ async function getHourlyWeather(location, selectedDate){
 
     try {
 
-        const coords = locations[location];
+        const coords =
+            locations[location];
+
 
         const pointResponse =
             await fetch(
                 `https://api.weather.gov/points/${coords.lat},${coords.lon}`
             );
 
+
         if(!pointResponse.ok){
-            throw new Error("NOAA location lookup failed");
+
+            throw new Error(
+                "NOAA location lookup failed"
+            );
+
         }
+
 
         const pointData =
             await pointResponse.json();
+
 
         const hourlyResponse =
             await fetch(
                 pointData.properties.forecastHourly
             );
 
+
         if(!hourlyResponse.ok){
-            throw new Error("NOAA forecast lookup failed");
+
+            throw new Error(
+                "NOAA forecast lookup failed"
+            );
+
         }
+
 
         const hourlyData =
             await hourlyResponse.json();
 
+
         const hourlyForecast =
             new Array(24).fill(null);
 
+
+        const now =
+            new Date();
+
+
+        const today = [
+            now.getFullYear(),
+            String(now.getMonth() + 1).padStart(2, "0"),
+            String(now.getDate()).padStart(2, "0")
+        ].join("-");
+
+
+        const isToday =
+            selectedDate === today;
+
+
+        const currentHour =
+            now.getHours();
+
+
         hourlyData.properties.periods.forEach(period => {
 
-            const periodTime =
-                new Date(period.startTime);
+            /*
+            NOAA provides a timestamp similar to:
 
-            const periodDate = [
-                periodTime.getFullYear(),
-                String(periodTime.getMonth() + 1).padStart(2, "0"),
-                String(periodTime.getDate()).padStart(2, "0")
-            ].join("-");
+            2026-07-28T20:00:00-04:00
 
-            if(periodDate !== selectedDate){
+            Read the date and hour directly from that string
+            so the browser does not shift it into another day
+            or hour during timezone conversion.
+            */
+
+            const timestampMatch =
+                period.startTime.match(
+                    /^(\d{4}-\d{2}-\d{2})T(\d{2}):/
+                );
+
+
+            if(!timestampMatch){
+
                 return;
+
             }
 
+
+            const periodDate =
+                timestampMatch[1];
+
+
             const hour =
-                periodTime.getHours();
+                Number(timestampMatch[2]);
+
+
+            if(periodDate !== selectedDate){
+
+                return;
+
+            }
+
+
+            /*
+            When today is selected, ignore hours that
+            have already passed.
+            */
+
+            if(isToday && hour < currentHour){
+
+                return;
+
+            }
+
+
+            const precipitation =
+                period.probabilityOfPrecipitation?.value;
+
 
             hourlyForecast[hour] = {
 
                 wind:
-                    parseInt(period.windSpeed) || 0,
+                    parseInt(
+                        period.windSpeed,
+                        10
+                    ) || 0,
 
                 waves:
                     1,
 
                 precip:
-                    period.probabilityOfPrecipitation.value ?? 0
+                    precipitation ?? 0,
+
+                windDirection:
+                    period.windDirection || "",
+
+                temperature:
+                    period.temperature ?? null,
+
+                shortForecast:
+                    period.shortForecast || "",
+
+                startTime:
+                    period.startTime
 
             };
 
         });
+
 
         return hourlyForecast;
 
@@ -1172,13 +1266,16 @@ async function getHourlyWeather(location, selectedDate){
 
     catch(error){
 
-        console.error(error);
+        console.error(
+            "Hourly weather error:",
+            error
+        );
+
         return null;
 
     }
 
 }
-
 
 
 
