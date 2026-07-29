@@ -282,8 +282,10 @@ const sun =
 
 
     const forecast =
-    await getHourlyWeather(location);
-
+await getHourlyWeather(
+    location,
+    selectedDate
+);
 
 if(!forecast){
 
@@ -1098,93 +1100,84 @@ function createWhySection(results){
 
 
 
-async function getHourlyWeather(location){
-
+async function getHourlyWeather(location, selectedDate){
 
     try {
 
-
         const coords = locations[location];
-
 
         const pointResponse =
             await fetch(
                 `https://api.weather.gov/points/${coords.lat},${coords.lon}`
             );
 
-
         if(!pointResponse.ok){
-
             throw new Error("NOAA location lookup failed");
-
         }
-
 
         const pointData =
             await pointResponse.json();
-
-
 
         const hourlyResponse =
             await fetch(
                 pointData.properties.forecastHourly
             );
 
-
         if(!hourlyResponse.ok){
-
             throw new Error("NOAA forecast lookup failed");
-
         }
-
 
         const hourlyData =
             await hourlyResponse.json();
 
+        const hourlyForecast =
+            new Array(24).fill(null);
 
+        hourlyData.properties.periods.forEach(period => {
 
-        return hourlyData.properties.periods
-        .slice(0,24)
-        .map(period => {
+            const periodTime =
+                new Date(period.startTime);
 
+            const periodDate = [
+                periodTime.getFullYear(),
+                String(periodTime.getMonth() + 1).padStart(2, "0"),
+                String(periodTime.getDate()).padStart(2, "0")
+            ].join("-");
 
-            return {
+            if(periodDate !== selectedDate){
+                return;
+            }
+
+            const hour =
+                periodTime.getHours();
+
+            hourlyForecast[hour] = {
 
                 wind:
-                parseInt(period.windSpeed),
-
+                    parseInt(period.windSpeed) || 0,
 
                 waves:
-                1,
-
+                    1,
 
                 precip:
-                period.probabilityOfPrecipitation.value || 0
-
+                    period.probabilityOfPrecipitation.value ?? 0
 
             };
 
-
         });
 
+        return hourlyForecast;
 
     }
-
 
     catch(error){
 
-
         console.error(error);
-
-
         return null;
-
 
     }
 
-
 }
-
 
 
 
