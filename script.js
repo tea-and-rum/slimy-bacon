@@ -281,34 +281,57 @@ async function checkConditions(){
 
         const allWeather = [];
 
+        let allAlerts=[];
+
         let locationHTML = "";
 
 
         for(const location of selectedLocations){
 
-            const forecast =
-                await getHourlyWeather(
-                    location,
-                    selectedDate
-                );
+            const [
+    forecast,
+    alerts
+] = await Promise.all([
+
+    getHourlyWeather(
+        location,
+        selectedDate
+    ),
+
+    getActiveAlerts(
+        location
+    )
+
+]);
 
 
-            const hasForecastData =
-                Array.isArray(forecast) &&
-                forecast.some(hour => hour !== null);
+if(!forecast){
+
+    document.getElementById("message").innerHTML =
+        "Weather data unavailable. Please try again.";
+
+    return;
+
+}
 
 
-            if(!hasForecastData){
-
-                document.getElementById("message").innerHTML =
-                    `Weather data is unavailable for ${location} on the selected date.`;
-
-                return;
-
-            }
+applyAlertsToForecast(
+    forecast,
+    alerts
+);
 
 
-            allWeather.push(forecast);
+allWeather.push(forecast);
+
+
+alerts.forEach(alert => {
+
+    allAlerts.push({
+        ...alert,
+        location: location
+    });
+
+});
 
 
             const evaluated =
@@ -408,7 +431,7 @@ async function checkConditions(){
 
 
         createEvidenceCharts(allWeather);
-
+renderAdvisoryTile(allAlerts);
 
         document
             .getElementById("results")
@@ -452,7 +475,169 @@ setTimeout(() => {
 
 
 
+function escapeHTML(value){
 
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+
+}
+
+
+function renderAdvisoryTile(alerts){
+
+    const advisoryTile =
+        document.getElementById(
+            "advisoryText"
+        );
+
+
+    if(!advisoryTile){
+
+        console.error(
+            "Could not find advisoryText element."
+        );
+
+        return;
+
+    }
+
+
+    if(
+        !Array.isArray(alerts) ||
+        alerts.length === 0
+    ){
+
+        advisoryTile.innerHTML =
+            "✓ No active advisories";
+
+        return;
+
+    }
+
+
+    /*
+    Remove duplicate alerts returned for
+    more than one selected location.
+    */
+
+    const uniqueAlerts =
+        new Map();
+
+
+    alerts.forEach(alert => {
+
+        const key =
+            alert.id ||
+            `${alert.event}-${alert.expires}`;
+
+
+        if(!uniqueAlerts.has(key)){
+
+            uniqueAlerts.set(
+                key,
+                {
+                    ...alert,
+                    locations: [
+                        alert.location
+                    ]
+                }
+            );
+
+        }
+        else {
+
+            const existing =
+                uniqueAlerts.get(key);
+
+
+            if(
+                alert.location &&
+                !existing.locations.includes(
+                    alert.location
+                )
+            ){
+
+                existing.locations.push(
+                    alert.location
+                );
+
+            }
+
+        }
+
+    });
+
+
+    advisoryTile.innerHTML =
+        [...uniqueAlerts.values()]
+        .map(alert => {
+
+            const endTime =
+                alert.ends ||
+                alert.expires;
+
+
+            const endText =
+                endTime
+                    ? new Date(
+                        endTime
+                    ).toLocaleString(
+                        [],
+                        {
+                            weekday: "short",
+                            hour: "numeric",
+                            minute: "2-digit"
+                        }
+                    )
+                    : "Time unavailable";
+
+
+            const locationsText =
+                alert.locations
+                    .filter(Boolean)
+                    .join(", ");
+
+
+            return `
+
+                <div class="active-advisory">
+
+                    <strong>
+                        ⚠ ${escapeHTML(
+                            alert.event
+                        )}
+                    </strong>
+
+                    ${
+                        locationsText
+                            ? `
+                                <div>
+                                    ${escapeHTML(
+                                        locationsText
+                                    )}
+                                </div>
+                            `
+                            : ""
+                    }
+
+                    <small>
+                        Until ${escapeHTML(
+                            endText
+                        )}
+                    </small>
+
+                </div>
+
+            `;
+
+        })
+        .join("");
+
+}
 
 
 
@@ -566,8 +751,7 @@ function createEvidenceCharts(weatherData){
     createPrecipChart(maxPrecip);
 
 
-    document.getElementById("advisoryText").innerHTML =
-        "No active advisories";
+  
 
 }
 
@@ -858,7 +1042,88 @@ function evaluateLocation(hours, boatSize){
 
 
 
+function getAlertStatus(alerts){
 
+    if(
+        !Array.isArray(alerts) ||
+        alerts.length === 0
+    ){
+
+        return "GO";
+
+    }
+
+
+    const noGoAlerts = [
+
+        "Special Marine Warning",
+        "Severe Thunderstorm Warning",
+        "Tornado Warning",
+
+        "Small Craft Advisory",
+
+        "Gale Warning",
+        "Storm Warning",
+
+        "Hurricane Warning",
+        "Tropical Storm Warning",
+
+        "Extreme Wind Warning",
+        "Snow Squall Warning"
+
+    ];
+
+
+    const sportyAlerts = [
+
+        "Severe Thunderstorm Watch",
+        "Tornado Watch",
+
+        "Gale Watch",
+        "Storm Watch",
+
+        "Hurricane Watch",
+        "Tropical Storm Watch",
+
+        "Marine Weather Statement",
+
+        "Dense Fog Advisory",
+        "Wind Advisory",
+        "Coastal Flood Advisory"
+
+    ];
+
+
+    if(
+        alerts.some(alert =>
+            noGoAlerts.includes(alert.event)
+        )
+    ){
+
+        return "NO-GO";
+
+    }
+
+
+    if(
+        alerts.some(alert =>
+            sportyAlerts.includes(alert.event)
+        )
+    ){
+
+        return "SPORTY";
+
+    }
+
+
+    /*
+    Any other active NWS alert receives
+    a cautious SPORTY classification.
+    */
+
+    return "SPORTY";
+
+}
 
 
 
@@ -914,12 +1179,16 @@ function checkHour(hour, boatSize){
     };
 
 
-    const limits = thresholds[boatSize];
+    const limits =
+        thresholds[boatSize];
 
 
     if(!limits){
 
-        console.error("Unknown vessel size:", boatSize);
+        console.error(
+            "Unknown vessel size:",
+            boatSize
+        );
 
         return {
             status: "NO-GO"
@@ -928,17 +1197,74 @@ function checkHour(hour, boatSize){
     }
 
 
-    const wind = Number(hour.wind) || 0;
-    const waves = Number(hour.waves) || 0;
-    const precip = Number(hour.precip) || 0;
+    const wind =
+        Number(hour.wind) || 0;
+
+    const waves =
+        Number(hour.waves) || 0;
+
+    const precip =
+        Number(hour.precip) || 0;
+
+    const alerts =
+        Array.isArray(hour.alerts)
+            ? hour.alerts
+            : [];
+
+
+    const noGoAlertNames = [
+
+        "Special Marine Warning",
+        "Severe Thunderstorm Warning",
+        "Tornado Warning",
+        "Small Craft Advisory",
+        "Gale Warning",
+        "Storm Warning",
+        "Hurricane Warning",
+        "Tropical Storm Warning",
+        "Extreme Wind Warning"
+
+    ];
+
+
+    const sportyAlertNames = [
+
+        "Severe Thunderstorm Watch",
+        "Tornado Watch",
+        "Gale Watch",
+        "Storm Watch",
+        "Hurricane Watch",
+        "Tropical Storm Watch",
+        "Marine Weather Statement",
+        "Dense Fog Advisory",
+        "Wind Advisory",
+        "Coastal Flood Advisory"
+
+    ];
+
+
+    const hasNoGoAlert =
+        alerts.some(alert =>
+            noGoAlertNames.includes(
+                alert.event
+            )
+        );
+
+
+    const hasSportyAlert =
+        alerts.some(alert =>
+            sportyAlertNames.includes(
+                alert.event
+            )
+        );
 
 
     /*
     NO-GO takes priority.
-    If any one condition is unsafe, the hour is red.
     */
 
     if(
+        hasNoGoAlert ||
         wind >= limits.wind.noGo ||
         waves >= limits.waves.noGo ||
         precip >= 61
@@ -952,11 +1278,12 @@ function checkHour(hour, boatSize){
 
 
     /*
-    SPORTY is used when at least one condition
-    falls in the sporty range.
+    SPORTY comes next.
     */
 
     if(
+        hasSportyAlert ||
+        alerts.length > 0 ||
         wind >= limits.wind.sporty ||
         waves >= limits.waves.sporty ||
         precip >= 31
@@ -968,10 +1295,6 @@ function checkHour(hour, boatSize){
 
     }
 
-
-    /*
-    Everything else is GO.
-    */
 
     return {
         status: "GO"
@@ -1375,31 +1698,37 @@ async function getHourlyWeather(location, selectedDate){
 
             hourlyForecast[hour] = {
 
-                wind:
-                    parseInt(
-                        period.windSpeed,
-                        10
-                    ) || 0,
+    wind:
+        parseInt(
+            period.windSpeed,
+            10
+        ) || 0,
 
-                waves:
-                    1,
+    waves:
+        1,
 
-                precip:
-                    precipitation ?? 0,
+    precip:
+        precipitation ?? 0,
 
-                windDirection:
-                    period.windDirection || "",
+    windDirection:
+        period.windDirection || "",
 
-                temperature:
-                    period.temperature ?? null,
+    temperature:
+        period.temperature ?? null,
 
-                shortForecast:
-                    period.shortForecast || "",
+    shortForecast:
+        period.shortForecast || "",
 
-                startTime:
-                    period.startTime
+    startTime:
+        period.startTime,
 
-            };
+    endTime:
+        period.endTime,
+
+    alerts:
+        []
+
+};
 
         });
 
@@ -1423,10 +1752,146 @@ async function getHourlyWeather(location, selectedDate){
 
 
 
+async function getActiveAlerts(location){
+
+    try {
+
+        const coords = locations[location];
+
+        const response = await fetch(
+            `https://api.weather.gov/alerts/active?point=${coords.lat},${coords.lon}`,
+            {
+                headers: {
+                    "Accept": "application/geo+json"
+                }
+            }
+        );
 
 
+        if(!response.ok){
+
+            throw new Error(
+                `NWS alert request failed: ${response.status}`
+            );
+
+        }
 
 
+        const data = await response.json();
+
+
+        return data.features.map(feature => {
+
+            const alert = feature.properties;
+
+            return {
+
+                id:
+                    feature.id,
+
+                event:
+                    alert.event || "Weather Alert",
+
+                headline:
+                    alert.headline || alert.event,
+
+                severity:
+                    alert.severity || "Unknown",
+
+                urgency:
+                    alert.urgency || "Unknown",
+
+                effective:
+                    alert.effective,
+
+                onset:
+                    alert.onset,
+
+                ends:
+                    alert.ends,
+
+                expires:
+                    alert.expires,
+
+                description:
+                    alert.description || "",
+
+                instruction:
+                    alert.instruction || ""
+
+            };
+
+        });
+
+    }
+    catch(error){
+
+        console.error(
+            `Unable to load alerts for ${location}:`,
+            error
+        );
+
+        return [];
+
+    }
+
+}
+
+
+function applyAlertsToForecast(forecast, alerts){
+
+    forecast.forEach(hour => {
+
+        if(!hour){
+
+            return;
+
+        }
+
+
+        const hourStart =
+            new Date(hour.startTime);
+
+        const hourEnd =
+            new Date(hour.endTime);
+
+
+        hour.alerts = alerts.filter(alert => {
+
+            const alertStart =
+                new Date(
+                    alert.onset ||
+                    alert.effective
+                );
+
+
+            const alertEnd =
+                new Date(
+                    alert.ends ||
+                    alert.expires
+                );
+
+
+            if(
+                Number.isNaN(alertStart.getTime()) ||
+                Number.isNaN(alertEnd.getTime())
+            ){
+
+                return false;
+
+            }
+
+
+            return (
+                alertStart < hourEnd &&
+                alertEnd > hourStart
+            );
+
+        });
+
+    });
+
+}
 function getSunTimes(selectedLocations, selectedDate){
 
 
