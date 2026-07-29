@@ -213,19 +213,19 @@ function clearSelections(){
 
 async function checkConditions(){
 
- const hasForecastData =
-    Array.isArray(forecast) &&
-    forecast.some(hour => hour !== null);
+    const selectedLocations =
+        [...document.querySelectorAll(".locations input:checked")]
+            .map(input => input.value);
 
 
-if(!hasForecastData){
+    if(selectedLocations.length === 0){
 
-    document.getElementById("message").innerHTML =
-        `Weather data is unavailable for ${location} on the selected date.`;
+        document.getElementById("message").innerHTML =
+            "Please select at least one location.";
 
-    return;
+        return;
 
-}
+    }
 
 
     const boatSize =
@@ -250,185 +250,196 @@ if(!hasForecastData){
         "Checking conditions...";
 
 
-    const sun =
-        getSunTimes(
-            selectedLocations,
-            selectedDate
-        );
+    document
+        .getElementById("results")
+        .classList
+        .add("hidden");
 
 
-    document.getElementById("sunrise").innerHTML =
-        sun.sunrise;
+    try {
 
-
-    document.getElementById("sunset").innerHTML =
-        sun.sunset;
-
-
-    document.getElementById("checked").innerHTML =
-        new Date().toLocaleString();
-
-
-    let allResults = [];
-
-    let locationHTML = "";
-
-    let allWeather = [];
-
-
-  try {
-
-    for(const location of selectedLocations){
-
-        const forecast =
-            await getHourlyWeather(
-                location,
+        const sun =
+            getSunTimes(
+                selectedLocations,
                 selectedDate
             );
 
 
-        const hasForecastData =
-            Array.isArray(forecast) &&
-            forecast.some(hour => hour !== null);
+        document.getElementById("sunrise").innerHTML =
+            sun.sunrise;
 
 
-        if(!hasForecastData){
+        document.getElementById("sunset").innerHTML =
+            sun.sunset;
+
+
+        document.getElementById("checked").innerHTML =
+            new Date().toLocaleString();
+
+
+        const allResults = [];
+
+        const allWeather = [];
+
+        let locationHTML = "";
+
+
+        for(const location of selectedLocations){
+
+            const forecast =
+                await getHourlyWeather(
+                    location,
+                    selectedDate
+                );
+
+
+            const hasForecastData =
+                Array.isArray(forecast) &&
+                forecast.some(hour => hour !== null);
+
+
+            if(!hasForecastData){
+
+                document.getElementById("message").innerHTML =
+                    `Weather data is unavailable for ${location} on the selected date.`;
+
+                return;
+
+            }
+
+
+            allWeather.push(forecast);
+
+
+            const evaluated =
+                evaluateLocation(
+                    forecast,
+                    boatSize
+                );
+
+
+            allResults.push(
+                evaluated.hourlyResults
+            );
+
+
+            locationHTML += `
+
+                <div class="locationCard ${backgroundClass(evaluated.result)}">
+
+                    <strong>
+                        ${emoji(evaluated.result)}
+                        ${location}
+                    </strong>
+
+                    <br><br>
+
+                    <b>Best conditions:</b><br>
+
+                    ${findGoodWindow(evaluated.hourlyResults)}
+
+                    <br><br>
+
+                    <b>Watch:</b><br>
+
+                    ${evaluated.reason}
+
+                </div>
+
+            `;
+
+        }
+
+
+        const timeline =
+            combineTimelineResults(allResults);
+
+
+        const validTimeline =
+            timeline.filter(value =>
+                value === "GO" ||
+                value === "SPORTY" ||
+                value === "NO-GO"
+            );
+
+
+        if(validTimeline.length === 0){
 
             document.getElementById("message").innerHTML =
-                `Weather data is unavailable for ${location} on the selected date.`;
+                "No remaining forecast hours are available for today.";
 
             return;
 
         }
 
 
-        allWeather.push(forecast);
+        const overall =
+            determineDailyResult(validTimeline);
 
 
-        const evaluated =
-            evaluateLocation(
-                forecast,
-                boatSize
-            );
-
-
-        allResults.push(
-            evaluated.hourlyResults
+        createTimeline(
+            timeline,
+            sun
         );
 
 
-        locationHTML += `
+        document.getElementById("decision").innerHTML =
+            emoji(overall) + " " + overall;
 
-            <div class="locationCard ${backgroundClass(evaluated.result)}">
 
-                <strong>
-                    ${emoji(evaluated.result)}
-                    ${location}
-                </strong>
+        document.getElementById("decision").className =
+            overallClass(overall);
 
-                <br><br>
 
-                <b>Best conditions:</b><br>
+        document.getElementById("decisionSummary").innerHTML =
+            getDecisionSummary(overall);
 
-                ${findGoodWindow(evaluated.hourlyResults)}
 
-                <br><br>
+        document.getElementById("whyResults").innerHTML =
+            createWhySection(validTimeline);
 
-                <b>Watch:</b><br>
 
-                ${evaluated.reason}
+        document.getElementById("locationResults").innerHTML =
+            locationHTML;
 
-            </div>
 
-        `;
+        document.getElementById("window").innerHTML =
+            findGoodWindow(timeline);
+
+
+        createEvidenceCharts(allWeather);
+
+
+        document
+            .getElementById("results")
+            .classList
+            .remove("hidden");
+
+
+        document.getElementById("message").innerHTML = "";
+
+    }
+    catch(error){
+
+        console.error(
+            "Unable to check conditions:",
+            error
+        );
+
+
+        document.getElementById("message").innerHTML =
+            "Unable to finish checking conditions: " +
+            error.message;
+
+
+        document
+            .getElementById("results")
+            .classList
+            .remove("hidden");
 
     }
 
 }
-catch(error){
-
-    console.error(
-        "Condition evaluation failed:",
-        error
-    );
-
-
-    document.getElementById("message").innerHTML =
-        `Unable to finish checking conditions: ${error.message}`;
-
-
-    return;
-
-}
-
-
-
-   const timeline =
-    combineTimelineResults(allResults);
-
-
-const validTimeline =
-    timeline.filter(value =>
-        value === "GO" ||
-        value === "SPORTY" ||
-        value === "NO-GO"
-    );
-
-
-if(validTimeline.length === 0){
-
-    document.getElementById("message").innerHTML =
-        "No remaining forecast hours are available for today.";
-
-    return;
-
-}
-
-
-const overall =
-    determineDailyResult(validTimeline);
-
-
-createTimeline(
-    timeline,
-    sun
-);
-
-
-document.getElementById("decision").innerHTML =
-    emoji(overall) + " " + overall;
-
-
-document.getElementById("decision").className =
-    overallClass(overall);
-
-
-document.getElementById("decisionSummary").innerHTML =
-    getDecisionSummary(overall);
-
-
-document.getElementById("whyResults").innerHTML =
-    createWhySection(validTimeline);
-
-
-document.getElementById("locationResults").innerHTML =
-    locationHTML;
-
-
-document.getElementById("window").innerHTML =
-    findGoodWindow(timeline);
-
-
-createEvidenceCharts(allWeather);
-
-
-document
-    .getElementById("results")
-    .classList
-    .remove("hidden");
-
-
-document.getElementById("message").innerHTML = "";
 
 
 
