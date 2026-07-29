@@ -898,7 +898,6 @@ button:hover {
 /* Check Conditions takes more space */
 
 .check-button {
-    flex: 2;
     background: #1479c9;
     color: #ffffff;
 }
@@ -907,11 +906,13 @@ button:hover {
     background: #0f68ae;
 }
 
-
+.check-button,
+.reset-button {
+    flex: 1;
+}
 /* Reset button */
 
 .reset-button {
-    flex: 1;
     background: #e7ebef;
     color: #263746;
 }
