@@ -58,10 +58,216 @@ window.onload = function(){
 
     setupVesselCards();
 
+    setupDarkMode();
+
 };
 
 
+function setupDarkMode(){
 
+    const toggle =
+        document.getElementById(
+            "darkModeToggle"
+        );
+
+    const icon =
+        document.getElementById(
+            "darkModeIcon"
+        );
+
+    const text =
+        document.getElementById(
+            "darkModeText"
+        );
+
+
+    if(!toggle){
+
+        console.error(
+            "Could not find darkModeToggle."
+        );
+
+        return;
+
+    }
+
+
+    const savedMode =
+        localStorage.getItem(
+            "boatingConditionsDarkMode"
+        );
+
+
+    /*
+    Use the saved preference when available.
+
+    When there is no saved preference,
+    use the device's current appearance.
+    */
+
+    const prefersDark =
+        window.matchMedia &&
+        window.matchMedia(
+            "(prefers-color-scheme: dark)"
+        ).matches;
+
+
+    const shouldUseDarkMode =
+        savedMode === "dark" ||
+        (
+            savedMode === null &&
+            prefersDark
+        );
+
+
+    setDarkMode(
+        shouldUseDarkMode,
+        toggle,
+        icon,
+        text
+    );
+
+
+    toggle.addEventListener(
+        "click",
+        function(){
+
+            const darkModeEnabled =
+                !document.body.classList.contains(
+                    "dark-mode"
+                );
+
+
+            setDarkMode(
+                darkModeEnabled,
+                toggle,
+                icon,
+                text
+            );
+
+
+            localStorage.setItem(
+                "boatingConditionsDarkMode",
+                darkModeEnabled
+                    ? "dark"
+                    : "light"
+            );
+
+        }
+    );
+
+}
+function setDarkMode(
+    enabled,
+    toggle,
+    icon,
+    text
+){
+
+    document.body.classList.toggle(
+        "dark-mode",
+        enabled
+    );
+
+
+    toggle.setAttribute(
+        "aria-pressed",
+        String(enabled)
+    );
+
+
+    toggle.setAttribute(
+        "aria-label",
+        enabled
+            ? "Switch to light mode"
+            : "Switch to dark mode"
+    );
+
+
+    icon.textContent =
+        enabled
+            ? "☀️"
+            : "🌙";
+
+
+    text.textContent =
+        enabled
+            ? "Light mode"
+            : "Dark mode";
+
+
+    updateChartAppearance(
+        enabled
+    );
+
+}
+function updateChartAppearance(isDarkMode){
+
+    const textColor =
+        isDarkMode
+            ? "#cbd5e1"
+            : "#475569";
+
+    const gridColor =
+        isDarkMode
+            ? "rgba(148, 163, 184, 0.18)"
+            : "rgba(100, 116, 139, 0.15)";
+
+
+    [
+        windChart,
+        waveChart,
+        precipChart
+    ].forEach(chart => {
+
+        if(!chart){
+            return;
+        }
+
+
+        const scales =
+            chart.options.scales;
+
+
+        if(scales?.x){
+
+            scales.x.ticks =
+                scales.x.ticks || {};
+
+            scales.x.grid =
+                scales.x.grid || {};
+
+            scales.x.ticks.color =
+                textColor;
+
+            scales.x.grid.color =
+                gridColor;
+
+        }
+
+
+        if(scales?.y){
+
+            scales.y.ticks =
+                scales.y.ticks || {};
+
+            scales.y.grid =
+                scales.y.grid || {};
+
+            scales.y.ticks.color =
+                textColor;
+
+            scales.y.grid.color =
+                gridColor;
+
+        }
+
+
+        chart.update();
+
+    });
+
+}
 
 
 
@@ -823,7 +1029,11 @@ function createEvidenceCharts(weatherData){
     createWindChart(maxWind);
     createWaveChart(maxWaves);
     createPrecipChart(maxPrecip);
-
+updateChartAppearance(
+    document.body.classList.contains(
+        "dark-mode"
+    )
+);
 }
 
 
