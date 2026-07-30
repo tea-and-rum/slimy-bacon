@@ -689,126 +689,142 @@ function createEvidenceCharts(weatherData){
 
     for(let hour = 0; hour < 24; hour++){
 
-        let windValues = [];
-        let waveValues = [];
-        let precipValues = [];
+        const availableHours =
+            weatherData
+                .map(location => location[hour])
+                .filter(hourData =>
+                    hourData !== null &&
+                    hourData !== undefined
+                );
 
 
-        weatherData.forEach(location => {
+        if(availableHours.length === 0){
 
-            const hourData =
-                location[hour];
+            maxWind.push(null);
+            maxWaves.push(null);
+            maxPrecip.push(null);
 
+            continue;
 
-            if(!hourData){
-
-                return;
-
-            }
+        }
 
 
-            windValues.push(
-                hourData.wind ?? 0
-            );
+        const hourlyWindValues =
+            availableHours
+                .map(hourData =>
+                    Number(hourData.wind)
+                )
+                .filter(value =>
+                    Number.isFinite(value)
+                );
 
 
-            waveValues.push(
-                hourData.waves ?? 0
-            );
+        const hourlyWaveValues =
+            availableHours
+                .map(hourData =>
+                    Number(hourData.waves)
+                )
+                .filter((value, index) => {
+
+                    const originalValue =
+                        availableHours[index].waves;
+
+                    return (
+                        originalValue !== null &&
+                        originalValue !== undefined &&
+                        Number.isFinite(value)
+                    );
+
+                });
 
 
-            precipValues.push(
-                hourData.precip ?? 0
-            );
-
-        });
+        const hourlyPrecipValues =
+            availableHours
+                .map(hourData =>
+                    Number(hourData.precip)
+                )
+                .filter(value =>
+                    Number.isFinite(value)
+                );
 
 
         maxWind.push(
-            windValues.length
-                ? Math.max(...windValues)
+            hourlyWindValues.length
+                ? Math.max(...hourlyWindValues)
                 : null
         );
 
 
-        const hourlyWaveValues =
-    availableHours
-        .map(hourData => hourData.waves)
-        .filter(value =>
-            value !== null &&
-            value !== undefined &&
-            Number.isFinite(value)
+        maxWaves.push(
+            hourlyWaveValues.length
+                ? Math.max(...hourlyWaveValues)
+                : null
         );
 
 
-maxWaves.push(
-    hourlyWaveValues.length
-        ? Math.max(...hourlyWaveValues)
-        : null
-);
-
         maxPrecip.push(
-            precipValues.length
-                ? Math.max(...precipValues)
+            hourlyPrecipValues.length
+                ? Math.max(...hourlyPrecipValues)
                 : null
         );
 
     }
 
 
-    const validWind =
-        maxWind.filter(
-            value => value !== null
+    const availableWind =
+        maxWind.filter(value =>
+            value !== null
         );
 
 
-    const validWaves =
-        maxWaves.filter(
-            value => value !== null
+    const availableWaves =
+        maxWaves.filter(value =>
+            value !== null
         );
 
 
-    const validPrecip =
-        maxPrecip.filter(
-            value => value !== null
+    const availablePrecip =
+        maxPrecip.filter(value =>
+            value !== null
         );
 
 
     document.getElementById("windSummary").innerHTML =
-        validWind.length
-            ? "Max: " + Math.max(...validWind) + " mph"
-            : "No data available";
+        availableWind.length
+            ? (
+                "Max: " +
+                Math.max(...availableWind) +
+                " mph"
+            )
+            : "No forecast data";
 
 
-  document.getElementById("waveSummary").innerHTML =
-    availableWaves.length
-        ? (
-            "Max: " +
-            Math.max(...availableWaves)
-                .toFixed(1) +
-            " ft"
-        )
-        : "Wave forecast unavailable";
+    document.getElementById("waveSummary").innerHTML =
+        availableWaves.length
+            ? (
+                "Max: " +
+                Math.max(...availableWaves)
+                    .toFixed(1) +
+                " ft"
+            )
+            : "Wave forecast unavailable";
 
 
     document.getElementById("precipSummary").innerHTML =
-        validPrecip.length
-            ? "Peak: " + Math.max(...validPrecip) + "%"
-            : "No data available";
+        availablePrecip.length
+            ? (
+                "Peak: " +
+                Math.max(...availablePrecip) +
+                "%"
+            )
+            : "No forecast data";
 
 
     createWindChart(maxWind);
-
     createWaveChart(maxWaves);
-
     createPrecipChart(maxPrecip);
 
-
-  
-
 }
-
-
 
 
 
