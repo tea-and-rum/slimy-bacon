@@ -889,6 +889,7 @@ function renderAdvisoryTile(alerts){
 function createEvidenceCharts(weatherData){
 
     const maxWind = [];
+    const maxGust = [];
     const maxWaves = [];
     const maxPrecip = [];
 
@@ -907,11 +908,11 @@ function createEvidenceCharts(weatherData){
         if(availableHours.length === 0){
 
             maxWind.push(null);
+            maxGust.push(null);
             maxWaves.push(null);
             maxPrecip.push(null);
 
             continue;
-
         }
 
 
@@ -919,6 +920,16 @@ function createEvidenceCharts(weatherData){
             availableHours
                 .map(hourData =>
                     Number(hourData.wind)
+                )
+                .filter(value =>
+                    Number.isFinite(value)
+                );
+
+
+        const hourlyGustValues =
+            availableHours
+                .map(hourData =>
+                    Number(hourData.gust)
                 )
                 .filter(value =>
                     Number.isFinite(value)
@@ -961,6 +972,13 @@ function createEvidenceCharts(weatherData){
         );
 
 
+        maxGust.push(
+            hourlyGustValues.length
+                ? Math.max(...hourlyGustValues)
+                : null
+        );
+
+
         maxWaves.push(
             hourlyWaveValues.length
                 ? Math.max(...hourlyWaveValues)
@@ -982,12 +1000,15 @@ function createEvidenceCharts(weatherData){
             value !== null
         );
 
+    const availableGust =
+        maxGust.filter(value =>
+            value !== null
+        );
 
     const availableWaves =
         maxWaves.filter(value =>
             value !== null
         );
-
 
     const availablePrecip =
         maxPrecip.filter(value =>
@@ -998,8 +1019,14 @@ function createEvidenceCharts(weatherData){
     document.getElementById("windSummary").innerHTML =
         availableWind.length
             ? (
-                "Max: " +
+                "Sustained: " +
                 Math.max(...availableWind) +
+                " mph | Gusts: " +
+                (
+                    availableGust.length
+                        ? Math.max(...availableGust)
+                        : Math.max(...availableWind)
+                ) +
                 " mph"
             )
             : "No forecast data";
@@ -1026,7 +1053,11 @@ function createEvidenceCharts(weatherData){
             : "No forecast data";
 
 
-    createWindChart(maxWind);
+    createWindChart(
+        maxWind,
+        maxGust
+    );
+
     createWaveChart(maxWaves);
     createPrecipChart(maxPrecip);
 
@@ -1036,46 +1067,73 @@ function createEvidenceCharts(weatherData){
 
 
 
-function createWindChart(data){
+function createWindChart(
+    sustainedData,
+    gustData
+){
 
-
-    if(windChart)
+    if(windChart){
         windChart.destroy();
+    }
 
+
+    const options =
+        simpleChartOptions();
+
+    /*
+    The legend needs to be visible because
+    this chart now has two separate lines.
+    */
+    options.plugins.legend.display = true;
 
 
     windChart =
-    new Chart(
-        document.getElementById("windChart"),
-        {
+        new Chart(
+            document.getElementById("windChart"),
+            {
 
-        type:"line",
+                type: "line",
 
-        data:{
+                data: {
 
-            labels:hourLabels(),
+                    labels:
+                        hourLabels(),
 
-            datasets:[{
+                    datasets: [
 
-                data:data,
+                        {
+                            label: "Sustained",
+                            data: sustainedData,
+                            borderColor: "#2563eb",
+                            backgroundColor: "#2563eb",
+                            pointBackgroundColor: "#2563eb",
+                            tension: 0.3,
+                            fill: false,
+                            spanGaps: false
+                        },
 
-                tension:.3,
+                        {
+                            label: "Gusts",
+                            data: gustData,
+                            borderColor: "#dc2626",
+                            backgroundColor: "#dc2626",
+                            pointBackgroundColor: "#dc2626",
+                            borderDash: [8, 5],
+                            tension: 0.3,
+                            fill: false,
+                            spanGaps: false
+                        }
 
-                fill:false
+                    ]
 
-            }]
+                },
 
-        },
+                options: options
 
-        options:simpleChartOptions()
-
-        });
-
+            }
+        );
 
 }
-
-
-
 
 
 
@@ -1472,8 +1530,25 @@ function checkHour(hour, boatSize){
     }
 
 
-    const wind =
-        Number(hour.wind) || 0;
+    const sustainedWind =
+    Number(hour.wind) || 0;
+
+const gustWind =
+    Number.isFinite(
+        Number(hour.gust)
+    )
+        ? Number(hour.gust)
+        : sustainedWind;
+
+/*
+Use whichever wind measurement creates
+the more restrictive result.
+*/
+const wind =
+    Math.max(
+        sustainedWind,
+        gustWind
+    );
 
     const waves =
         Number(hour.waves);
@@ -1990,7 +2065,73 @@ function getWaveHeightForHour(
 
 }
 
+function kilometersPerHourToMph(kph){
 
+    if(
+        kph === null ||
+        kph === undefined ||
+        Number.isNaN(Number(kph))
+    ){
+        return null;
+    }
+
+    return Number(kph) * 0.621371;
+}
+
+
+function getWindGustForHour(
+    gustValues,
+    hourStart,
+    hourEnd
+){
+
+    const matchingValues = [];
+
+    gustValues.forEach(item => {
+
+        if(
+            item.value === null ||
+            item.value === undefined
+        ){
+            return;
+        }
+
+        const interval =
+            parseNOAAValidTime(
+                item.validTime
+            );
+
+        const overlaps =
+            interval.start < hourEnd &&
+            interval.end > hourStart;
+
+        if(overlaps){
+
+            matchingValues.push(
+                kilometersPerHourToMph(
+                    item.value
+                )
+            );
+
+        }
+
+    });
+
+
+    if(matchingValues.length === 0){
+        return null;
+    }
+
+
+    /*
+    Use the strongest gust that overlaps
+    the selected forecast hour.
+    */
+    return Math.max(
+        ...matchingValues
+    );
+
+}
 
 async function getHourlyWeather(
     location,
@@ -2057,6 +2198,7 @@ const hourlyData =
 
 
 let waveValues = [];
+let gustValues = [];
 
 
 try {
@@ -2078,11 +2220,17 @@ try {
         await gridResponse.json();
 
 
-    waveValues =
-        gridData
-            .properties
-            .waveHeight
-            ?.values || [];
+   waveValues =
+    gridData
+        .properties
+        .waveHeight
+        ?.values || [];
+
+gustValues =
+    gridData
+        .properties
+        .windGust
+        ?.values || [];
 
 }
 catch(error){
@@ -2093,6 +2241,7 @@ catch(error){
     );
 
     waveValues = [];
+    gustValues = [];
 
 }
 
@@ -2160,13 +2309,27 @@ catch(error){
                         hourEnd
                     );
 
+const sustainedWind =
+    parseInt(
+        period.windSpeed,
+        10
+    ) || 0;
 
+const forecastGust =
+    getWindGustForHour(
+        gustValues,
+        hourStart,
+        hourEnd
+    );
                 hourlyForecast[hour] = {
 
                     wind:
-                        parseInt(
-                            period.windSpeed
-                        ) || 0,
+    sustainedWind,
+
+gust:
+    forecastGust !== null
+        ? Math.round(forecastGust)
+        : sustainedWind,
 
                     waves:
                         waveHeight,
