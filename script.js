@@ -731,12 +731,21 @@ function createEvidenceCharts(weatherData){
         );
 
 
-        maxWaves.push(
-            waveValues.length
-                ? Math.max(...waveValues)
-                : null
+        const hourlyWaveValues =
+    availableHours
+        .map(hourData => hourData.waves)
+        .filter(value =>
+            value !== null &&
+            value !== undefined &&
+            Number.isFinite(value)
         );
 
+
+maxWaves.push(
+    hourlyWaveValues.length
+        ? Math.max(...hourlyWaveValues)
+        : null
+);
 
         maxPrecip.push(
             precipValues.length
@@ -771,10 +780,15 @@ function createEvidenceCharts(weatherData){
             : "No data available";
 
 
-    document.getElementById("waveSummary").innerHTML =
-        validWaves.length
-            ? "Max: " + Math.max(...validWaves) + " ft"
-            : "No data available";
+  document.getElementById("waveSummary").innerHTML =
+    availableWaves.length
+        ? (
+            "Max: " +
+            Math.max(...availableWaves)
+                .toFixed(1) +
+            " ft"
+        )
+        : "Wave forecast unavailable";
 
 
     document.getElementById("precipSummary").innerHTML =
@@ -1240,7 +1254,12 @@ function checkHour(hour, boatSize){
         Number(hour.wind) || 0;
 
     const waves =
-        Number(hour.waves) || 0;
+        Number(hour.waves);
+
+   const hasWaveData =
+    hour.waves !== null &&
+    hour.waves !== undefined &&
+    Number.isFinite(waves);
 
     const precip =
         Number(hour.precip) || 0;
@@ -1305,7 +1324,10 @@ function checkHour(hour, boatSize){
     if(
         hasNoGoAlert ||
         wind >= limits.wind.noGo ||
-        waves >= limits.waves.noGo ||
+        (
+            hasWaveData &&
+            waves >= limits.waves.noGo
+        ) ||
         precip >= 61
     ){
 
@@ -1324,7 +1346,10 @@ function checkHour(hour, boatSize){
         hasSportyAlert ||
         alerts.length > 0 ||
         wind >= limits.wind.sporty ||
-        waves >= limits.waves.sporty ||
+        (
+            hasWaveData &&
+            waves >= limits.waves.sporty
+        ) ||
         precip >= 31
     ){
 
@@ -1340,10 +1365,6 @@ function checkHour(hour, boatSize){
     };
 
 }
-
-
-
-
 
 
 
@@ -1606,17 +1627,164 @@ function createWhySection(results){
 
 
 
+function parseISODuration(duration){
+
+    const match =
+        duration.match(
+            /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?$/
+        );
+
+
+    if(!match){
+        return 60 * 60 * 1000;
+    }
+
+
+    const days =
+        Number(match[1] || 0);
+
+    const hours =
+        Number(match[2] || 0);
+
+    const minutes =
+        Number(match[3] || 0);
+
+
+    return (
+        (
+            days * 24 * 60 +
+            hours * 60 +
+            minutes
+        )
+        *
+        60 * 1000
+    );
+
+}
 
 
 
+function parseNOAAValidTime(validTime){
 
-async function getHourlyWeather(location, selectedDate){
+    const [
+        startText,
+        durationText
+    ] = validTime.split("/");
+
+
+    const start =
+        new Date(startText);
+
+    const duration =
+        parseISODuration(durationText);
+
+
+    return {
+        start,
+        end:
+            new Date(
+                start.getTime() + duration
+            )
+    };
+
+}
+
+
+
+function metersToFeet(meters){
+
+    if(
+        meters === null ||
+        meters === undefined ||
+        Number.isNaN(Number(meters))
+    ){
+        return null;
+    }
+
+
+    return Number(meters) * 3.28084;
+
+}
+
+
+
+function getWaveHeightForHour(
+    waveValues,
+    hourStart,
+    hourEnd
+){
+
+    const matchingValues = [];
+
+
+    waveValues.forEach(item => {
+
+        if(
+            item.value === null ||
+            item.value === undefined
+        ){
+            return;
+        }
+
+
+        const interval =
+            parseNOAAValidTime(
+                item.validTime
+            );
+
+
+        const overlaps =
+            interval.start < hourEnd &&
+            interval.end > hourStart;
+
+
+        if(overlaps){
+
+            matchingValues.push(
+                metersToFeet(item.value)
+            );
+
+        }
+
+    });
+
+
+    if(matchingValues.length === 0){
+        return null;
+    }
+
+
+    /*
+    Use the highest overlapping value.
+
+    This is safer when NOAA supplies a wave
+    period covering multiple hours or when
+    intervals overlap at a transition.
+    */
+
+    return Math.max(
+        ...matchingValues
+    );
+
+}
+
+
+
+async function getHourlyWeather(
+    location,
+    selectedDate
+){
 
     try {
 
         const coords =
             locations[location];
 
+
+        /*
+        First NOAA request:
+        locate the appropriate forecast grid.
+        */
 
         const pointResponse =
             await fetch(
@@ -1627,7 +1795,7 @@ async function getHourlyWeather(location, selectedDate){
         if(!pointResponse.ok){
 
             throw new Error(
-                "NOAA location lookup failed"
+                `NOAA location lookup failed for ${location}`
             );
 
         }
@@ -1637,149 +1805,180 @@ async function getHourlyWeather(location, selectedDate){
             await pointResponse.json();
 
 
-        const hourlyResponse =
-            await fetch(
-                pointData.properties.forecastHourly
-            );
+        const hourlyURL =
+            pointData.properties.forecastHourly;
+
+        const gridDataURL =
+            pointData.properties.forecastGridData;
+
+
+        /*
+        Retrieve normal hourly weather and
+        raw marine grid data simultaneously.
+        */
+
+        const [
+            hourlyResponse,
+            gridResponse
+        ] = await Promise.all([
+
+            fetch(hourlyURL),
+
+            fetch(gridDataURL)
+
+        ]);
 
 
         if(!hourlyResponse.ok){
 
             throw new Error(
-                "NOAA forecast lookup failed"
+                `NOAA hourly forecast failed for ${location}`
             );
 
         }
 
 
-        const hourlyData =
-            await hourlyResponse.json();
+        if(!gridResponse.ok){
+
+            throw new Error(
+                `NOAA grid forecast failed for ${location}`
+            );
+
+        }
+
+
+        const [
+            hourlyData,
+            gridData
+        ] = await Promise.all([
+
+            hourlyResponse.json(),
+
+            gridResponse.json()
+
+        ]);
+
+
+        /*
+        NOAA wave-height values normally use
+        meters in forecastGridData.
+        */
+
+        const waveValues =
+            gridData
+                .properties
+                .waveHeight
+                ?.values || [];
+
+
+        console.log(
+            `${location} NOAA wave values:`,
+            waveValues
+        );
 
 
         const hourlyForecast =
             new Array(24).fill(null);
 
 
-        const now =
-            new Date();
+        hourlyData
+            .properties
+            .periods
+            .forEach(period => {
+
+                /*
+                Read NOAA's date and hour directly
+                from the timestamp string.
+
+                This preserves the local date and
+                avoids browser timezone shifting.
+                */
+
+                const periodDate =
+                    period.startTime.slice(0,10);
 
 
-        const today = [
-            now.getFullYear(),
-            String(now.getMonth() + 1).padStart(2, "0"),
-            String(now.getDate()).padStart(2, "0")
-        ].join("-");
+                if(periodDate !== selectedDate){
+                    return;
+                }
 
 
-        const isToday =
-            selectedDate === today;
+                const hour =
+                    Number(
+                        period.startTime.slice(
+                            11,
+                            13
+                        )
+                    );
 
 
-        const currentHour =
-            now.getHours();
+                const hourStart =
+                    new Date(
+                        period.startTime
+                    );
 
 
-        hourlyData.properties.periods.forEach(period => {
-
-            /*
-            NOAA provides a timestamp similar to:
-
-            2026-07-28T20:00:00-04:00
-
-            Read the date and hour directly from that string
-            so the browser does not shift it into another day
-            or hour during timezone conversion.
-            */
-
-            const timestampMatch =
-                period.startTime.match(
-                    /^(\d{4}-\d{2}-\d{2})T(\d{2}):/
-                );
+                const hourEnd =
+                    period.endTime
+                        ? new Date(period.endTime)
+                        : new Date(
+                            hourStart.getTime() +
+                            60 * 60 * 1000
+                        );
 
 
-            if(!timestampMatch){
-
-                return;
-
-            }
-
-
-            const periodDate =
-                timestampMatch[1];
+                const waveHeight =
+                    getWaveHeightForHour(
+                        waveValues,
+                        hourStart,
+                        hourEnd
+                    );
 
 
-            const hour =
-                Number(timestampMatch[2]);
+                hourlyForecast[hour] = {
 
+                    wind:
+                        parseInt(
+                            period.windSpeed
+                        ) || 0,
 
-            if(periodDate !== selectedDate){
+                    waves:
+                        waveHeight,
 
-                return;
+                    precip:
+                        period
+                            .probabilityOfPrecipitation
+                            .value ?? 0,
 
-            }
+                    windDirection:
+                        period.windDirection,
 
+                    temperature:
+                        period.temperature,
 
-            /*
-            When today is selected, ignore hours that
-            have already passed.
-            */
+                    shortForecast:
+                        period.shortForecast,
 
-            if(isToday && hour < currentHour){
+                    startTime:
+                        period.startTime,
 
-                return;
+                    endTime:
+                        period.endTime,
 
-            }
+                    alerts:[]
 
+                };
 
-            const precipitation =
-                period.probabilityOfPrecipitation?.value;
-
-
-            hourlyForecast[hour] = {
-
-    wind:
-        parseInt(
-            period.windSpeed,
-            10
-        ) || 0,
-
-    waves:
-        1,
-
-    precip:
-        precipitation ?? 0,
-
-    windDirection:
-        period.windDirection || "",
-
-    temperature:
-        period.temperature ?? null,
-
-    shortForecast:
-        period.shortForecast || "",
-
-    startTime:
-        period.startTime,
-
-    endTime:
-        period.endTime,
-
-    alerts:
-        []
-
-};
-
-        });
+            });
 
 
         return hourlyForecast;
 
     }
-
     catch(error){
 
         console.error(
-            "Hourly weather error:",
+            `Forecast error for ${location}:`,
             error
         );
 
@@ -1788,7 +1987,6 @@ async function getHourlyWeather(location, selectedDate){
     }
 
 }
-
 
 
 async function getActiveAlerts(location){
