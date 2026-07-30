@@ -39,13 +39,15 @@ const locations = {
     },
 
     "Kent Narrows":{
-        lat:38.96,
-        lon:-76.24
+        lat:38.962535,
+        lon:76.245747
+
     },
 
     "Poplar Island":{
-        lat:38.76,
-        lon:-76.38
+        lat:38.766405,
+        lon:76.403985
+
     }
 
 };
