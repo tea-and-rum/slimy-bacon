@@ -1147,3 +1147,17 @@ body.dark-mode .active-advisory {
     }
 
 }
+/* Fix remaining result panels in dark mode */
+
+body.dark-mode #decisionCard,
+body.dark-mode #whyResults,
+body.dark-mode .summary {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+}
+body.dark-mode #decisionSummary,
+body.dark-mode #whyResults,
+body.dark-mode .summary {
+    color: #cbd5e1;
+}
