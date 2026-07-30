@@ -1895,9 +1895,14 @@ function findGoodWindow(results){
 
 function createWhySection(results){
 
-    const calmHours = results.filter(result => result === "CALM").length;
-    const sportyHours = results.filter(result => result === "SPORTY").length;
-    const poorHours = results.filter(result => result === "POOR").length;
+    const calmHours =
+        results.filter(result => result === "CALM").length;
+
+    const sportyHours =
+        results.filter(result => result === "SPORTY").length;
+
+    const poorHours =
+        results.filter(result => result === "POOR").length;
 
     let longestCalmWindow = 0;
     let currentCalmWindow = 0;
@@ -1905,30 +1910,44 @@ function createWhySection(results){
     results.forEach(result => {
         if(result === "CALM"){
             currentCalmWindow++;
-            longestCalmWindow = Math.max(longestCalmWindow, currentCalmWindow);
+            longestCalmWindow = Math.max(
+                longestCalmWindow,
+                currentCalmWindow
+            );
         }
         else{
             currentCalmWindow = 0;
         }
     });
 
-    let html = `
-        <div class="why-item">🟢 ${calmHours} calm hour${calmHours === 1 ? "" : "s"}</div>
-        <div class="why-item">🟡 ${sportyHours} sporty hour${sportyHours === 1 ? "" : "s"}</div>
-        <div class="why-item">🔴 ${poorHours} poor hour${poorHours === 1 ? "" : "s"}</div>
+    const html = `
+        <div class="why-item">
+            🟢 Calm hours: <strong>${calmHours}</strong>
+        </div>
+
+        <div class="why-item">
+            🟡 Sporty hours: <strong>${sportyHours}</strong>
+        </div>
+
+        <div class="why-item">
+            🔴 Poor hours: <strong>${poorHours}</strong>
+        </div>
     `;
 
-    if(longestCalmWindow >= 3){
-        html += `<div class="why-item">✓ Longest continuous calm window: ${longestCalmWindow} hours.</div>`;
-    }
-    else{
-        html += `<div class="why-item">⚠ No continuous calm window of at least 3 hours.</div>`;
-    }
+    setTimeout(() => {
+        const calmWindowLength =
+            document.getElementById("calmWindowLength");
+
+        if(calmWindowLength){
+            calmWindowLength.textContent =
+                longestCalmWindow === 1
+                    ? "1 consecutive calm hour"
+                    : `${longestCalmWindow} consecutive calm hours`;
+        }
+    }, 0);
 
     return html;
-
 }
-
 
 function parseISODuration(duration){
 
