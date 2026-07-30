@@ -433,7 +433,44 @@ alerts.forEach(alert => {
 
 
         createEvidenceCharts(allWeather);
-renderAdvisoryTile(allAlerts);
+const alertsForSelectedTime =
+    getAlertsFromForecast(allWeather);
+function getAlertsFromForecast(weatherData){
+
+    const matchingAlerts = [];
+
+
+    weatherData.forEach(locationForecast => {
+
+        locationForecast.forEach(hour => {
+
+            if(
+                !hour ||
+                !Array.isArray(hour.alerts)
+            ){
+                return;
+            }
+
+
+            hour.alerts.forEach(alert => {
+
+                matchingAlerts.push(
+                    alert
+                );
+
+            });
+
+        });
+
+    });
+
+
+    return matchingAlerts;
+
+}
+renderAdvisoryTile(
+    alertsForSelectedTime
+);
 
         document
             .getElementById("results")
