@@ -1161,3 +1161,7 @@ body.dark-mode #whyResults,
 body.dark-mode .summary {
     color: #cbd5e1;
 }
+body.dark-mode .evidence-card {
+    background-color: #182235;
+    border-color: #334155;
+}
