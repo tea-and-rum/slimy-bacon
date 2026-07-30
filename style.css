@@ -1209,3 +1209,21 @@ body.dark-mode .disclaimer {
 body.dark-mode .disclaimer strong {
     color: #e2e8f0;
 }
+
+/* Recommendation and condition-language update */
+#decision.decision-result {
+    color: #111827;
+}
+
+.limitedBackground {
+    background: #fff0d6;
+}
+
+body.dark-mode #decision.decision-result {
+    color: #f8fafc;
+}
+
+body.dark-mode .limitedBackground {
+    background-color: #4a2d12;
+    color: #ffedd5;
+}
