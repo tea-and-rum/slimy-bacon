@@ -1833,58 +1833,62 @@ async function getHourlyWeather(
         raw marine grid data simultaneously.
         */
 
-        const [
-            hourlyResponse,
-            gridResponse
-        ] = await Promise.all([
-
-            fetch(hourlyURL),
-
-            fetch(gridDataURL)
-
-        ]);
+        const hourlyResponse =
+    await fetch(hourlyURL);
 
 
-        if(!hourlyResponse.ok){
+if(!hourlyResponse.ok){
 
-            throw new Error(
-                `NOAA hourly forecast failed for ${location}`
-            );
+    throw new Error(
+        `NOAA hourly forecast failed for ${location}`
+    );
 
-        }
-
-
-        if(!gridResponse.ok){
-
-            throw new Error(
-                `NOAA grid forecast failed for ${location}`
-            );
-
-        }
+}
 
 
-        const [
-            hourlyData,
-            gridData
-        ] = await Promise.all([
-
-            hourlyResponse.json(),
-
-            gridResponse.json()
-
-        ]);
+const hourlyData =
+    await hourlyResponse.json();
 
 
-        /*
-        NOAA wave-height values normally use
-        meters in forecastGridData.
-        */
+let waveValues = [];
 
-        const waveValues =
-            gridData
-                .properties
-                .waveHeight
-                ?.values || [];
+
+try {
+
+    const gridResponse =
+        await fetch(gridDataURL);
+
+
+    if(!gridResponse.ok){
+
+        throw new Error(
+            `NOAA grid forecast failed for ${location}`
+        );
+
+    }
+
+
+    const gridData =
+        await gridResponse.json();
+
+
+    waveValues =
+        gridData
+            .properties
+            .waveHeight
+            ?.values || [];
+
+}
+catch(error){
+
+    console.warn(
+        `Wave data unavailable for ${location}:`,
+        error
+    );
+
+    waveValues = [];
+
+}
 
 
         console.log(
