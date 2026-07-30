@@ -1029,11 +1029,7 @@ function createEvidenceCharts(weatherData){
     createWindChart(maxWind);
     createWaveChart(maxWaves);
     createPrecipChart(maxPrecip);
-updateChartAppearance(
-    document.body.classList.contains(
-        "dark-mode"
-    )
-);
+
 }
 
 
