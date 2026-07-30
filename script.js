@@ -14,13 +14,13 @@ const locations = {
     },
 
     "Tolchester Marina Area":{
-        lat:39.21,
-        lon:-76.24
+        lat:39.215570,
+        lon:-76.252115
     },
 
     "Hart-Miller Island":{
-    lat:39.2512,
-    lon:-76.3769
+    lat:39.262787,
+    lon:-76.381216
 },
 
 "Fort Smallwood":{
@@ -29,13 +29,13 @@ const locations = {
 },
 
     "Bay Bridge":{
-        lat:38.99,
-        lon:-76.53
+        lat:38.999808,
+        lon:-76.365982
     },
 
-    "Annapolis":{
-        lat:38.97,
-        lon:-76.49
+    "Triton Beach":{
+        lat:38.879155,
+        lon:-76.491461
     },
 
     "Kent Narrows":{
