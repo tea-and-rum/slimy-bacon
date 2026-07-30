@@ -939,3 +939,209 @@ button:hover {
 #results {
     scroll-margin-top: 20px;
 }
+/* ---------------------------------
+   Dark-mode toggle
+---------------------------------- */
+
+.dark-mode-toggle {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px 14px;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+
+    background: #ffffff;
+    color: #1e293b;
+
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.12);
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.dark-mode-toggle:hover {
+    transform: translateY(-2px);
+}
+
+.dark-mode-toggle:focus-visible {
+    outline: 3px solid #38bdf8;
+    outline-offset: 3px;
+}
+
+
+/* ---------------------------------
+   Dark-mode page colors
+---------------------------------- */
+
+body.dark-mode {
+    background-color: #0f172a;
+    color: #e2e8f0;
+}
+
+
+/*
+Adjust these selectors to match the names
+of the major containers in your page.
+*/
+
+body.dark-mode header,
+body.dark-mode main,
+body.dark-mode section,
+body.dark-mode .card,
+body.dark-mode .locationCard,
+body.dark-mode .summary-card,
+body.dark-mode .evidence-card,
+body.dark-mode .timeline-container,
+body.dark-mode .results-container {
+    color: #e2e8f0;
+}
+
+
+/* General light-colored panels */
+
+body.dark-mode .card,
+body.dark-mode .locationCard,
+body.dark-mode .summary-card,
+body.dark-mode .evidence-card,
+body.dark-mode .timeline-container,
+body.dark-mode .results-container,
+body.dark-mode .form-section,
+body.dark-mode .selection-section {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+
+/* Inputs and dropdowns */
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+    background-color: #0f172a;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+    color: #94a3b8;
+}
+
+
+/* Vessel and location selection cards */
+
+body.dark-mode .vessel-card,
+body.dark-mode .location-card,
+body.dark-mode .location-option {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border-color: #475569;
+}
+
+body.dark-mode .vessel-card:hover,
+body.dark-mode .location-card:hover,
+body.dark-mode .location-option:hover {
+    background-color: #334155;
+}
+
+
+/* Preserve visible selected styling */
+
+body.dark-mode .vessel-card.selected {
+    background-color: #0c4a6e;
+    border-color: #38bdf8;
+}
+
+
+/* Text colors */
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode strong,
+body.dark-mode label {
+    color: #f8fafc;
+}
+
+body.dark-mode p,
+body.dark-mode small,
+body.dark-mode .subtitle,
+body.dark-mode .secondary-text {
+    color: #cbd5e1;
+}
+
+
+/* Dividers */
+
+body.dark-mode hr {
+    border-color: #334155;
+}
+
+
+/* Dark-mode button appearance */
+
+body.dark-mode .dark-mode-toggle {
+    background-color: #1e293b;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+
+/* Keep status cards recognizable */
+
+body.dark-mode .goodBackground {
+    background-color: #123d2a;
+    color: #dcfce7;
+}
+
+body.dark-mode .sportyBackground {
+    background-color: #493b0b;
+    color: #fef3c7;
+}
+
+body.dark-mode .noGoBackground {
+    background-color: #4c1d1d;
+    color: #fee2e2;
+}
+
+
+/* Active advisory */
+
+body.dark-mode .active-advisory {
+    background-color: #422006;
+    color: #fef3c7;
+    border-color: #92400e;
+}
+
+
+/* Mobile placement */
+
+@media (max-width: 600px) {
+
+    .dark-mode-toggle {
+        right: 12px;
+        bottom: 12px;
+
+        padding: 9px 12px;
+    }
+
+}
