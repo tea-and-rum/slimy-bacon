@@ -589,7 +589,7 @@ alerts.forEach(alert => {
         const validTimeline =
             timeline.filter(value =>
                 value === "GO" ||
-                value === "SPORTY" ||
+                value === "Maybe" ||
                 value === "NO-GO"
             );
 
@@ -1386,7 +1386,7 @@ function getAlertStatus(alerts){
         )
     ){
 
-        return "SPORTY";
+        return "MAYBE";
 
     }
 
@@ -1396,7 +1396,7 @@ function getAlertStatus(alerts){
     a cautious SPORTY classification.
     */
 
-    return "SPORTY";
+    return "MAYBE";
 
 }
 
@@ -1600,7 +1600,7 @@ function determineDailyResult(results){
 
 
     if(results.includes("SPORTY"))
-        return "SPORTY";
+        return "MAYBE";
 
 
     return "NO-GO";
