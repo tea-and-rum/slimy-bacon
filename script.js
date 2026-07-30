@@ -24,8 +24,8 @@ const locations = {
 },
 
 "Fort Smallwood":{
-    lat:39.1634,
-    lon:-76.4800
+    lat:39.176864,
+    lon:-76.495797
 },
 
     "Bay Bridge":{
