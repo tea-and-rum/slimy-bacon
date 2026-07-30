@@ -588,9 +588,9 @@ alerts.forEach(alert => {
 
         const validTimeline =
             timeline.filter(value =>
-                value === "GO" ||
-                value === "Maybe" ||
-                value === "NO-GO"
+                value === "CALM" ||
+                value === "SPORTY" ||
+                value === "POOR"
             );
 
 
@@ -1366,13 +1366,31 @@ function evaluateLocation(hours, boatSize){
 
         reason:
             validResults.length > 0
-                ? "Conditions may become less favorable later in the day."
+                ? getLocationReason(determineDailyResult(validResults))
                 : "No forecast hours are currently available for the selected date."
 
     };
 
 }
 
+
+
+function getLocationReason(result){
+
+    switch(result){
+        case "GO":
+            return "Conditions are calm for most or all of the available forecast period.";
+        case "MAYBE":
+            return "Boating may be reasonable, but review the sporty or isolated poor hours before choosing a time.";
+        case "LIMITED WINDOW":
+            return "Poor conditions are common, but at least one continuous calm window is available.";
+        case "DON'T GO":
+            return "No meaningful continuous calm window is available.";
+        default:
+            return "Forecast conditions are unavailable.";
+    }
+
+}
 
 
 function getAlertStatus(alerts){
@@ -1382,7 +1400,7 @@ function getAlertStatus(alerts){
         alerts.length === 0
     ){
 
-        return "GO";
+        return "CALM";
 
     }
 
@@ -1433,7 +1451,7 @@ function getAlertStatus(alerts){
         )
     ){
 
-        return "NO-GO";
+        return "POOR";
 
     }
 
@@ -1444,7 +1462,7 @@ function getAlertStatus(alerts){
         )
     ){
 
-        return "MAYBE";
+        return "SPORTY";
 
     }
 
@@ -1454,7 +1472,7 @@ function getAlertStatus(alerts){
     a cautious SPORTY classification.
     */
 
-    return "MAYBE";
+    return "SPORTY";
 
 }
 
@@ -1524,7 +1542,7 @@ function checkHour(hour, boatSize){
         );
 
         return {
-            status: "NO-GO"
+            status: "POOR"
         };
 
     }
@@ -1629,7 +1647,7 @@ const wind =
     ){
 
         return {
-            status: "NO-GO"
+            status: "POOR"
         };
 
     }
@@ -1658,7 +1676,7 @@ const wind =
 
 
     return {
-        status: "GO"
+        status: "CALM"
     };
 
 }
@@ -1669,25 +1687,48 @@ const wind =
 
 function determineDailyResult(results){
 
+    const validResults = results.filter(result =>
+        result === "CALM" ||
+        result === "SPORTY" ||
+        result === "POOR"
+    );
 
-    if(results.includes("GO"))
+    const calmHours = validResults.filter(result => result === "CALM").length;
+    const sportyHours = validResults.filter(result => result === "SPORTY").length;
+    const poorHours = validResults.filter(result => result === "POOR").length;
+
+    let longestCalmWindow = 0;
+    let currentCalmWindow = 0;
+
+    validResults.forEach(result => {
+        if(result === "CALM"){
+            currentCalmWindow++;
+            longestCalmWindow = Math.max(longestCalmWindow, currentCalmWindow);
+        }
+        else{
+            currentCalmWindow = 0;
+        }
+    });
+
+    if(
+        poorHours === 0 &&
+        calmHours > sportyHours &&
+        sportyHours <= 2
+    ){
         return "GO";
+    }
 
-
-    if(results.includes("SPORTY"))
+    if(poorHours === 0 || poorHours <= 2){
         return "MAYBE";
+    }
 
+    if(longestCalmWindow >= 3){
+        return "LIMITED WINDOW";
+    }
 
-    return "NO-GO";
+    return "DON'T GO";
 
 }
-
-
-
-
-
-
-
 
 
 function combineTimelineResults(allResults){
@@ -1718,9 +1759,9 @@ function combineTimelineResults(allResults){
         }
 
 
-        if(validValues.includes("NO-GO")){
+        if(validValues.includes("POOR")){
 
-            timeline.push("NO-GO");
+            timeline.push("POOR");
 
             continue;
 
@@ -1736,7 +1777,7 @@ function combineTimelineResults(allResults){
         }
 
 
-        timeline.push("GO");
+        timeline.push("CALM");
 
     }
 
@@ -1771,7 +1812,7 @@ function createTimeline(results, sun){
         );
 
 
-        if(hour === "GO"){
+        if(hour === "CALM"){
 
             block.classList.add(
                 "timeline-go"
@@ -1785,7 +1826,7 @@ function createTimeline(results, sun){
             );
 
         }
-        else if(hour === "NO-GO"){
+        else if(hour === "POOR"){
 
             block.classList.add(
                 "timeline-no-go"
@@ -1826,102 +1867,67 @@ function createTimeline(results, sun){
 function findGoodWindow(results){
 
     const windows = [];
-
     let start = null;
 
-
     results.forEach((value, index) => {
+        const isCalm = value === "CALM";
 
-        const isGo =
-            value === "GO";
-
-
-        if(isGo && start === null){
-
+        if(isCalm && start === null){
             start = index;
-
         }
 
-
-        if(!isGo && start !== null){
-
-            windows.push(
-                formatHour(start) +
-                " - " +
-                formatHour(index)
-            );
-
+        if(!isCalm && start !== null){
+            windows.push(formatHour(start) + " - " + formatHour(index));
             start = null;
-
         }
-
     });
 
-
     if(start !== null){
-
-        windows.push(
-            formatHour(start) +
-            " - " +
-            formatHour(24)
-        );
-
+        windows.push(formatHour(start) + " - " + formatHour(24));
     }
-
 
     return windows.length > 0
         ? windows.join("<br>")
-        : "No GO periods available.";
+        : "No calm periods available.";
 
 }
-
-
-
-
-
-
 
 
 function createWhySection(results){
 
+    const calmHours = results.filter(result => result === "CALM").length;
+    const sportyHours = results.filter(result => result === "SPORTY").length;
+    const poorHours = results.filter(result => result === "POOR").length;
 
-    let html="";
+    let longestCalmWindow = 0;
+    let currentCalmWindow = 0;
 
+    results.forEach(result => {
+        if(result === "CALM"){
+            currentCalmWindow++;
+            longestCalmWindow = Math.max(longestCalmWindow, currentCalmWindow);
+        }
+        else{
+            currentCalmWindow = 0;
+        }
+    });
 
+    let html = `
+        <div class="why-item">🟢 ${calmHours} calm hour${calmHours === 1 ? "" : "s"}</div>
+        <div class="why-item">🟡 ${sportyHours} sporty hour${sportyHours === 1 ? "" : "s"}</div>
+        <div class="why-item">🔴 ${poorHours} poor hour${poorHours === 1 ? "" : "s"}</div>
+    `;
 
-    if(results.includes("GO"))
-
-        html+=`
-        <div class="why-item">
-        ✓ At least one favorable boating window exists.
-        </div>`;
-
-
-
-    if(results.includes("SPORTY"))
-
-        html+=`
-        <div class="why-item">
-        ⚠ Some periods may have increased wind or waves.
-        </div>`;
-
-
-
-    if(results.includes("NO-GO"))
-
-        html+=`
-        <div class="why-item">
-        ⚠ Some periods exceed comfortable boating conditions.
-        </div>`;
-
-
+    if(longestCalmWindow >= 3){
+        html += `<div class="why-item">✓ Longest continuous calm window: ${longestCalmWindow} hours.</div>`;
+    }
+    else{
+        html += `<div class="why-item">⚠ No continuous calm window of at least 3 hours.</div>`;
+    }
 
     return html;
 
 }
-
-
-
 
 
 function parseISODuration(duration){
@@ -2677,25 +2683,20 @@ function timeToPercent(date){
 
 function getDecisionSummary(result){
 
-
-    if(result=="GO")
-        return "Good boating conditions are available during part of the day.";
-
-
-    if(result=="SPORTY")
-        return "Boating is possible, but expect less comfortable conditions.";
-
-
-    return "Conditions are unfavorable throughout the day.";
+    switch(result){
+        case "GO":
+            return "Conditions are calm for most or all of the available boating day.";
+        case "MAYBE":
+            return "Boating may be reasonable, but expect sporty conditions or a couple isolated poor hours.";
+        case "LIMITED WINDOW":
+            return "Poor conditions dominate much of the day, but a continuous calm window of at least 3 hours is available.";
+        case "DON'T GO":
+            return "There is no meaningful continuous calm window in the available forecast.";
+        default:
+            return "Forecast conditions are unavailable.";
+    }
 
 }
-
-
-
-
-
-
-
 
 
 function formatHour(hour){
@@ -2726,58 +2727,35 @@ function formatHour(hour){
 
 function emoji(result){
 
-    return result=="GO"
-    ?
-    "🟢"
-    :
-    result=="SPORTY"
-    ?
-    "🟡"
-    :
-    "🔴";
+    switch(result){
+        case "GO": return "😎";
+        case "MAYBE": return "🤨";
+        case "LIMITED WINDOW": return "😕";
+        case "DON'T GO": return "☹️";
+        case "CALM": return "🟢";
+        case "SPORTY": return "🟡";
+        case "POOR": return "🔴";
+        default: return "";
+    }
 
 }
-
-
-
-
-
-
-
 
 
 function overallClass(result){
 
-    return result=="GO"
-    ?
-    "good"
-    :
-    result=="SPORTY"
-    ?
-    "sporty"
-    :
-    "no-go";
+    return "decision-result";
 
 }
 
 
-
-
-
-
-
-
-
 function backgroundClass(result){
 
-    return result=="GO"
-    ?
-    "goodBackground"
-    :
-    result=="SPORTY"
-    ?
-    "sportyBackground"
-    :
-    "noGoBackground";
+    switch(result){
+        case "GO": return "goodBackground";
+        case "MAYBE": return "sportyBackground";
+        case "LIMITED WINDOW": return "limitedBackground";
+        case "DON'T GO": return "noGoBackground";
+        default: return "";
+    }
 
 }
