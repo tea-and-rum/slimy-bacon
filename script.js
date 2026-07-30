@@ -8,9 +8,9 @@ let precipChart;
 
 const locations = {
 
-    "Gunpowder River / Mariner Point":{
-        lat:39.42,
-        lon:-76.33
+    "Gunpowder River":{
+        lat:39.376819,
+        lon:-76.321522
     },
 
     "Tolchester Marina Area":{
