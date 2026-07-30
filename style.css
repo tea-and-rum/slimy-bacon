@@ -1227,3 +1227,32 @@ body.dark-mode .limitedBackground {
     background-color: #4a2d12;
     color: #ffedd5;
 }
+
+.summary-divider {
+    margin: 16px 0;
+    border: none;
+    border-top: 1px solid #d6dce3;
+}
+
+body.dark-mode .summary-divider {
+    border-top: 1px solid #3b4252;
+}
+
+.go-window {
+    font-size: 1rem;
+    margin-bottom: 2px;
+}
+
+.go-window strong {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.go-window-subtext {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+body.dark-mode .go-window-subtext {
+    color: #9ca3af;
+}
