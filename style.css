@@ -948,7 +948,9 @@ button:hover {
     right: 18px;
     bottom: 18px;
     z-index: 1000;
-
+ width: auto;          /* ADD */
+    margin: 0;            /* ADD */
+    display: inline-flex; /* CHANGE from "flex" */
     display: flex;
     align-items: center;
     gap: 8px;
