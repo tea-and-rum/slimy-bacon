@@ -529,7 +529,9 @@ timeline
 }
 
 
-
+.timeline-flat {
+    background: #2196f3;
+}
 
 
 .timeline-labels {
