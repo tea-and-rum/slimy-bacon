@@ -587,11 +587,12 @@ alerts.forEach(alert => {
 
 
         const validTimeline =
-            timeline.filter(value =>
-                value === "CALM" ||
-                value === "SPORTY" ||
-                value === "POOR"
-            );
+    timeline.filter(value =>
+        value === "FLAT" ||
+        value === "CALM" ||
+        value === "SPORTY" ||
+        value === "POOR"
+    );
 
 
         if(validTimeline.length === 0){
@@ -1916,9 +1917,29 @@ const wind =
     }
 
 
+    /*
+FLAT is better than CALM.
+
+Only classify the hour as FLAT when NOAA
+provides wave data, reports zero-foot waves,
+and the higher of sustained wind or gusts
+is no more than 5 mph.
+*/
+
+if(
+    hasWaveData &&
+    waves === 0 &&
+    wind <= 5
+){
     return {
-        status: "CALM"
+        status: "FLAT"
     };
+}
+
+
+return {
+    status: "CALM"
+};
 
 }
 
@@ -1928,49 +1949,95 @@ const wind =
 
 function determineDailyResult(results){
 
-    const validResults = results.filter(result =>
-        result === "CALM" ||
-        result === "SPORTY" ||
-        result === "POOR"
-    );
+    const validResults =
+        results.filter(result =>
+            result === "FLAT" ||
+            result === "CALM" ||
+            result === "SPORTY" ||
+            result === "POOR"
+        );
 
-    const calmHours = validResults.filter(result => result === "CALM").length;
-    const sportyHours = validResults.filter(result => result === "SPORTY").length;
-    const poorHours = validResults.filter(result => result === "POOR").length;
 
-    let longestCalmWindow = 0;
-    let currentCalmWindow = 0;
+    const flatHours =
+        validResults.filter(
+            result => result === "FLAT"
+        ).length;
+
+    const calmHours =
+        validResults.filter(
+            result => result === "CALM"
+        ).length;
+
+    const sportyHours =
+        validResults.filter(
+            result => result === "SPORTY"
+        ).length;
+
+    const poorHours =
+        validResults.filter(
+            result => result === "POOR"
+        ).length;
+
+
+    /*
+    FLAT and CALM both count toward a
+    favorable continuous boating window.
+    */
+
+    const favorableHours =
+        flatHours + calmHours;
+
+
+    let longestFavorableWindow = 0;
+    let currentFavorableWindow = 0;
+
 
     validResults.forEach(result => {
-        if(result === "CALM"){
-            currentCalmWindow++;
-            longestCalmWindow = Math.max(longestCalmWindow, currentCalmWindow);
+
+        if(
+            result === "FLAT" ||
+            result === "CALM"
+        ){
+            currentFavorableWindow++;
+
+            longestFavorableWindow =
+                Math.max(
+                    longestFavorableWindow,
+                    currentFavorableWindow
+                );
         }
         else{
-            currentCalmWindow = 0;
+            currentFavorableWindow = 0;
         }
+
     });
+
 
     if(
         poorHours === 0 &&
-        calmHours > sportyHours &&
+        favorableHours > sportyHours &&
         sportyHours <= 2
     ){
         return "GO";
     }
 
-    if(poorHours === 0 || poorHours <= 2){
+
+    if(
+        poorHours === 0 ||
+        poorHours <= 2
+    ){
         return "MAYBE";
     }
 
-    if(longestCalmWindow >= 3){
+
+    if(longestFavorableWindow >= 3){
         return "LIMITED WINDOW";
     }
+
 
     return "DON'T GO";
 
 }
-
 
 function combineTimelineResults(allResults){
 
@@ -2018,7 +2085,27 @@ function combineTimelineResults(allResults){
         }
 
 
-        timeline.push("CALM");
+        /*
+When multiple locations are selected,
+use the most restrictive condition.
+
+If one location is CALM and another is FLAT,
+the combined result is CALM.
+
+The combined result is FLAT only when every
+available selected location is FLAT.
+*/
+
+if(validValues.includes("CALM")){
+
+    timeline.push("CALM");
+
+    continue;
+
+}
+
+
+timeline.push("FLAT");
 
     }
 
@@ -2053,34 +2140,41 @@ function createTimeline(results, sun){
         );
 
 
-        if(hour === "CALM"){
+        if(hour === "FLAT"){
 
-            block.classList.add(
-                "timeline-go"
-            );
+    block.classList.add(
+        "timeline-flat"
+    );
 
-        }
-        else if(hour === "SPORTY"){
+}
+else if(hour === "CALM"){
 
-            block.classList.add(
-                "timeline-sporty"
-            );
+    block.classList.add(
+        "timeline-go"
+    );
 
-        }
-        else if(hour === "POOR"){
+}
+else if(hour === "SPORTY"){
 
-            block.classList.add(
-                "timeline-no-go"
-            );
+    block.classList.add(
+        "timeline-sporty"
+    );
 
-        }
-        else{
+}
+else if(hour === "POOR"){
 
-            block.classList.add(
-                "timeline-past"
-            );
+    block.classList.add(
+        "timeline-no-go"
+    );
 
-        }
+}
+else{
+
+    block.classList.add(
+        "timeline-past"
+    );
+
+}
 
 
         bar.appendChild(block);
@@ -2111,7 +2205,9 @@ function findGoodWindow(results){
     let start = null;
 
     results.forEach((value, index) => {
-        const isCalm = value === "CALM";
+        const isCalm =
+    value === "FLAT" ||
+    value === "CALM";
 
         if(isCalm && start === null){
             start = index;
@@ -2136,32 +2232,57 @@ function findGoodWindow(results){
 
 function createWhySection(results){
 
+    const flatHours =
+        results.filter(
+            result => result === "FLAT"
+        ).length;
+
     const calmHours =
-        results.filter(result => result === "CALM").length;
+        results.filter(
+            result => result === "CALM"
+        ).length;
 
     const sportyHours =
-        results.filter(result => result === "SPORTY").length;
+        results.filter(
+            result => result === "SPORTY"
+        ).length;
 
     const poorHours =
-        results.filter(result => result === "POOR").length;
+        results.filter(
+            result => result === "POOR"
+        ).length;
 
-    let longestCalmWindow = 0;
-    let currentCalmWindow = 0;
+
+    let longestFavorableWindow = 0;
+    let currentFavorableWindow = 0;
+
 
     results.forEach(result => {
-        if(result === "CALM"){
-            currentCalmWindow++;
-            longestCalmWindow = Math.max(
-                longestCalmWindow,
-                currentCalmWindow
-            );
+
+        if(
+            result === "FLAT" ||
+            result === "CALM"
+        ){
+            currentFavorableWindow++;
+
+            longestFavorableWindow =
+                Math.max(
+                    longestFavorableWindow,
+                    currentFavorableWindow
+                );
         }
         else{
-            currentCalmWindow = 0;
+            currentFavorableWindow = 0;
         }
+
     });
 
+
     const html = `
+        <div class="why-item">
+            🔵 Flat hours: <strong>${flatHours}</strong>
+        </div>
+
         <div class="why-item">
             🟢 Calm hours: <strong>${calmHours}</strong>
         </div>
@@ -2175,19 +2296,30 @@ function createWhySection(results){
         </div>
     `;
 
+
     setTimeout(() => {
+
         const calmWindowLength =
-            document.getElementById("calmWindowLength");
+            document.getElementById(
+                "calmWindowLength"
+            );
+
 
         if(calmWindowLength){
+
             calmWindowLength.textContent =
-                longestCalmWindow === 1
-                    ? "1 consecutive calm hour"
-                    : `${longestCalmWindow} consecutive calm hours`;
+
+                longestFavorableWindow === 1
+                    ? "1 consecutive flat or calm hour"
+                    : `${longestFavorableWindow} consecutive flat or calm hours`;
+
         }
+
     }, 0);
 
+
     return html;
+
 }
 
 function parseISODuration(duration){
@@ -2992,6 +3124,7 @@ function emoji(result){
         case "MAYBE": return "🤨";
         case "LIMITED WINDOW": return "😕";
         case "DON'T GO": return "☹️";
+        case "FLAT": return "🔵";
         case "CALM": return "🟢";
         case "SPORTY": return "🟡";
         case "POOR": return "🔴";
