@@ -893,6 +893,18 @@ function createEvidenceCharts(weatherData){
     const maxWaves = [];
     const maxPrecip = [];
 
+    /*
+Only use wind directions when exactly
+one location has been selected.
+*/
+const windDirections =
+    weatherData.length === 1
+        ? weatherData[0].map(hour =>
+            hour
+                ? hour.windDirection || null
+                : null
+        )
+        : null;
 
     for(let hour = 0; hour < 24; hour++){
 
@@ -1051,12 +1063,209 @@ function createEvidenceCharts(weatherData){
                 "%"
             )
             : "No forecast data";
+const windDirectionDegrees = {
+    N: 0,
+    NNE: 22.5,
+    NE: 45,
+    ENE: 67.5,
+    E: 90,
+    ESE: 112.5,
+    SE: 135,
+    SSE: 157.5,
+    S: 180,
+    SSW: 202.5,
+    SW: 225,
+    WSW: 247.5,
+    W: 270,
+    WNW: 292.5,
+    NW: 315,
+    NNW: 337.5
+};
 
+
+function getWindTravelDirection(direction){
+
+    const sourceDirection =
+        windDirectionDegrees[
+            String(direction || "")
+                .trim()
+                .toUpperCase()
+        ];
+
+    if(sourceDirection === undefined){
+        return null;
+    }
+
+    /*
+    NOAA reports where the wind comes from.
+
+    Add 180 degrees so the arrow points
+    where the wind is blowing toward.
+    */
+    return (
+        sourceDirection + 180
+    ) % 360;
+
+}
+    const windDirectionArrowPlugin = {
+
+    id: "windDirectionArrows",
+
+    afterDraw(chart, args, options){
+
+        const directions =
+            options?.directions;
+
+        if(
+            !Array.isArray(directions) ||
+            directions.length === 0
+        ){
+            return;
+        }
+
+
+        const xScale =
+            chart.scales.x;
+
+        if(!xScale){
+            return;
+        }
+
+
+        const ctx =
+            chart.ctx;
+
+        const isDarkMode =
+            document.body.classList.contains(
+                "dark-mode"
+            );
+
+        const arrowColor =
+            isDarkMode
+                ? "#cbd5e1"
+                : "#475569";
+
+        /*
+        Position the arrows along the bottom
+        of the chart, underneath the hour labels.
+        */
+        const arrowY =
+            chart.height - 8;
+
+
+        ctx.save();
+
+        ctx.strokeStyle =
+            arrowColor;
+
+        ctx.fillStyle =
+            arrowColor;
+
+        ctx.lineWidth = 1.5;
+
+
+        directions.forEach(
+            (direction, index) => {
+
+                const degrees =
+                    getWindTravelDirection(
+                        direction
+                    );
+
+                if(degrees === null){
+                    return;
+                }
+
+
+                const x =
+                    xScale.getPixelForValue(
+                        index
+                    );
+
+
+                /*
+                Canvas zero degrees points right,
+                while compass zero degrees points north.
+                */
+                const rotation =
+                    (
+                        degrees - 90
+                    ) *
+                    Math.PI / 180;
+
+
+                ctx.save();
+
+                ctx.translate(
+                    x,
+                    arrowY
+                );
+
+                ctx.rotate(
+                    rotation
+                );
+
+
+                /*
+                Draw the arrow shaft.
+                */
+                ctx.beginPath();
+
+                ctx.moveTo(
+                    -4,
+                    0
+                );
+
+                ctx.lineTo(
+                    4,
+                    0
+                );
+
+                ctx.stroke();
+
+
+                /*
+                Draw the arrowhead.
+                */
+                ctx.beginPath();
+
+                ctx.moveTo(
+                    4,
+                    0
+                );
+
+                ctx.lineTo(
+                    1,
+                    -2.5
+                );
+
+                ctx.lineTo(
+                    1,
+                    2.5
+                );
+
+                ctx.closePath();
+
+                ctx.fill();
+
+
+                ctx.restore();
+
+            }
+        );
+
+
+        ctx.restore();
+
+    }
+
+};
 
     createWindChart(
-        maxWind,
-        maxGust
-    );
+    maxWind,
+    maxGust,
+    windDirections
+);
 
     createWaveChart(maxWaves);
     createPrecipChart(maxPrecip);
@@ -1069,7 +1278,8 @@ function createEvidenceCharts(weatherData){
 
 function createWindChart(
     sustainedData,
-    gustData
+    gustData,
+    windDirections
 ){
 
     if(windChart){
@@ -1080,19 +1290,51 @@ function createWindChart(
     const options =
         simpleChartOptions();
 
+
     /*
-    The legend needs to be visible because
-    this chart now has two separate lines.
+    Show the sustained-wind and gust legend.
     */
-    options.plugins.legend.display = true;
+    options.plugins.legend.display =
+        true;
+
+
+    /*
+    Supply directions to the custom plugin.
+
+    Passing null prevents arrows from appearing
+    when multiple locations are selected.
+    */
+    options.plugins.windDirectionArrows = {
+        directions:
+            Array.isArray(windDirections)
+                ? windDirections
+                : []
+    };
+
+
+    /*
+    Reserve extra room underneath the graph
+    for the wind-direction arrows.
+    */
+    options.layout = {
+        padding: {
+            bottom: 22
+        }
+    };
 
 
     windChart =
         new Chart(
-            document.getElementById("windChart"),
+            document.getElementById(
+                "windChart"
+            ),
             {
 
                 type: "line",
+
+                plugins: [
+                    windDirectionArrowPlugin
+                ],
 
                 data: {
 
@@ -1134,7 +1376,6 @@ function createWindChart(
         );
 
 }
-
 
 
 
