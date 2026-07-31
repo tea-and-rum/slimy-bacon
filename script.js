@@ -1063,6 +1063,20 @@ const windDirections =
                 "%"
             )
             : "No forecast data";
+
+    createWindChart(
+    maxWind,
+    maxGust,
+    windDirections
+);
+
+    createWaveChart(maxWaves);
+    createPrecipChart(maxPrecip);
+
+}
+
+
+
 const windDirectionDegrees = {
     N: 0,
     NNE: 22.5,
@@ -1260,20 +1274,6 @@ function getWindTravelDirection(direction){
     }
 
 };
-
-    createWindChart(
-    maxWind,
-    maxGust,
-    windDirections
-);
-
-    createWaveChart(maxWaves);
-    createPrecipChart(maxPrecip);
-
-}
-
-
-
 
 
 function createWindChart(
