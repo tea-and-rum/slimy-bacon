@@ -1125,7 +1125,32 @@ body.dark-mode .active-advisory {
     border-color: #92400e;
 }
 
+.active-advisory {
+    text-align: center;
+    margin-bottom: 16px;
+}
 
+.advisory-title {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.advisory-location {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.advisory-time {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+body.dark-mode .advisory-location,
+body.dark-mode .advisory-time {
+    color: #94a3b8;
+}
 /* Mobile placement */
 
 @media (max-width: 600px) {
