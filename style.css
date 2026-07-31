@@ -518,6 +518,8 @@ button:hover {
 
 }
 
+timeline
+
 
 
 .timeline-no-go {
@@ -549,17 +551,12 @@ button:hover {
 
 
 .timeline-legend {
-
     display: flex;
-
     justify-content: center;
-
-    gap: 25px;
-
+    flex-wrap: wrap;
+    gap: 12px 20px;
     margin-top: 20px;
-
     font-size: 14px;
-
 }
 
 
@@ -586,7 +583,9 @@ button:hover {
 
 }
 
-
+.legend-flat {
+    background: #2196f3;
+}
 
 .legend-sporty {
 
