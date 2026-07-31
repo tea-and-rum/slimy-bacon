@@ -638,72 +638,46 @@ button:hover {
 
 /* Evidence Tiles */
 
-
 .evidence-grid {
-
     display: grid;
-
     grid-template-columns: repeat(2, 1fr);
-
+    grid-auto-rows: 275px;
     gap: 15px;
-
     margin-top: 30px;
-
 }
-
-
 
 .evidence-card {
-    background: white;
+    background: #f8f8f8;
     border-radius: 10px;
-    padding: 16px;
-    height: 260px;
-    display: flex;
-    flex-direction: column;
+    padding: 15px;
+    box-sizing: border-box;
+    overflow: hidden;
 }
-
-
 
 .evidence-card h3 {
-
     margin-top: 0;
-
+    margin-bottom: 10px;
     text-align: center;
-
 }
-
-
 
 .evidence-summary {
-
     text-align: center;
-
     font-weight: bold;
-
     margin-bottom: 10px;
-
 }
-
-
 
 .evidence-card canvas {
-
+    display: block;
     width: 100% !important;
-
-    height: 120px !important;
-
+    height: 175px !important;
 }
 
-
-
-
-
 #advisoryText {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+    max-height: 205px;
+    overflow-y: auto;
+    padding-top: 10px;
+    text-align: left;
+    line-height: 1.5;
 }
 
 
@@ -946,12 +920,7 @@ button:hover {
 }
 
 
-#windChart,
-#waveChart,
-#precipChart {
-    width: 100% !important;
-    height: 155px !important;
-}
+
 
 /* ---------------------------------
    Dark-mode toggle
