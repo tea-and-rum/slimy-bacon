@@ -851,31 +851,31 @@ function renderAdvisoryTile(alerts){
 
                 <div class="active-advisory">
 
-                    <strong>
-                        ⚠ ${escapeHTML(
-                            alert.event
-                        )}
-                    </strong>
+    <div class="advisory-title">
+        ⚠ ${escapeHTML(
+            alert.event
+        )}
+    </div>
 
-                    ${
+    ${
+        locationsText
+            ? `
+                <div class="advisory-location">
+                    ${escapeHTML(
                         locationsText
-                            ? `
-                                <div>
-                                    ${escapeHTML(
-                                        locationsText
-                                    )}
-                                </div>
-                            `
-                            : ""
-                    }
-
-                    <small>
-                        Until ${escapeHTML(
-                            endText
-                        )}
-                    </small>
-
+                    )}
                 </div>
+            `
+            : ""
+    }
+
+    <div class="advisory-time">
+        Until ${escapeHTML(
+            endText
+        )}
+    </div>
+
+</div>
 
             `;
 
