@@ -1042,6 +1042,7 @@ body.dark-mode .selection-section {
 }
 
 
+
 /* Inputs and dropdowns */
 
 body.dark-mode input,
@@ -1055,6 +1056,12 @@ body.dark-mode textarea {
 body.dark-mode input::placeholder,
 body.dark-mode textarea::placeholder {
     color: #94a3b8;
+}
+
+/* Make the date picker icon visible in dark mode */
+body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(2);
+    cursor: pointer;
 }
 
 
