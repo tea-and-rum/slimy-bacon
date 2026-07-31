@@ -512,25 +512,20 @@ button:hover {
 
 
 
-.timeline-sporty {
-
-    background: #e6b800;
-
+.timeline-flat {
+    background: #2196f3;
 }
 
-timeline
+.timeline-go {
+    background: #4caf50;
+}
 
-
+.timeline-sporty {
+    background: #e6b800;
+}
 
 .timeline-no-go {
-
     background: #d9534f;
-
-}
-
-
-.timeline-flat {
-    background: purple !important;
 }
 
 
