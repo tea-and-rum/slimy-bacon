@@ -654,15 +654,12 @@ button:hover {
 
 
 .evidence-card {
-
-    background: #f8f8f8;
-
+    background: white;
     border-radius: 10px;
-
-    padding: 15px;
-
-    min-height: 180px;
-
+    padding: 16px;
+    height: 260px;
+    display: flex;
+    flex-direction: column;
 }
 
 
@@ -950,9 +947,11 @@ button:hover {
     scroll-margin-top: 20px;
 }
 
-/* Extra room for hourly wind-direction arrows */
 
-#windChart {
+#windChart,
+#waveChart,
+#precipChart {
+    width: 100% !important;
     height: 155px !important;
 }
 
