@@ -1928,7 +1928,7 @@ is no more than 5 mph.
 
 if(
     hasWaveData &&
-    waves === 0 &&
+    waves < 0.1 &&
     wind <= 5
 ){
     return {
