@@ -949,6 +949,13 @@ button:hover {
 #results {
     scroll-margin-top: 20px;
 }
+
+/* Extra room for hourly wind-direction arrows */
+
+#windChart {
+    height: 155px !important;
+}
+
 /* ---------------------------------
    Dark-mode toggle
 ---------------------------------- */
