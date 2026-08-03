@@ -1352,3 +1352,32 @@ body.dark-mode .go-window-label {
 body.dark-mode .go-window-subtext {
     color: #9ca3af;
 }
+
+
+/* Chronological sunrise, sunset, and tide-event list */
+
+.daily-event-times {
+    margin-top: 4px;
+}
+
+.daily-event-time {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin: 10px 0;
+    line-height: 1.4;
+}
+
+.daily-event-icon {
+    width: 22px;
+    flex: 0 0 22px;
+    text-align: center;
+}
+
+.daily-event-label {
+    white-space: nowrap;
+}
+
+body.dark-mode .daily-event-time {
+    color: #cbd5e1;
+}

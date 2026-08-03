@@ -8,6 +8,8 @@ let precipChart;
 
 let tideStationCache = null;
 let lastTidePoints = [];
+let lastTideEvents = [];
+let lastSunData = null;
 
 const locations = {
 
@@ -483,16 +485,6 @@ async function checkConditions(){
                 selectedLocations,
                 selectedDate
             );
-
-
-        document.getElementById("sunrise").innerHTML =
-            sun.sunrise;
-
-
-        document.getElementById("sunset").innerHTML =
-            sun.sunset;
-
-
         document.getElementById("checked").innerHTML =
             new Date().toLocaleString();
 
@@ -660,7 +652,8 @@ const validTimeline =
 
         await renderTideOverlay(
             selectedLocations,
-            selectedDate
+            selectedDate,
+            sun
         );
 
 
@@ -2239,6 +2232,13 @@ function setupTideToggle(){
 
             updateTideOverlayVisibility();
 
+            renderDailyEventTimes(
+                toggle.checked
+                    ? lastTideEvents
+                    : [],
+                lastSunData
+            );
+
         }
     );
 
@@ -2307,10 +2307,26 @@ function clearTideOverlay(){
 
 async function renderTideOverlay(
     selectedLocations,
-    selectedDate
+    selectedDate,
+    sun
 ){
 
     clearTideOverlay();
+
+    lastSunData = sun;
+    lastTideEvents = [];
+
+
+    /*
+    Always render sunrise and sunset, even if tide
+    data is hidden, unavailable, or multiple locations
+    are selected.
+    */
+
+    renderDailyEventTimes(
+        [],
+        sun
+    );
 
 
     /*
@@ -2353,19 +2369,49 @@ async function renderTideOverlay(
         }
 
 
-        const predictions =
-            await getHourlyTidePredictions(
+        const [
+            hourlyPredictions,
+            highLowEvents
+        ] = await Promise.all([
+
+            getHourlyTidePredictions(
                 station.id,
                 selectedDate
+            ),
+
+            getHighLowTidePredictions(
+                station.id,
+                selectedDate
+            )
+
+        ]);
+
+
+        if(hourlyPredictions.length >= 2){
+
+            drawTidePath(
+                hourlyPredictions
             );
 
-
-        if(predictions.length < 2){
-            return;
         }
 
 
-        drawTidePath(predictions);
+        lastTideEvents =
+            highLowEvents;
+
+
+        const tideToggle =
+            document.getElementById(
+                "tideToggle"
+            );
+
+
+        renderDailyEventTimes(
+            tideToggle?.checked
+                ? highLowEvents
+                : [],
+            sun
+        );
 
     }
     catch(error){
@@ -2381,6 +2427,11 @@ async function renderTideOverlay(
         );
 
         clearTideOverlay();
+
+        renderDailyEventTimes(
+            [],
+            sun
+        );
 
     }
 
@@ -2442,11 +2493,9 @@ async function findNearestTideStation(
 
 
     /*
-    Hourly predictions are only available
-    from NOAA reference/harmonic stations.
-
-    Subordinate stations only support
-    high/low tide predictions.
+    NOAA subordinate stations generally provide only
+    high/low predictions. The timeline curve requires
+    hourly values, so use the nearest reference station.
     */
 
     const hourlyCapableStations =
@@ -2457,20 +2506,17 @@ async function findNearestTideStation(
         );
 
 
-    if(hourlyCapableStations.length === 0){
-
-        throw new Error(
-            "No hourly-capable NOAA tide stations were found."
-        );
-
-    }
+    const candidates =
+        hourlyCapableStations.length > 0
+            ? hourlyCapableStations
+            : stations;
 
 
     let nearestStation = null;
     let nearestDistance = Infinity;
 
 
-    hourlyCapableStations.forEach(station => {
+    candidates.forEach(station => {
 
         const distance =
             calculateDistanceMiles(
@@ -2497,8 +2543,7 @@ async function findNearestTideStation(
             "Using NOAA tide station:",
             nearestStation.id,
             nearestStation.name,
-            `${nearestDistance.toFixed(1)} miles away`,
-            `type ${nearestStation.type}`
+            `${nearestDistance.toFixed(1)} miles away`
         );
 
     }
@@ -2507,6 +2552,7 @@ async function findNearestTideStation(
     return nearestStation;
 
 }
+
 
 function calculateDistanceMiles(
     lat1,
@@ -2555,37 +2601,16 @@ async function getHourlyTidePredictions(
 
     const parameters =
         new URLSearchParams({
-
-            begin_date:
-                compactDate,
-
-            end_date:
-                compactDate,
-
-            station:
-                stationId,
-
-            product:
-                "predictions",
-
-            datum:
-                "MLLW",
-
-            time_zone:
-                "lst_ldt",
-
-            interval:
-                "h",
-
-            units:
-                "english",
-
-            application:
-                "Chesapeake_Bay_Conditions",
-
-            format:
-                "json"
-
+            begin_date: compactDate,
+            end_date: compactDate,
+            station: stationId,
+            product: "predictions",
+            datum: "MLLW",
+            time_zone: "lst_ldt",
+            interval: "h",
+            units: "english",
+            application: "Chesapeake_Bay_Conditions",
+            format: "json"
         });
 
 
@@ -2631,10 +2656,7 @@ async function getHourlyTidePredictions(
 
                 const timeMatch =
                     String(item.t || "")
-                        .match(
-                            /\s(\d{2}):(\d{2})$/
-                        );
-
+                        .match(/\s(\d{2}):(\d{2})$/);
 
                 const value =
                     Number(item.v);
@@ -2649,22 +2671,15 @@ async function getHourlyTidePredictions(
 
 
                 return {
-
                     hour:
                         Number(timeMatch[1]) +
                         Number(timeMatch[2]) / 60,
-
-                    value:
-                        value
-
+                    value
                 };
 
             })
             .filter(Boolean)
-            .sort(
-                (a, b) =>
-                    a.hour - b.hour
-            );
+            .sort((a, b) => a.hour - b.hour);
 
 
     if(formattedPredictions.length < 2){
@@ -2679,6 +2694,256 @@ async function getHourlyTidePredictions(
     return formattedPredictions;
 
 }
+
+
+async function getHighLowTidePredictions(
+    stationId,
+    selectedDate
+){
+
+    const compactDate =
+        selectedDate.replaceAll("-", "");
+
+
+    const parameters =
+        new URLSearchParams({
+            begin_date: compactDate,
+            end_date: compactDate,
+            station: stationId,
+            product: "predictions",
+            datum: "MLLW",
+            time_zone: "lst_ldt",
+            interval: "hilo",
+            units: "english",
+            application: "Chesapeake_Bay_Conditions",
+            format: "json"
+        });
+
+
+    const response =
+        await fetch(
+            "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?" +
+            parameters.toString()
+        );
+
+
+    if(!response.ok){
+
+        throw new Error(
+            `NOAA high/low tide request failed: ${response.status}`
+        );
+
+    }
+
+
+    const data =
+        await response.json();
+
+
+    if(data.error){
+
+        throw new Error(
+            data.error.message ||
+            "NOAA returned a high/low tide error."
+        );
+
+    }
+
+
+    return (
+        Array.isArray(data.predictions)
+            ? data.predictions
+            : []
+    )
+        .map(item => {
+
+            const match =
+                String(item.t || "")
+                    .match(
+                        /^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2})$/
+                    );
+
+
+            const type =
+                String(item.type || "")
+                    .toUpperCase();
+
+
+            if(
+                !match ||
+                (
+                    type !== "H" &&
+                    type !== "L"
+                )
+            ){
+                return null;
+            }
+
+
+            const date =
+                new Date(
+                    Number(match[1]),
+                    Number(match[2]) - 1,
+                    Number(match[3]),
+                    Number(match[4]),
+                    Number(match[5])
+                );
+
+
+            return {
+                date,
+                type,
+                value:
+                    Number(item.v)
+            };
+
+        })
+        .filter(event =>
+            event &&
+            !Number.isNaN(
+                event.date.getTime()
+            )
+        )
+        .sort(
+            (a, b) =>
+                a.date.getTime() -
+                b.date.getTime()
+        );
+
+}
+
+
+function renderDailyEventTimes(
+    tideEvents,
+    sun
+){
+
+    const container =
+        document.getElementById(
+            "dailyEventTimes"
+        );
+
+
+    if(!container){
+        return;
+    }
+
+
+    const events = [];
+
+
+    if(
+        sun?.sunriseDate instanceof Date &&
+        !Number.isNaN(
+            sun.sunriseDate.getTime()
+        )
+    ){
+
+        events.push({
+            date: sun.sunriseDate,
+            icon: "🌅",
+            label: "Sunrise"
+        });
+
+    }
+
+
+    if(
+        sun?.sunsetDate instanceof Date &&
+        !Number.isNaN(
+            sun.sunsetDate.getTime()
+        )
+    ){
+
+        events.push({
+            date: sun.sunsetDate,
+            icon: "🌇",
+            label: "Sunset"
+        });
+
+    }
+
+
+    if(Array.isArray(tideEvents)){
+
+        tideEvents.forEach(event => {
+
+            if(
+                !(event.date instanceof Date) ||
+                Number.isNaN(
+                    event.date.getTime()
+                )
+            ){
+                return;
+            }
+
+
+            const isHigh =
+                String(event.type)
+                    .toUpperCase() === "H";
+
+
+            events.push({
+                date: event.date,
+                icon:
+                    isHigh
+                        ? "⬆"
+                        : "⬇",
+                label:
+                    isHigh
+                        ? "High tide"
+                        : "Low tide"
+            });
+
+        });
+
+    }
+
+
+    events.sort(
+        (a, b) =>
+            a.date.getTime() -
+            b.date.getTime()
+    );
+
+
+    container.innerHTML =
+        events
+            .map(event => {
+
+                const timeText =
+                    event.date.toLocaleTimeString(
+                        [],
+                        {
+                            hour: "numeric",
+                            minute: "2-digit"
+                        }
+                    );
+
+
+                return `
+                    <div class="daily-event-time">
+                        <span class="daily-event-icon">
+                            ${event.icon}
+                        </span>
+
+                        <span class="daily-event-label">
+                            ${event.label}:
+                        </span>
+
+                        <strong>
+                            ${escapeHTML(
+                                timeText
+                            )}
+                        </strong>
+                    </div>
+                `;
+
+            })
+            .join("");
+
+}
+
 
 function drawTidePath(predictions){
 
@@ -2720,70 +2985,53 @@ function drawTidePath(predictions){
     const drawableHeight = 72;
 
 
-  const points =
-    predictions.map(point => ({
-        x:
-            point.hour / 24 * 1000,
-
-        y:
-            topPadding +
-            (maximum - point.value) /
-            range *
-            drawableHeight
-    }));
-
-
-/*
-NOAA's last hourly prediction is normally 11 PM,
-which places the final point at 23/24 of the bar.
-
-Add a midnight endpoint so the tide line reaches
-the full right edge of the 24-hour timeline.
-*/
-
-if(points.length >= 2){
-
-    const lastPoint =
-        points[points.length - 1];
-
-    const previousPoint =
-        points[points.length - 2];
+    const points =
+        predictions.map(point => ({
+            x:
+                point.hour / 24 * 1000,
+            y:
+                topPadding +
+                (maximum - point.value) /
+                range *
+                drawableHeight
+        }));
 
 
     /*
-    Continue the final trend for one more hour,
-    rather than making the last section completely flat.
+    NOAA's final hourly value is normally 11 PM.
+    Project one additional point to midnight so the
+    curve reaches the full right edge of the bar.
     */
 
-    const projectedY =
-        lastPoint.y +
-        (
-            lastPoint.y -
-            previousPoint.y
-        );
+    if(points.length >= 2){
+
+        const lastPoint =
+            points[points.length - 1];
+
+        const previousPoint =
+            points[points.length - 2];
+
+        const projectedY =
+            lastPoint.y +
+            (
+                lastPoint.y -
+                previousPoint.y
+            );
 
 
-    points.push({
-
-        x: 1000,
-
-        /*
-        Keep the projected point inside the
-        drawable area of the timeline bar.
-        */
-
-        y:
-            Math.max(
-                topPadding,
-                Math.min(
-                    topPadding + drawableHeight,
-                    projectedY
+        points.push({
+            x: 1000,
+            y:
+                Math.max(
+                    topPadding,
+                    Math.min(
+                        topPadding + drawableHeight,
+                        projectedY
+                    )
                 )
-            )
+        });
 
-    });
-
-}
+    }
 
 
     const pathData =
@@ -3774,6 +4022,12 @@ function getSunTimes(selectedLocations, selectedDate){
                 earliestSunset,
                 latestSunset
             ),
+
+        sunriseDate:
+            earliestSunrise,
+
+        sunsetDate:
+            latestSunset,
 
         sunrisePercent:
             timeToPercent(earliestSunrise),
