@@ -1998,26 +1998,24 @@ function determineDailyResult(results){
             result => result === "FLAT"
         ).length;
 
+
     const calmHours =
         validResults.filter(
             result => result === "CALM"
         ).length;
+
 
     const sportyHours =
         validResults.filter(
             result => result === "SPORTY"
         ).length;
 
+
     const poorHours =
         validResults.filter(
             result => result === "POOR"
         ).length;
 
-
-    /*
-    FLAT and CALM both count toward a
-    favorable continuous boating window.
-    */
 
     const favorableHours =
         flatHours + calmHours;
@@ -2048,6 +2046,30 @@ function determineDailyResult(results){
     });
 
 
+    /*
+    No favorable hours remaining means
+    there is no recommended boating window.
+    */
+
+    if(favorableHours === 0){
+
+        if(poorHours > 0){
+            return "DON'T GO";
+        }
+
+        /*
+        All remaining hours are Sporty.
+        */
+        return "MAYBE";
+
+    }
+
+
+    /*
+    Favorable conditions dominate and
+    there are no Poor hours.
+    */
+
     if(
         poorHours === 0 &&
         favorableHours > sportyHours &&
@@ -2057,13 +2079,23 @@ function determineDailyResult(results){
     }
 
 
+    /*
+    A mostly usable period with only one
+    or two isolated Poor hours.
+    */
+
     if(
-        poorHours === 0 ||
-        poorHours <= 2
+        poorHours <= 2 &&
+        longestFavorableWindow >= 3
     ){
         return "MAYBE";
     }
 
+
+    /*
+    Poor conditions dominate, but a useful
+    favorable window still exists.
+    */
 
     if(longestFavorableWindow >= 3){
         return "LIMITED WINDOW";
