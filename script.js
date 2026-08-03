@@ -624,7 +624,10 @@ alerts.forEach(alert => {
 
 
         document.getElementById("decisionSummary").innerHTML =
-            getDecisionSummary(overall);
+    getDecisionSummary(
+        overall,
+        validTimeline
+    );
 
 
         document.getElementById("whyResults").innerHTML =
@@ -3073,23 +3076,102 @@ function timeToPercent(date){
 
 
 
-function getDecisionSummary(result){
+function getDecisionSummary(result, timeline){
+
+    const validHours =
+        Array.isArray(timeline)
+            ? timeline.filter(status =>
+                status === "FLAT" ||
+                status === "CALM" ||
+                status === "SPORTY" ||
+                status === "POOR"
+            )
+            : [];
+
+
+    const flatHours =
+        validHours.filter(
+            status => status === "FLAT"
+        ).length;
+
+
+    const calmHours =
+        validHours.filter(
+            status => status === "CALM"
+        ).length;
+
+
+    const sportyHours =
+        validHours.filter(
+            status => status === "SPORTY"
+        ).length;
+
+
+    const poorHours =
+        validHours.filter(
+            status => status === "POOR"
+        ).length;
+
+
+    /*
+    Flat and Calm are both favorable
+    boating conditions.
+    */
+
+    const favorableHours =
+        flatHours + calmHours;
+
+
+    const favorableText =
+        favorableHours === 1
+            ? "1 favorable boating hour"
+            : `${favorableHours} favorable boating hours`;
+
 
     switch(result){
+
         case "GO":
-            return "Conditions are calm for most or all of the available boating day.";
+
+            return (
+                `${favorableText} are available, ` +
+                "with little or no poor weather expected."
+            );
+
+
         case "MAYBE":
-            return "Boating may be reasonable, but expect sporty conditions or a couple isolated poor hours.";
+
+            return (
+                `${favorableText} are available, ` +
+                `but the day also includes ` +
+                `${sportyHours} sporty and ` +
+                `${poorHours} poor ` +
+                `${poorHours === 1 ? "hour" : "hours"}.`
+            );
+
+
         case "LIMITED WINDOW":
-            return "Poor conditions dominate much of the day, but a continuous calm window of at least 3 hours is available.";
+
+            return (
+                `${favorableText} are available, ` +
+                "but poor conditions affect much of the remaining day."
+            );
+
+
         case "DON'T GO":
-            return "There is no meaningful continuous calm window in the available forecast.";
+
+            return (
+                `${favorableText} are available, ` +
+                "but there is no meaningful continuous favorable window."
+            );
+
+
         default:
+
             return "Forecast conditions are unavailable.";
+
     }
 
 }
-
 
 function formatHour(hour){
 
