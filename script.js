@@ -2515,89 +2515,138 @@ async function getHourlyTidePredictions(
     const compactDate =
         selectedDate.replaceAll("-", "");
 
-    const parameters =
-        new URLSearchParams({
-            begin_date: compactDate,
-            end_date: compactDate,
-            station: stationId,
-            product: "predictions",
-            datum: "MLLW",
-            time_zone: "lst_ldt",
-            interval: "h",
-            units: "english",
-            application: "Chesapeake_Bay_Conditions",
-            format: "json"
-        });
+
+    /*
+    Try the normal coastal datum first.
+
+    Some prediction stations reject MLLW,
+    so fall back to the station's own datum.
+    */
+
+    const datumsToTry = [
+        "MLLW",
+        "STND"
+    ];
 
 
-    const response =
-        await fetch(
-            "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?" +
-            parameters.toString()
-        );
+    let lastErrorMessage =
+        "NOAA returned no tide predictions.";
 
 
-    if(!response.ok){
+    for(const datum of datumsToTry){
 
-        throw new Error(
-            `NOAA tide-prediction request failed: ${response.status}`
-        );
+        const parameters =
+            new URLSearchParams({
+                begin_date: compactDate,
+                end_date: compactDate,
+                station: stationId,
+                product: "predictions",
+                datum: datum,
+                time_zone: "lst_ldt",
+                interval: "h",
+                units: "english",
+                application: "Chesapeake_Bay_Conditions",
+                format: "json"
+            });
+
+
+        const response =
+            await fetch(
+                "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?" +
+                parameters.toString()
+            );
+
+
+        if(!response.ok){
+
+            lastErrorMessage =
+                `NOAA tide-prediction request failed: ${response.status}`;
+
+            continue;
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        if(data.error){
+
+            lastErrorMessage =
+                data.error.message ||
+                "NOAA returned a tide-prediction error.";
+
+            continue;
+
+        }
+
+
+        const predictions =
+            Array.isArray(data.predictions)
+                ? data.predictions
+                : [];
+
+
+        const formattedPredictions =
+            predictions
+                .map(item => {
+
+                    const timeMatch =
+                        String(item.t || "")
+                            .match(/\s(\d{2}):(\d{2})$/);
+
+
+                    const value =
+                        Number(item.v);
+
+
+                    if(
+                        !timeMatch ||
+                        !Number.isFinite(value)
+                    ){
+                        return null;
+                    }
+
+
+                    return {
+                        hour:
+                            Number(timeMatch[1]) +
+                            Number(timeMatch[2]) / 60,
+
+                        value: value
+                    };
+
+                })
+                .filter(Boolean)
+                .sort(
+                    (a, b) =>
+                        a.hour - b.hour
+                );
+
+
+        if(formattedPredictions.length >= 2){
+
+            console.log(
+                `Tide predictions loaded for station ${stationId} using ${datum}.`
+            );
+
+            return formattedPredictions;
+
+        }
+
+
+        lastErrorMessage =
+            `No usable tide predictions were returned using ${datum}.`;
 
     }
 
 
-    const data =
-        await response.json();
-
-
-    if(data.error){
-
-        throw new Error(
-            data.error.message ||
-            "NOAA returned a tide-prediction error."
-        );
-
-    }
-
-
-    const predictions =
-        Array.isArray(data.predictions)
-            ? data.predictions
-            : [];
-
-
-    return predictions
-        .map(item => {
-
-            const timeMatch =
-                String(item.t || "")
-                    .match(/\s(\d{2}):(\d{2})$/);
-
-            const value =
-                Number(item.v);
-
-
-            if(
-                !timeMatch ||
-                !Number.isFinite(value)
-            ){
-                return null;
-            }
-
-
-            return {
-                hour:
-                    Number(timeMatch[1]) +
-                    Number(timeMatch[2]) / 60,
-                value
-            };
-
-        })
-        .filter(Boolean)
-        .sort((a, b) => a.hour - b.hour);
+    throw new Error(
+        lastErrorMessage
+    );
 
 }
-
 
 function drawTidePath(predictions){
 
