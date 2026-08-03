@@ -6,6 +6,9 @@ let windChart;
 let waveChart;
 let precipChart;
 
+let tideStationCache = null;
+let lastTidePoints = [];
+
 const locations = {
 
     "Gunpowder River":{
@@ -66,6 +69,8 @@ window.onload = function(){
     setupVesselCards();
 
     setupDarkMode();
+
+    setupTideToggle();
 
 };
 
@@ -652,6 +657,11 @@ const validTimeline =
     relevantTimeline,
     sun
 );
+
+        await renderTideOverlay(
+            selectedLocations,
+            selectedDate
+        );
 
 
         document.getElementById("decision").innerHTML =
@@ -2192,6 +2202,511 @@ timeline.push("FLAT");
 
 
 
+
+
+
+function setupTideToggle(){
+
+    const toggle =
+        document.getElementById(
+            "tideToggle"
+        );
+
+
+    if(!toggle){
+        return;
+    }
+
+
+    const savedPreference =
+        localStorage.getItem(
+            "showTideOverlay"
+        );
+
+
+    toggle.checked =
+        savedPreference !== "false";
+
+
+    toggle.addEventListener(
+        "change",
+        function(){
+
+            localStorage.setItem(
+                "showTideOverlay",
+                String(toggle.checked)
+            );
+
+            updateTideOverlayVisibility();
+
+        }
+    );
+
+}
+
+
+function updateTideOverlayVisibility(){
+
+    const toggle =
+        document.getElementById(
+            "tideToggle"
+        );
+
+    const overlay =
+        document.getElementById(
+            "tideOverlay"
+        );
+
+
+    if(!toggle || !overlay){
+        return;
+    }
+
+
+    const shouldShow =
+        toggle.checked &&
+        lastTidePoints.length > 1;
+
+
+    overlay.classList.toggle(
+        "hidden",
+        !shouldShow
+    );
+
+}
+
+
+function clearTideOverlay(){
+
+    lastTidePoints = [];
+
+    const tidePath =
+        document.getElementById(
+            "tidePath"
+        );
+
+    const tidePathOutline =
+        document.getElementById(
+            "tidePathOutline"
+        );
+
+
+    if(tidePath){
+        tidePath.setAttribute("d", "");
+    }
+
+    if(tidePathOutline){
+        tidePathOutline.setAttribute("d", "");
+    }
+
+
+    updateTideOverlayVisibility();
+
+}
+
+
+async function renderTideOverlay(
+    selectedLocations,
+    selectedDate
+){
+
+    clearTideOverlay();
+
+
+    /*
+    A single tide curve only makes sense for one
+    selected location. Different locations can use
+    different tide-prediction stations and timing.
+    */
+
+    if(
+        !Array.isArray(selectedLocations) ||
+        selectedLocations.length !== 1
+    ){
+        return;
+    }
+
+
+    const locationName =
+        selectedLocations[0];
+
+    const coords =
+        locations[locationName];
+
+
+    if(!coords){
+        return;
+    }
+
+
+    try {
+
+        const station =
+            await findNearestTideStation(
+                coords.lat,
+                coords.lon
+            );
+
+
+        if(!station){
+            return;
+        }
+
+
+        const predictions =
+            await getHourlyTidePredictions(
+                station.id,
+                selectedDate
+            );
+
+
+        if(predictions.length < 2){
+            return;
+        }
+
+
+        drawTidePath(predictions);
+
+    }
+    catch(error){
+
+        /*
+        Tide data is optional. A tide failure should
+        never prevent the weather results from loading.
+        */
+
+        console.warn(
+            `Tide data unavailable for ${locationName}:`,
+            error
+        );
+
+        clearTideOverlay();
+
+    }
+
+}
+
+
+async function getTidePredictionStations(){
+
+    if(Array.isArray(tideStationCache)){
+        return tideStationCache;
+    }
+
+
+    const response =
+        await fetch(
+            "https://api.tidesandcurrents.noaa.gov/mdapi/prod/webapi/stations.json?type=tidepredictions"
+        );
+
+
+    if(!response.ok){
+
+        throw new Error(
+            `NOAA tide-station request failed: ${response.status}`
+        );
+
+    }
+
+
+    const data =
+        await response.json();
+
+    const stations =
+        Array.isArray(data.stations)
+            ? data.stations
+            : [];
+
+
+    tideStationCache =
+        stations.filter(station =>
+            station &&
+            station.id &&
+            Number.isFinite(Number(station.lat)) &&
+            Number.isFinite(Number(station.lng))
+        );
+
+
+    return tideStationCache;
+
+}
+
+
+async function findNearestTideStation(
+    latitude,
+    longitude
+){
+
+    const stations =
+        await getTidePredictionStations();
+
+
+    let nearestStation = null;
+    let nearestDistance = Infinity;
+
+
+    stations.forEach(station => {
+
+        const distance =
+            calculateDistanceMiles(
+                latitude,
+                longitude,
+                Number(station.lat),
+                Number(station.lng)
+            );
+
+
+        if(distance < nearestDistance){
+
+            nearestDistance = distance;
+            nearestStation = station;
+
+        }
+
+    });
+
+
+    return nearestStation;
+
+}
+
+
+function calculateDistanceMiles(
+    lat1,
+    lon1,
+    lat2,
+    lon2
+){
+
+    const earthRadiusMiles = 3958.8;
+
+    const toRadians =
+        degrees => degrees * Math.PI / 180;
+
+    const latitudeDifference =
+        toRadians(lat2 - lat1);
+
+    const longitudeDifference =
+        toRadians(lon2 - lon1);
+
+
+    const a =
+        Math.sin(latitudeDifference / 2) ** 2 +
+        Math.cos(toRadians(lat1)) *
+        Math.cos(toRadians(lat2)) *
+        Math.sin(longitudeDifference / 2) ** 2;
+
+
+    return earthRadiusMiles *
+        2 *
+        Math.atan2(
+            Math.sqrt(a),
+            Math.sqrt(1 - a)
+        );
+
+}
+
+
+async function getHourlyTidePredictions(
+    stationId,
+    selectedDate
+){
+
+    const compactDate =
+        selectedDate.replaceAll("-", "");
+
+    const parameters =
+        new URLSearchParams({
+            begin_date: compactDate,
+            end_date: compactDate,
+            station: stationId,
+            product: "predictions",
+            datum: "MLLW",
+            time_zone: "lst_ldt",
+            interval: "h",
+            units: "english",
+            application: "Chesapeake_Bay_Conditions",
+            format: "json"
+        });
+
+
+    const response =
+        await fetch(
+            "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?" +
+            parameters.toString()
+        );
+
+
+    if(!response.ok){
+
+        throw new Error(
+            `NOAA tide-prediction request failed: ${response.status}`
+        );
+
+    }
+
+
+    const data =
+        await response.json();
+
+
+    if(data.error){
+
+        throw new Error(
+            data.error.message ||
+            "NOAA returned a tide-prediction error."
+        );
+
+    }
+
+
+    const predictions =
+        Array.isArray(data.predictions)
+            ? data.predictions
+            : [];
+
+
+    return predictions
+        .map(item => {
+
+            const timeMatch =
+                String(item.t || "")
+                    .match(/\s(\d{2}):(\d{2})$/);
+
+            const value =
+                Number(item.v);
+
+
+            if(
+                !timeMatch ||
+                !Number.isFinite(value)
+            ){
+                return null;
+            }
+
+
+            return {
+                hour:
+                    Number(timeMatch[1]) +
+                    Number(timeMatch[2]) / 60,
+                value
+            };
+
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.hour - b.hour);
+
+}
+
+
+function drawTidePath(predictions){
+
+    const tidePath =
+        document.getElementById(
+            "tidePath"
+        );
+
+    const tidePathOutline =
+        document.getElementById(
+            "tidePathOutline"
+        );
+
+
+    if(!tidePath || !tidePathOutline){
+        return;
+    }
+
+
+    const values =
+        predictions.map(point => point.value);
+
+    const minimum =
+        Math.min(...values);
+
+    const maximum =
+        Math.max(...values);
+
+    const range =
+        Math.max(maximum - minimum, 0.01);
+
+
+    /*
+    Keep the line away from the rounded top and bottom
+    edges of the 28px timeline bar.
+    */
+
+    const topPadding = 14;
+    const drawableHeight = 72;
+
+
+    const points =
+        predictions.map(point => ({
+            x:
+                point.hour / 24 * 1000,
+            y:
+                topPadding +
+                (maximum - point.value) /
+                range *
+                drawableHeight
+        }));
+
+
+    const pathData =
+        createSmoothSvgPath(points);
+
+
+    tidePath.setAttribute(
+        "d",
+        pathData
+    );
+
+    tidePathOutline.setAttribute(
+        "d",
+        pathData
+    );
+
+
+    lastTidePoints = points;
+
+    updateTideOverlayVisibility();
+
+}
+
+
+function createSmoothSvgPath(points){
+
+    if(points.length < 2){
+        return "";
+    }
+
+
+    let path =
+        `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
+
+
+    for(let index = 1; index < points.length; index++){
+
+        const previous =
+            points[index - 1];
+
+        const current =
+            points[index];
+
+        const midpointX =
+            (previous.x + current.x) / 2;
+
+
+        path +=
+            ` C ${midpointX.toFixed(2)} ${previous.y.toFixed(2)},` +
+            ` ${midpointX.toFixed(2)} ${current.y.toFixed(2)},` +
+            ` ${current.x.toFixed(2)} ${current.y.toFixed(2)}`;
+
+    }
+
+
+    return path;
+
+}
 
 
 function createTimeline(results, sun){

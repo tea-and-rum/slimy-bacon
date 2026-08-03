@@ -303,7 +303,20 @@ Large Boat
 
 
 
-<h2>24-Hour Conditions</h2>
+<div class="timeline-heading-row">
+
+    <h2>24-Hour Conditions</h2>
+
+    <label class="tide-toggle" for="tideToggle">
+        <span>Tides</span>
+        <input
+            id="tideToggle"
+            type="checkbox"
+            checked
+        >
+    </label>
+
+</div>
 
 
 
@@ -315,6 +328,25 @@ Large Boat
 
 
 <div id="timelineBar"></div>
+
+<svg
+    id="tideOverlay"
+    class="tide-overlay hidden"
+    viewBox="0 0 1000 100"
+    preserveAspectRatio="none"
+    role="img"
+    aria-label="Predicted tide movement across the selected day"
+>
+    <path
+        id="tidePathOutline"
+        class="tide-path-outline"
+    ></path>
+
+    <path
+        id="tidePath"
+        class="tide-path"
+    ></path>
+</svg>
 
 
 
@@ -567,5 +599,4 @@ No active advisories
 </body>
 
 
-</html>
 </html>
