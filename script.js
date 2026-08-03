@@ -583,11 +583,43 @@ alerts.forEach(alert => {
 
 
         const timeline =
-            combineTimelineResults(allResults);
+    combineTimelineResults(allResults);
 
 
-        const validTimeline =
-    timeline.filter(value =>
+/*
+For today's forecast, remove elapsed hours
+from all recommendations and summaries.
+
+The current hour remains included because
+conditions for that hour are still relevant.
+*/
+
+const now = new Date();
+
+const todayString = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0")
+].join("-");
+
+
+const relevantTimeline =
+    timeline.map((status, hourIndex) => {
+
+        if(
+            selectedDate === todayString &&
+            hourIndex < now.getHours()
+        ){
+            return "PAST";
+        }
+
+        return status;
+
+    });
+
+
+const validTimeline =
+    relevantTimeline.filter(value =>
         value === "FLAT" ||
         value === "CALM" ||
         value === "SPORTY" ||
@@ -610,9 +642,9 @@ alerts.forEach(alert => {
 
 
         createTimeline(
-            timeline,
-            sun
-        );
+    relevantTimeline,
+    sun
+);
 
 
         document.getElementById("decision").innerHTML =
@@ -639,7 +671,7 @@ alerts.forEach(alert => {
 
 
         document.getElementById("window").innerHTML =
-            findGoodWindow(timeline);
+    findGoodWindow(relevantTimeline);
 
 
         createEvidenceCharts(allWeather);
