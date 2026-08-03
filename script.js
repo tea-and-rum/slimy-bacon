@@ -48,7 +48,14 @@ const locations = {
         lat:38.766405,
         lon:-76.403985
 
+    },
+
+    "Deleware Reefs":{
+        lat:38.622925,
+        lon:-74.917270
+
     }
+
 
 };
 
