@@ -2720,16 +2720,70 @@ function drawTidePath(predictions){
     const drawableHeight = 72;
 
 
-    const points =
-        predictions.map(point => ({
-            x:
-                point.hour / 24 * 1000,
-            y:
-                topPadding +
-                (maximum - point.value) /
-                range *
-                drawableHeight
-        }));
+  const points =
+    predictions.map(point => ({
+        x:
+            point.hour / 24 * 1000,
+
+        y:
+            topPadding +
+            (maximum - point.value) /
+            range *
+            drawableHeight
+    }));
+
+
+/*
+NOAA's last hourly prediction is normally 11 PM,
+which places the final point at 23/24 of the bar.
+
+Add a midnight endpoint so the tide line reaches
+the full right edge of the 24-hour timeline.
+*/
+
+if(points.length >= 2){
+
+    const lastPoint =
+        points[points.length - 1];
+
+    const previousPoint =
+        points[points.length - 2];
+
+
+    /*
+    Continue the final trend for one more hour,
+    rather than making the last section completely flat.
+    */
+
+    const projectedY =
+        lastPoint.y +
+        (
+            lastPoint.y -
+            previousPoint.y
+        );
+
+
+    points.push({
+
+        x: 1000,
+
+        /*
+        Keep the projected point inside the
+        drawable area of the timeline bar.
+        */
+
+        y:
+            Math.max(
+                topPadding,
+                Math.min(
+                    topPadding + drawableHeight,
+                    projectedY
+                )
+            )
+
+    });
+
+}
 
 
     const pathData =
