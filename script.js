@@ -50,7 +50,7 @@ const locations = {
 
     },
 
-    "Deleware Site 10 Reef":{
+    "Delaware Site 10 Reef":{
         lat:38.622925,
         lon:-74.917270
 
@@ -2641,18 +2641,32 @@ async function getHourlyWeather(
 
 
         const hourlyURL =
-            pointData.properties.forecastHourly;
+    pointData.properties.forecastHourly;
 
-        const gridDataURL =
-            pointData.properties.forecastGridData;
+const gridDataURL =
+    pointData.properties.forecastGridData;
 
 
-        /*
-        Retrieve normal hourly weather and
-        raw marine grid data simultaneously.
-        */
+/*
+Some offshore and coastal marine points do not
+provide the normal hourly forecast endpoint.
+*/
 
-        const hourlyResponse =
+if(!hourlyURL){
+
+    console.error(
+        `${location} does not have a NOAA forecastHourly endpoint.`,
+        pointData.properties
+    );
+
+    throw new Error(
+        `Hourly forecast unavailable for offshore location: ${location}`
+    );
+
+}
+
+
+const hourlyResponse =
     await fetch(hourlyURL);
 
 
@@ -2663,6 +2677,10 @@ if(!hourlyResponse.ok){
     );
 
 }
+
+
+const hourlyData =
+    await hourlyResponse.json();
 
 
 const hourlyData =
