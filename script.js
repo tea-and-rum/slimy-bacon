@@ -2441,11 +2441,36 @@ async function findNearestTideStation(
         await getTidePredictionStations();
 
 
+    /*
+    Hourly predictions are only available
+    from NOAA reference/harmonic stations.
+
+    Subordinate stations only support
+    high/low tide predictions.
+    */
+
+    const hourlyCapableStations =
+        stations.filter(station =>
+            String(station.type || "")
+                .trim()
+                .toUpperCase() === "R"
+        );
+
+
+    if(hourlyCapableStations.length === 0){
+
+        throw new Error(
+            "No hourly-capable NOAA tide stations were found."
+        );
+
+    }
+
+
     let nearestStation = null;
     let nearestDistance = Infinity;
 
 
-    stations.forEach(station => {
+    hourlyCapableStations.forEach(station => {
 
         const distance =
             calculateDistanceMiles(
@@ -2466,10 +2491,22 @@ async function findNearestTideStation(
     });
 
 
+    if(nearestStation){
+
+        console.log(
+            "Using NOAA tide station:",
+            nearestStation.id,
+            nearestStation.name,
+            `${nearestDistance.toFixed(1)} miles away`,
+            `type ${nearestStation.type}`
+        );
+
+    }
+
+
     return nearestStation;
 
 }
-
 
 function calculateDistanceMiles(
     lat1,
@@ -2516,135 +2553,130 @@ async function getHourlyTidePredictions(
         selectedDate.replaceAll("-", "");
 
 
-    /*
-    Try the normal coastal datum first.
+    const parameters =
+        new URLSearchParams({
 
-    Some prediction stations reject MLLW,
-    so fall back to the station's own datum.
-    */
+            begin_date:
+                compactDate,
 
-    const datumsToTry = [
-        "MLLW",
-        "STND"
-    ];
+            end_date:
+                compactDate,
 
+            station:
+                stationId,
 
-    let lastErrorMessage =
-        "NOAA returned no tide predictions.";
+            product:
+                "predictions",
 
+            datum:
+                "MLLW",
 
-    for(const datum of datumsToTry){
+            time_zone:
+                "lst_ldt",
 
-        const parameters =
-            new URLSearchParams({
-                begin_date: compactDate,
-                end_date: compactDate,
-                station: stationId,
-                product: "predictions",
-                datum: datum,
-                time_zone: "lst_ldt",
-                interval: "h",
-                units: "english",
-                application: "Chesapeake_Bay_Conditions",
-                format: "json"
-            });
+            interval:
+                "h",
 
+            units:
+                "english",
 
-        const response =
-            await fetch(
-                "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?" +
-                parameters.toString()
-            );
+            application:
+                "Chesapeake_Bay_Conditions",
+
+            format:
+                "json"
+
+        });
 
 
-        if(!response.ok){
-
-            lastErrorMessage =
-                `NOAA tide-prediction request failed: ${response.status}`;
-
-            continue;
-
-        }
+    const response =
+        await fetch(
+            "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter?" +
+            parameters.toString()
+        );
 
 
-        const data =
-            await response.json();
+    if(!response.ok){
 
-
-        if(data.error){
-
-            lastErrorMessage =
-                data.error.message ||
-                "NOAA returned a tide-prediction error.";
-
-            continue;
-
-        }
-
-
-        const predictions =
-            Array.isArray(data.predictions)
-                ? data.predictions
-                : [];
-
-
-        const formattedPredictions =
-            predictions
-                .map(item => {
-
-                    const timeMatch =
-                        String(item.t || "")
-                            .match(/\s(\d{2}):(\d{2})$/);
-
-
-                    const value =
-                        Number(item.v);
-
-
-                    if(
-                        !timeMatch ||
-                        !Number.isFinite(value)
-                    ){
-                        return null;
-                    }
-
-
-                    return {
-                        hour:
-                            Number(timeMatch[1]) +
-                            Number(timeMatch[2]) / 60,
-
-                        value: value
-                    };
-
-                })
-                .filter(Boolean)
-                .sort(
-                    (a, b) =>
-                        a.hour - b.hour
-                );
-
-
-        if(formattedPredictions.length >= 2){
-
-            console.log(
-                `Tide predictions loaded for station ${stationId} using ${datum}.`
-            );
-
-            return formattedPredictions;
-
-        }
-
-
-        lastErrorMessage =
-            `No usable tide predictions were returned using ${datum}.`;
+        throw new Error(
+            `NOAA tide-prediction request failed: ${response.status}`
+        );
 
     }
 
 
-    throw new Error(
-        lastErrorMessage
-    );
+    const data =
+        await response.json();
+
+
+    if(data.error){
+
+        throw new Error(
+            data.error.message ||
+            "NOAA returned a tide-prediction error."
+        );
+
+    }
+
+
+    const predictions =
+        Array.isArray(data.predictions)
+            ? data.predictions
+            : [];
+
+
+    const formattedPredictions =
+        predictions
+            .map(item => {
+
+                const timeMatch =
+                    String(item.t || "")
+                        .match(
+                            /\s(\d{2}):(\d{2})$/
+                        );
+
+
+                const value =
+                    Number(item.v);
+
+
+                if(
+                    !timeMatch ||
+                    !Number.isFinite(value)
+                ){
+                    return null;
+                }
+
+
+                return {
+
+                    hour:
+                        Number(timeMatch[1]) +
+                        Number(timeMatch[2]) / 60,
+
+                    value:
+                        value
+
+                };
+
+            })
+            .filter(Boolean)
+            .sort(
+                (a, b) =>
+                    a.hour - b.hour
+            );
+
+
+    if(formattedPredictions.length < 2){
+
+        throw new Error(
+            `No hourly tide predictions were returned for station ${stationId}.`
+        );
+
+    }
+
+
+    return formattedPredictions;
 
 }
 
