@@ -50,7 +50,7 @@ const locations = {
 
     },
 
-    "Deleware Reefs":{
+    "Deleware Site 10 Reef":{
         lat:38.622925,
         lon:-74.917270
 
