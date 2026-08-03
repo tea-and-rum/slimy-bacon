@@ -2616,9 +2616,18 @@ async function getHourlyWeather(
             locations[location];
 
 
+        if(!coords){
+
+            throw new Error(
+                `Coordinates are missing for ${location}`
+            );
+
+        }
+
+
         /*
-        First NOAA request:
-        locate the appropriate forecast grid.
+        Find the NOAA forecast grid for
+        the selected latitude and longitude.
         */
 
         const pointResponse =
@@ -2630,7 +2639,8 @@ async function getHourlyWeather(
         if(!pointResponse.ok){
 
             throw new Error(
-                `NOAA location lookup failed for ${location}`
+                `NOAA location lookup failed for ${location}: ` +
+                pointResponse.status
             );
 
         }
@@ -2641,214 +2651,238 @@ async function getHourlyWeather(
 
 
         const hourlyURL =
-    pointData.properties.forecastHourly;
+            pointData.properties?.forecastHourly;
 
-const gridDataURL =
-    pointData.properties.forecastGridData;
-
-
-/*
-Some offshore and coastal marine points do not
-provide the normal hourly forecast endpoint.
-*/
-
-if(!hourlyURL){
-
-    console.error(
-        `${location} does not have a NOAA forecastHourly endpoint.`,
-        pointData.properties
-    );
-
-    throw new Error(
-        `Hourly forecast unavailable for offshore location: ${location}`
-    );
-
-}
+        const gridDataURL =
+            pointData.properties?.forecastGridData;
 
 
-const hourlyResponse =
-    await fetch(hourlyURL);
+        /*
+        Offshore locations may not provide the
+        standard hourly forecast endpoint.
+        */
+
+        if(!hourlyURL){
+
+            throw new Error(
+                `NOAA hourly forecast is unavailable for ${location}`
+            );
+
+        }
 
 
-if(!hourlyResponse.ok){
-
-    throw new Error(
-        `NOAA hourly forecast failed for ${location}`
-    );
-
-}
+        const hourlyResponse =
+            await fetch(hourlyURL);
 
 
-const hourlyData =
-    await hourlyResponse.json();
+        if(!hourlyResponse.ok){
+
+            throw new Error(
+                `NOAA hourly forecast failed for ${location}: ` +
+                hourlyResponse.status
+            );
+
+        }
 
 
-const hourlyData =
-    await hourlyResponse.json();
+        /*
+        Declare hourlyData exactly once.
+        */
+
+        const hourlyData =
+            await hourlyResponse.json();
 
 
-let waveValues = [];
-let gustValues = [];
+        let waveValues = [];
+        let gustValues = [];
 
 
-try {
+        /*
+        Grid data supplies waves and gusts.
 
-    const gridResponse =
-        await fetch(gridDataURL);
+        Failure here should not prevent the
+        normal hourly forecast from loading.
+        */
 
+        if(gridDataURL){
 
-    if(!gridResponse.ok){
+            try {
 
-        throw new Error(
-            `NOAA grid forecast failed for ${location}`
-        );
-
-    }
-
-
-    const gridData =
-        await gridResponse.json();
+                const gridResponse =
+                    await fetch(gridDataURL);
 
 
-   waveValues =
-    gridData
-        .properties
-        .waveHeight
-        ?.values || [];
+                if(!gridResponse.ok){
 
-gustValues =
-    gridData
-        .properties
-        .windGust
-        ?.values || [];
+                    throw new Error(
+                        `NOAA grid forecast failed for ${location}: ` +
+                        gridResponse.status
+                    );
 
-}
-catch(error){
-
-    console.warn(
-        `Wave data unavailable for ${location}:`,
-        error
-    );
-
-    waveValues = [];
-    gustValues = [];
-
-}
+                }
 
 
-        console.log(
-            `${location} NOAA wave values:`,
-            waveValues
-        );
+                const gridData =
+                    await gridResponse.json();
+
+
+                waveValues =
+                    gridData
+                        .properties
+                        ?.waveHeight
+                        ?.values || [];
+
+
+                gustValues =
+                    gridData
+                        .properties
+                        ?.windGust
+                        ?.values || [];
+
+            }
+            catch(error){
+
+                console.warn(
+                    `Wave or gust data unavailable for ${location}:`,
+                    error
+                );
+
+                waveValues = [];
+                gustValues = [];
+
+            }
+
+        }
 
 
         const hourlyForecast =
             new Array(24).fill(null);
 
 
-        hourlyData
-            .properties
-            .periods
-            .forEach(period => {
-
-                /*
-                Read NOAA's date and hour directly
-                from the timestamp string.
-
-                This preserves the local date and
-                avoids browser timezone shifting.
-                */
-
-                const periodDate =
-                    period.startTime.slice(0,10);
+        const periods =
+            hourlyData
+                .properties
+                ?.periods;
 
 
-                if(periodDate !== selectedDate){
-                    return;
-                }
+        if(!Array.isArray(periods)){
+
+            throw new Error(
+                `NOAA returned no hourly periods for ${location}`
+            );
+
+        }
 
 
-                const hour =
-                    Number(
-                        period.startTime.slice(
-                            11,
-                            13
-                        )
+        periods.forEach(period => {
+
+            const periodDate =
+                period.startTime?.slice(0, 10);
+
+
+            if(periodDate !== selectedDate){
+
+                return;
+
+            }
+
+
+            const hour =
+                Number(
+                    period.startTime.slice(
+                        11,
+                        13
+                    )
+                );
+
+
+            if(
+                !Number.isInteger(hour) ||
+                hour < 0 ||
+                hour > 23
+            ){
+
+                return;
+
+            }
+
+
+            const hourStart =
+                new Date(
+                    period.startTime
+                );
+
+
+            const hourEnd =
+                period.endTime
+                    ? new Date(period.endTime)
+                    : new Date(
+                        hourStart.getTime() +
+                        60 * 60 * 1000
                     );
 
 
-                const hourStart =
-                    new Date(
-                        period.startTime
-                    );
+            const waveHeight =
+                getWaveHeightForHour(
+                    waveValues,
+                    hourStart,
+                    hourEnd
+                );
 
 
-                const hourEnd =
-                    period.endTime
-                        ? new Date(period.endTime)
-                        : new Date(
-                            hourStart.getTime() +
-                            60 * 60 * 1000
-                        );
+            const sustainedWind =
+                parseInt(
+                    period.windSpeed,
+                    10
+                ) || 0;
 
 
-                const waveHeight =
-                    getWaveHeightForHour(
-                        waveValues,
-                        hourStart,
-                        hourEnd
-                    );
+            const forecastGust =
+                getWindGustForHour(
+                    gustValues,
+                    hourStart,
+                    hourEnd
+                );
 
-const sustainedWind =
-    parseInt(
-        period.windSpeed,
-        10
-    ) || 0;
 
-const forecastGust =
-    getWindGustForHour(
-        gustValues,
-        hourStart,
-        hourEnd
-    );
-                hourlyForecast[hour] = {
+            hourlyForecast[hour] = {
 
-                    wind:
-    sustainedWind,
+                wind:
+                    sustainedWind,
 
-gust:
-    forecastGust !== null
-        ? Math.round(forecastGust)
-        : sustainedWind,
+                gust:
+                    forecastGust !== null
+                        ? Math.round(forecastGust)
+                        : sustainedWind,
 
-                    waves:
-                        waveHeight,
+                waves:
+                    waveHeight,
 
-                    precip:
-                        period
-                            .probabilityOfPrecipitation
-                            .value ?? 0,
+                precip:
+                    period
+                        .probabilityOfPrecipitation
+                        ?.value ?? 0,
 
-                    windDirection:
-                        period.windDirection,
+                windDirection:
+                    period.windDirection || "",
 
-                    temperature:
-                        period.temperature,
+                temperature:
+                    period.temperature ?? null,
 
-                    shortForecast:
-                        period.shortForecast,
+                shortForecast:
+                    period.shortForecast || "",
 
-                    startTime:
-                        period.startTime,
+                startTime:
+                    period.startTime,
 
-                    endTime:
-                        period.endTime,
+                endTime:
+                    period.endTime,
 
-                    alerts:[]
+                alerts: []
 
-                };
+            };
 
-            });
+        });
 
 
         return hourlyForecast;
