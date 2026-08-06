@@ -4087,55 +4087,75 @@ function getDecisionExplanation(
 ){
 
     const vesselThresholds = {
+
         small: {
             windSporty: 11,
             windPoor: 18,
             waveSporty: 1,
             wavePoor: 2
         },
+
         medium: {
             windSporty: 16,
             windPoor: 23,
             waveSporty: 2,
             wavePoor: 4
         },
+
         large: {
             windSporty: 21,
             windPoor: 31,
             waveSporty: 4,
             wavePoor: 6
         },
+
         xlarge: {
             windSporty: 26,
             windPoor: 36,
             waveSporty: 6,
             wavePoor: 8
         }
+
     };
+
 
     const limits =
         vesselThresholds[boatSize];
 
+
     if(!limits){
-        return "The selected vessel could not be evaluated.";
+
+        return (
+            "The selected vessel could not be evaluated."
+        );
+
     }
+
 
     const now =
         new Date();
 
+
     const todayString = [
         now.getFullYear(),
-        String(now.getMonth() + 1).padStart(2, "0"),
-        String(now.getDate()).padStart(2, "0")
+        String(
+            now.getMonth() + 1
+        ).padStart(2, "0"),
+        String(
+            now.getDate()
+        ).padStart(2, "0")
     ].join("-");
 
+
     const relevantHours = [];
+
 
     weatherData.forEach(locationForecast => {
 
         if(!Array.isArray(locationForecast)){
             return;
         }
+
 
         locationForecast.forEach(
             (hour, hourIndex) => {
@@ -4144,6 +4164,7 @@ function getDecisionExplanation(
                     return;
                 }
 
+
                 if(
                     selectedDate === todayString &&
                     hourIndex < now.getHours()
@@ -4151,48 +4172,69 @@ function getDecisionExplanation(
                     return;
                 }
 
-                relevantHours.push(hour);
+
+                relevantHours.push({
+                    ...hour,
+                    hourIndex: hourIndex
+                });
 
             }
         );
 
     });
 
+
     if(relevantHours.length === 0){
-        return "No remaining forecast information is available.";
+
+        return (
+            "No remaining forecast information is available."
+        );
+
     }
 
-    const maxWind =
-        Math.max(
-            ...relevantHours.map(hour =>
-                Math.max(
-                    Number(hour.wind) || 0,
-                    Number(hour.gust) || 0
-                )
+
+    const windValues =
+        relevantHours.map(hour =>
+            Math.max(
+                Number(hour.wind) || 0,
+                Number(hour.gust) || 0
             )
         );
 
+
     const waveValues =
         relevantHours
-            .map(hour => hour.waves)
-            .filter(value =>
-                value !== null &&
-                value !== undefined &&
-                Number.isFinite(Number(value))
+            .map(hour =>
+                Number(hour.waves)
             )
-            .map(Number);
+            .filter(value =>
+                Number.isFinite(value)
+            );
+
+
+    const precipValues =
+        relevantHours.map(hour =>
+            Number(hour.precip) || 0
+        );
+
+
+    const maxWind =
+        windValues.length
+            ? Math.max(...windValues)
+            : 0;
+
 
     const maxWaves =
         waveValues.length
             ? Math.max(...waveValues)
             : null;
 
+
     const maxPrecip =
-        Math.max(
-            ...relevantHours.map(hour =>
-                Number(hour.precip) || 0
-            )
-        );
+        precipValues.length
+            ? Math.max(...precipValues)
+            : 0;
+
 
     const alertNames =
         [
@@ -4210,150 +4252,324 @@ function getDecisionExplanation(
             )
         ];
 
-    const seriousAlertNames = [
+
+    const seriousAlertPriority = [
+
+        "Tornado Warning",
         "Special Marine Warning",
         "Severe Thunderstorm Warning",
-        "Tornado Warning",
-        "Small Craft Advisory",
-        "Gale Warning",
-        "Storm Warning",
         "Hurricane Warning",
         "Tropical Storm Warning",
+        "Storm Warning",
+        "Gale Warning",
+        "Small Craft Advisory",
         "Extreme Wind Warning"
+
     ];
 
-    const seriousAlerts =
-        alertNames.filter(name =>
-            seriousAlertNames.includes(name)
+
+    const primaryAlert =
+        seriousAlertPriority.find(alertName =>
+            alertNames.includes(alertName)
         );
 
-    const reasons = [];
 
-    if(seriousAlerts.length){
+    const windIsUnsafe =
+        maxWind >= limits.windPoor;
 
-        reasons.push(
-            seriousAlerts.length === 1
-                ? `a ${seriousAlerts[0]} is in effect`
-                : `${seriousAlerts.join(" and ")} are in effect`
-        );
 
-    }
+    const windIsSporty =
+        maxWind >= limits.windSporty;
 
-    if(maxWind >= limits.windPoor){
 
-        reasons.push(
-            `wind or gusts reach ${Math.round(maxWind)} mph, which is unsafe for the selected vessel`
-        );
-
-    }
-    else if(maxWind >= limits.windSporty){
-
-        reasons.push(
-            `wind or gusts reach ${Math.round(maxWind)} mph, creating sporty conditions`
-        );
-
-    }
-
-    if(
+    const wavesAreUnsafe =
         maxWaves !== null &&
-        maxWaves >= limits.wavePoor
-    ){
+        maxWaves >= limits.wavePoor;
 
-        reasons.push(
-            `waves reach ${maxWaves.toFixed(1)} ft, which is unsafe for the selected vessel`
-        );
 
-    }
-    else if(
+    const wavesAreSporty =
         maxWaves !== null &&
-        maxWaves >= limits.waveSporty
-    ){
+        maxWaves >= limits.waveSporty;
 
-        reasons.push(
-            `waves reach ${maxWaves.toFixed(1)} ft, creating uncomfortable conditions`
+
+    const heavyRain =
+        maxPrecip >= 70;
+
+
+    const thunderstormForecast =
+        relevantHours.some(hour =>
+            String(
+                hour.shortForecast || ""
+            )
+                .toLowerCase()
+                .includes("thunder")
         );
 
-    }
 
-    if(maxPrecip >= 61){
-
-        reasons.push(
-            `precipitation probability reaches ${Math.round(maxPrecip)}%`
-        );
-
-    }
-    else if(maxPrecip >= 31){
-
-        reasons.push(
-            `rain chances reach ${Math.round(maxPrecip)}%`
-        );
-
-    }
-
-    const statuses =
+    const validStatuses =
         Array.isArray(timeline)
-            ? timeline
+            ? timeline.filter(status =>
+                status === "FLAT" ||
+                status === "CALM" ||
+                status === "SPORTY" ||
+                status === "POOR"
+            )
             : [];
 
+
     const allFavorable =
-        statuses.length > 0 &&
-        statuses.every(status =>
+        validStatuses.length > 0 &&
+        validStatuses.every(status =>
             status === "FLAT" ||
             status === "CALM"
         );
 
+
+    const mostlyFavorable =
+        validStatuses.filter(status =>
+            status === "FLAT" ||
+            status === "CALM"
+        ).length >
+        validStatuses.filter(status =>
+            status === "SPORTY" ||
+            status === "POOR"
+        ).length;
+
+
+    /*
+    GO
+    */
+
     if(result === "GO"){
 
-        return allFavorable
-            ? "Good boating conditions are expected throughout the remaining forecast period."
-            : "Conditions are favorable for most of the remaining forecast period, with only brief less-comfortable periods.";
+        if(allFavorable){
+
+            return (
+                "Excellent boating conditions are expected throughout the remaining forecast period."
+            );
+
+        }
+
+
+        if(windIsSporty){
+
+            return (
+                "Good boating conditions are expected, with only brief periods of stronger winds."
+            );
+
+        }
+
+
+        if(wavesAreSporty){
+
+            return (
+                "Good boating conditions are expected, with only brief periods of choppier water."
+            );
+
+        }
+
+
+        return (
+            "Good boating conditions are expected for most of the remaining forecast period."
+        );
 
     }
 
-    if(reasons.length === 0){
 
-        if(result === "MAYBE"){
-            return "Conditions vary during the remaining forecast period. Review the timeline and choose the calmest available window.";
-        }
-
-        if(result === "LIMITED WINDOW"){
-            return "Poor conditions affect much of the remaining forecast period, but a shorter favorable window is available.";
-        }
-
-        return "There is no meaningful favorable boating window remaining.";
-    }
-
-    const reasonText =
-        reasons.length === 1
-            ? reasons[0]
-            : reasons.slice(0, -1).join(", ") +
-              ", and " +
-              reasons[reasons.length - 1];
+    /*
+    MAYBE
+    */
 
     if(result === "MAYBE"){
 
+        if(primaryAlert){
+
+            return (
+                `Use caution because a ${primaryAlert} is in effect.`
+            );
+
+        }
+
+
+        if(thunderstormForecast){
+
+            return (
+                "Thunderstorms may affect part of the remaining forecast period."
+            );
+
+        }
+
+
+        if(windIsSporty && wavesAreSporty){
+
+            return (
+                "Winds and waves may become uncomfortable during parts of the remaining forecast period."
+            );
+
+        }
+
+
+        if(windIsSporty){
+
+            return (
+                "Winds may become uncomfortable during parts of the remaining forecast period."
+            );
+
+        }
+
+
+        if(wavesAreSporty){
+
+            return (
+                "Waves may become choppy during parts of the remaining forecast period."
+            );
+
+        }
+
+
+        if(heavyRain){
+
+            return (
+                "Periods of rain may affect boating conditions."
+            );
+
+        }
+
+
         return (
-            "Use caution because " +
-            reasonText +
-            ". Check the timeline for the best available window."
+            "Conditions vary during the remaining forecast period."
         );
 
     }
+
+
+    /*
+    LIMITED WINDOW
+    */
 
     if(result === "LIMITED WINDOW"){
 
+        if(primaryAlert){
+
+            return (
+                `A short favorable window may exist, but a ${primaryAlert} affects much of the remaining forecast period.`
+            );
+
+        }
+
+
+        if(windIsUnsafe){
+
+            return (
+                "Good conditions are only expected during a short window before winds become unsafe."
+            );
+
+        }
+
+
+        if(wavesAreUnsafe){
+
+            return (
+                "Good conditions are only expected during a short window before wave heights become unsafe."
+            );
+
+        }
+
+
+        if(windIsSporty){
+
+            return (
+                "Good conditions are only expected during a short window before winds increase."
+            );
+
+        }
+
+
+        if(wavesAreSporty){
+
+            return (
+                "Good conditions are only expected during a short window before the water becomes choppy."
+            );
+
+        }
+
+
         return (
-            "Most of the remaining period is unfavorable because " +
-            reasonText +
-            ", but a limited favorable window remains."
+            "Good conditions are only expected during a short part of the remaining forecast period."
         );
 
     }
 
+
+    /*
+    DON'T GO
+    */
+
+    if(primaryAlert){
+
+        return (
+            `A ${primaryAlert} is in effect.`
+        );
+
+    }
+
+
+    if(thunderstormForecast){
+
+        return (
+            "Thunderstorms are expected during the remaining forecast period."
+        );
+
+    }
+
+
+    if(windIsUnsafe && wavesAreUnsafe){
+
+        return (
+            "Multiple hazardous conditions are expected, including unsafe winds and rough water."
+        );
+
+    }
+
+
+    if(windIsUnsafe){
+
+        return (
+            "Winds are expected to become unsafe for the selected boat."
+        );
+
+    }
+
+
+    if(wavesAreUnsafe){
+
+        return (
+            "Wave heights are expected to become unsafe for the selected boat."
+        );
+
+    }
+
+
+    if(heavyRain){
+
+        return (
+            "Heavy rain is expected during much of the remaining forecast period."
+        );
+
+    }
+
+
+    if(!mostlyFavorable){
+
+        return (
+            "Poor boating conditions are expected throughout most of the remaining forecast period."
+        );
+
+    }
+
+
     return (
-        "Do not go out because " +
-        reasonText +
-        "."
+        "There is no meaningful favorable boating window remaining."
     );
 
 }
