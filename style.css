@@ -30,7 +30,17 @@ h1 {
 
 }
 
+.page-subheader {
+    margin: 6px 0 24px;
+    font-size: 18px;
+    font-weight: 400;
+    color: #64748b;
+    text-align: center;
+}
 
+body.dark-mode .page-subheader {
+    color: #94a3b8;
+}
 
 .card {
 
@@ -55,12 +65,6 @@ h2 {
     margin-bottom: 15px;
 
 }
-
-
-
-
-
-
 
 
 /* Locations */
@@ -99,11 +103,6 @@ h2 {
 }
 
 
-
-
-
-
-
 input[type="date"] {
 
     width: 100%;
@@ -121,13 +120,6 @@ input[type="date"] {
 }
 
 
-
-
-
-
-
-
-
 /* Vessel Selector */
 
 
@@ -140,9 +132,6 @@ input[type="date"] {
     margin-top: 15px;
 
 }
-
-
-
 
 
 .vessel-card {
@@ -168,17 +157,11 @@ input[type="date"] {
 }
 
 
-
-
-
 .vessel-card:hover {
 
     transform: translateY(-3px);
 
 }
-
-
-
 
 
 .vessel-card.selected {
@@ -192,9 +175,6 @@ input[type="date"] {
     transform: translateY(-4px);
 
 }
-
-
-
 
 
 .vessel-card.selected::after {
@@ -224,9 +204,6 @@ input[type="date"] {
 }
 
 
-
-
-
 .vessel-icon {
 
     font-size: 38px;
@@ -254,13 +231,6 @@ input[type="date"] {
     margin-top: 5px;
 
 }
-
-
-
-
-
-
-
 
 
 /* Buttons */
@@ -303,24 +273,11 @@ button:hover {
 }
 
 
-
-
-
-
-
-
 .hidden {
 
     display: none;
 
 }
-
-
-
-
-
-
-
 
 
 /* Decision */
@@ -359,9 +316,6 @@ button:hover {
 }
 
 
-
-
-
 .good {
 
     color: green;
@@ -383,13 +337,6 @@ button:hover {
     color: red;
 
 }
-
-
-
-
-
-
-
 
 
 /* Why Section */
@@ -424,13 +371,6 @@ button:hover {
 }
 
 
-
-
-
-
-
-
-
 /* Timeline */
 
 
@@ -442,6 +382,38 @@ button:hover {
 
 
 
+/* Timeline heading and tide control */
+
+.timeline-heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 25px;
+}
+
+.timeline-heading-row h2 {
+    margin: 0;
+}
+
+.tide-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.tide-toggle input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: #1479c9;
+    cursor: pointer;
+}
+
 .timeline-wrapper {
 
     position: relative;
@@ -451,9 +423,6 @@ button:hover {
     margin-top: 35px;
 
 }
-
-
-
 
 
 #timelineBar {
@@ -474,8 +443,37 @@ button:hover {
 
 }
 
+/* Tide curve layered directly over the timeline bar */
 
+.tide-overlay {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 28px;
+    border-radius: 14px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 5;
+}
 
+.tide-path,
+.tide-path-outline {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tide-path-outline {
+    stroke: rgba(0, 0, 0, 0.72);
+    stroke-width: 5px;
+}
+
+.tide-path {
+    stroke: #ffffff;
+    stroke-width: 2.5px;
+}
 
 
 .timeline-hour {
@@ -484,32 +482,31 @@ button:hover {
 
 }
 
+.timeline-hour.timeline-past {
+    background: repeating-linear-gradient(
+        45deg,
+        #cbd5e1,
+        #cbd5e1 5px,
+        #e2e8f0 5px,
+        #e2e8f0 10px
+    ) !important;
+}
 
+.timeline-flat {
+    background: #2196f3;
+}
 
 .timeline-go {
-
     background: #4caf50;
-
 }
-
-
 
 .timeline-sporty {
-
     background: #e6b800;
-
 }
-
-
 
 .timeline-no-go {
-
     background: #d9534f;
-
 }
-
-
-
 
 
 .timeline-labels {
@@ -527,21 +524,13 @@ button:hover {
 }
 
 
-
-
-
 .timeline-legend {
-
     display: flex;
-
     justify-content: center;
-
-    gap: 25px;
-
+    flex-wrap: wrap;
+    gap: 12px 20px;
     margin-top: 20px;
-
     font-size: 14px;
-
 }
 
 
@@ -568,7 +557,9 @@ button:hover {
 
 }
 
-
+.legend-flat {
+    background: #2196f3;
+}
 
 .legend-sporty {
 
@@ -585,14 +576,11 @@ button:hover {
 }
 
 
-
-
-
 .sun-marker {
 
     position: absolute;
 
-    top: -35px;
+    top: -20px;
 
     transform: translateX(-50%);
 
@@ -611,94 +599,54 @@ button:hover {
 }
 
 
+/* Full-width 24-hour condition charts */
 
-
-
-
-
-
-
-/* Evidence Tiles */
-
+.conditions-charts {
+    margin-top: 28px;
+}
 
 .evidence-grid {
-
     display: grid;
-
-    grid-template-columns: repeat(2, 1fr);
-
-    gap: 15px;
-
-    margin-top: 30px;
-
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    gap: 10px;
+    margin-top: 20px;
 }
-
-
 
 .evidence-card {
-
     background: #f8f8f8;
-
+    border: 1px solid #e5e7eb;
     border-radius: 10px;
-
     padding: 15px;
-
-    min-height: 180px;
-
+    box-sizing: border-box;
+    overflow: hidden;
 }
-
-
 
 .evidence-card h3 {
-
     margin-top: 0;
-
+    margin-bottom: 10px;
     text-align: center;
-
 }
-
-
 
 .evidence-summary {
-
     text-align: center;
-
     font-weight: bold;
-
     margin-bottom: 10px;
-
 }
-
-
 
 .evidence-card canvas {
-
+    display: block;
     width: 100% !important;
-
-    height: 120px !important;
-
+    height: 130px !important;
 }
-
-
-
-
 
 #advisoryText {
-
-    text-align: center;
-
-    padding-top: 35px;
-
+    max-height: 205px;
+    overflow-y: auto;
+    padding-top: 10px;
+    text-align: left;
     line-height: 1.5;
-
 }
-
-
-
-
-
-
-
 
 
 /* Summary */
@@ -721,13 +669,6 @@ button:hover {
     margin: 10px 0;
 
 }
-
-
-
-
-
-
-
 
 
 /* Location Cards */
@@ -770,31 +711,6 @@ button:hover {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @media(max-width:700px){
 
 
@@ -832,12 +748,16 @@ button:hover {
 }
 
 
-
-
-
-
-
 @media(max-width:500px){
+
+    .timeline-heading-row {
+        align-items: flex-start;
+    }
+
+    .tide-toggle {
+        margin-top: 4px;
+    }
+
 
 
     .evidence-grid {
@@ -850,11 +770,6 @@ button:hover {
 }
 
 
-
-
-
-
-
 @media(max-width:400px){
 
 
@@ -865,4 +780,461 @@ button:hover {
     }
 
 
+}
+
+/* Main action buttons */
+
+.action-buttons {
+    display: flex;
+    width: 100%;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.action-buttons button {
+    min-height: 52px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+}
+
+
+/* Check Conditions takes more space */
+
+.check-button {
+    background: #1479c9;
+    color: #ffffff;
+}
+
+.check-button:hover {
+    background: #0f68ae;
+}
+
+.check-button,
+.reset-button {
+    flex: 1;
+}
+/* Reset button */
+
+.reset-button {
+    background: #e7ebef;
+    color: #263746;
+}
+
+.reset-button:hover {
+    background: #d9dfe5;
+}
+
+
+/* Forecast timestamp under buttons */
+
+.forecast-checked {
+    width: 100%;
+    margin-top: 10px;
+    text-align: center;
+    color: #687783;
+    font-size: 13px;
+}
+
+.forecast-checked span {
+    font-weight: 600;
+    color: #42515d;
+}
+#results {
+    scroll-margin-top: 20px;
+}
+
+
+/* ---------------------------------
+   Dark-mode toggle
+---------------------------------- */
+
+.dark-mode-toggle {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1000;
+ width: auto;          /* ADD */
+    margin: 0;            /* ADD */
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px 14px;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+
+    background: #ffffff;
+    color: #1e293b;
+
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.12);
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.dark-mode-toggle:hover {
+    transform: translateY(-2px);
+}
+
+.dark-mode-toggle:focus-visible {
+    outline: 3px solid #38bdf8;
+    outline-offset: 3px;
+}
+
+
+/* ---------------------------------
+   Dark-mode page colors
+---------------------------------- */
+
+body.dark-mode {
+    background-color: #0f172a;
+    color: #e2e8f0;
+}
+
+
+/*
+Adjust these selectors to match the names
+of the major containers in your page.
+*/
+
+body.dark-mode header,
+body.dark-mode main,
+body.dark-mode section,
+body.dark-mode .card,
+body.dark-mode .locationCard,
+body.dark-mode .summary-card,
+body.dark-mode .evidence-card,
+body.dark-mode .timeline-container,
+body.dark-mode .results-container {
+    color: #e2e8f0;
+}
+
+
+/* General light-colored panels */
+
+body.dark-mode .card,
+body.dark-mode .locationCard,
+body.dark-mode .summary-card,
+body.dark-mode .evidence-card,
+body.dark-mode .timeline-container,
+body.dark-mode .results-container,
+body.dark-mode .form-section,
+body.dark-mode .selection-section {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+
+
+/* Inputs and dropdowns */
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+    background-color: #0f172a;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+    color: #94a3b8;
+}
+
+/* Make the date picker icon visible in dark mode */
+body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(2);
+    cursor: pointer;
+}
+
+
+/* Vessel and location selection cards */
+
+body.dark-mode .vessel-card,
+body.dark-mode .location-card,
+body.dark-mode .location-option {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border-color: #475569;
+}
+
+body.dark-mode .vessel-card:hover,
+body.dark-mode .location-card:hover,
+body.dark-mode .location-option:hover {
+    background-color: #334155;
+}
+
+
+/* Preserve visible selected styling */
+
+body.dark-mode .vessel-card.selected {
+    background-color: #0c4a6e;
+    border-color: #38bdf8;
+}
+
+
+/* Text colors */
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode strong,
+body.dark-mode label {
+    color: #f8fafc;
+}
+
+body.dark-mode p,
+body.dark-mode small,
+body.dark-mode .subtitle,
+body.dark-mode .secondary-text {
+    color: #cbd5e1;
+}
+
+
+/* Dividers */
+
+body.dark-mode hr {
+    border-color: #334155;
+}
+
+
+/* Dark-mode button appearance */
+
+body.dark-mode .dark-mode-toggle {
+    background-color: #1e293b;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+
+/* Keep status cards recognizable */
+
+body.dark-mode .goodBackground {
+    background-color: #123d2a;
+    color: #dcfce7;
+}
+
+body.dark-mode .sportyBackground {
+    background-color: #493b0b;
+    color: #fef3c7;
+}
+
+body.dark-mode .noGoBackground {
+    background-color: #4c1d1d;
+    color: #fee2e2;
+}
+
+
+/* Active advisory */
+
+body.dark-mode .active-advisory {
+    background-color: #422006;
+    color: #fef3c7;
+    border-color: #92400e;
+}
+
+.active-advisory {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.advisory-title {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.advisory-location {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.advisory-time {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+body.dark-mode .advisory-location,
+body.dark-mode .advisory-time {
+    color: #94a3b8;
+}
+/* Mobile placement */
+
+@media (max-width: 600px) {
+
+    .dark-mode-toggle {
+        right: 12px;
+        bottom: 12px;
+
+        padding: 9px 12px;
+    }
+
+}
+/* Fix remaining result panels in dark mode */
+
+body.dark-mode #decisionCard,
+body.dark-mode #whyResults,
+body.dark-mode .summary {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+}
+body.dark-mode #decisionSummary,
+body.dark-mode #whyResults,
+body.dark-mode .summary {
+    color: #cbd5e1;
+}
+body.dark-mode .evidence-card {
+    background-color: #182235;
+    border-color: #334155;
+}
+
+/* ===========================
+   Disclaimer
+=========================== */
+
+.disclaimer {
+    margin: 40px auto 20px;
+    max-width: 1100px;
+    padding: 16px 20px;
+
+    font-size: 13px;
+    line-height: 1.6;
+
+    color: #64748b;
+    text-align: left;
+
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.disclaimer strong {
+    color: #334155;
+}
+
+body.dark-mode .disclaimer {
+    background: #182235;
+    border-color: #334155;
+    color: #94a3b8;
+}
+
+body.dark-mode .disclaimer strong {
+    color: #e2e8f0;
+}
+
+/* Recommendation and condition-language update */
+#decision.decision-result {
+    color: #111827;
+}
+
+.limitedBackground {
+    background: #fff0d6;
+}
+
+body.dark-mode #decision.decision-result {
+    color: #f8fafc;
+}
+
+body.dark-mode .limitedBackground {
+    background-color: #4a2d12;
+    color: #ffedd5;
+}
+
+
+
+
+/* Chronological sunrise, sunset, and tide-event list */
+
+.daily-event-times {
+    margin-top: 4px;
+}
+
+.daily-event-time {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin: 10px 0;
+    line-height: 1.4;
+}
+
+.daily-event-icon {
+    width: 22px;
+    flex: 0 0 22px;
+    text-align: center;
+}
+
+.daily-event-label {
+    white-space: nowrap;
+}
+
+body.dark-mode .daily-event-time {
+    color: #cbd5e1;
+}
+
+/* Advisories inside the Breakdown panel */
+
+.advisory-breakdown {
+    margin-top: 0;
+}
+
+.advisory-breakdown h3 {
+    margin: 0 0 12px;
+    text-align: left;
+}
+
+.advisory-breakdown #advisoryText {
+    max-height: none;
+    overflow: visible;
+    padding-top: 0;
+    text-align: left;
+}
+
+.advisory-breakdown .active-advisory {
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #f0c36d;
+    border-radius: 8px;
+    background: #fff8e6;
+}
+
+.advisory-breakdown .active-advisory:last-child {
+    margin-bottom: 0;
+}
+
+body.dark-mode .advisory-breakdown .active-advisory {
+    background-color: #422006;
+    border-color: #92400e;
+}
+
+
+/* Best boating window beneath the main recommendation */
+
+.decision-window-summary {
+    margin: 6px auto 0;
+    max-width: 620px;
+    color: #64748b;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+body.dark-mode .decision-window-summary {
+    color: #94a3b8;
 }

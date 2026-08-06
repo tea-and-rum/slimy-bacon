@@ -7,12 +7,19 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Chesapeake Bay Boating Conditions</title>
-
+<title>Chesapeake Bay Conditions</title>
+<link rel="icon" href="data:image/svg+xml,
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+  <circle cx='50' cy='50' r='44' fill='%230b3d5c'/>
+  <circle cx='50' cy='50' r='34' fill='white'/>
+  <polygon points='50,15 59,50 50,45 41,50' fill='%23d9534f'/>
+  <polygon points='50,85 41,50 50,55 59,50' fill='%231976d2'/>
+  <circle cx='50' cy='50' r='5' fill='%230b3d5c'/>
+</svg>">
 <link rel="stylesheet" href="style.css">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
 </head>
 
 
@@ -22,10 +29,8 @@
 <div class="container">
 
 
-<h1>Chesapeake Bay Boating Conditions</h1>
-
-
-
+<h1>Chesapeake Bay Conditions</h1>
+<p class="page-subheader">Should I go out on the water today?</p>
 
 
 <div class="card">
@@ -42,8 +47,8 @@
 
 <div class="location-item">
 <label>
-<input type="checkbox" value="Gunpowder River / Mariner Point">
-Gunpowder River / Mariner Point
+<input type="checkbox" value="Gunpowder River">
+Gunpowder River
 </label>
 </div>
 
@@ -82,8 +87,8 @@ Bay Bridge
 
 <div class="location-item">
 <label>
-<input type="checkbox" value="Annapolis">
-Annapolis
+<input type="checkbox" value="Triton Beach">
+Triton Beach
 </label>
 </div>
 
@@ -103,22 +108,21 @@ Poplar Island
 </label>
 </div>
 
-
+  <div class="location-item">
+<label>
+<input type="checkbox" value="Delaware Site 10 Reef">
+Delaware Site 10 Reef
+</label>
 </div>
 
 
-
-
+</div>
 
 
 <h2>What day are you boating?</h2>
 
 
 <input type="date" id="date">
-
-
-
-
 
 
 <h2>What are you taking out?</h2>
@@ -130,7 +134,7 @@ Poplar Island
 <div class="vessel-card" data-size="small">
 
 <div class="vessel-icon">
-🛵
+🚣
 </div>
 
 <div class="vessel-name">
@@ -142,9 +146,6 @@ Under 16 ft
 </div>
 
 </div>
-
-
-
 
 
 <div class="vessel-card" data-size="medium">
@@ -164,9 +165,6 @@ Small Boat
 </div>
 
 
-
-
-
 <div class="vessel-card" data-size="large">
 
 <div class="vessel-icon">
@@ -182,9 +180,6 @@ Medium Boat
 </div>
 
 </div>
-
-
-
 
 
 <div class="vessel-card" data-size="xlarge">
@@ -207,41 +202,40 @@ Large Boat
 </div>
 
 
-
-
-
 <input type="hidden" id="boatSize" value="medium">
 
 
+<div class="action-buttons">
 
+    <button
+        type="button"
+        class="check-button"
+        onclick="checkConditions()"
+    >
+        CHECK CONDITIONS
+    </button>
 
+    <button
+        type="button"
+        class="reset-button"
+        onclick="clearSelections()"
+    >
+        RESET
+    </button>
 
+</div>
 
-<button onclick="checkConditions()">
-CHECK CONDITIONS
-</button>
-
-
-<button class="secondaryButton" onclick="clearSelections()">
-CLEAR SELECTIONS
-</button>
+<div class="forecast-checked">
+    Forecast checked:
+    <span id="checked">--</span>
+</div>
 
 
 
 </div>
 
 
-
-
-
-
-
-
-
 <div id="results" class="card hidden">
-
-
-
 
 
 <div id="decisionCard">
@@ -251,37 +245,26 @@ CLEAR SELECTIONS
 
 
 <p id="decisionSummary"></p>
+<p id="decisionWindowSummary" class="decision-window-summary"></p>
 
 
 </div>
 
 
+<div class="timeline-heading-row">
 
+    <h2>24-Hour Conditions</h2>
 
-
-
-
-
-<div class="why-section">
-
-
-<h2>Why?</h2>
-
-
-<div id="whyResults"></div>
-
+    <label class="tide-toggle" for="tideToggle">
+        <span>Tides</span>
+        <input
+            id="tideToggle"
+            type="checkbox"
+            checked
+        >
+    </label>
 
 </div>
-
-
-
-
-
-
-
-
-
-<h2>24-Hour Conditions</h2>
 
 
 
@@ -293,6 +276,25 @@ CLEAR SELECTIONS
 
 
 <div id="timelineBar"></div>
+
+<svg
+    id="tideOverlay"
+    class="tide-overlay hidden"
+    viewBox="0 0 1000 100"
+    preserveAspectRatio="none"
+    role="img"
+    aria-label="Predicted tide movement across the selected day"
+>
+    <path
+        id="tidePathOutline"
+        class="tide-path-outline"
+    ></path>
+
+    <path
+        id="tidePath"
+        class="tide-path"
+    ></path>
+</svg>
 
 
 
@@ -319,10 +321,6 @@ CLEAR SELECTIONS
 </div>
 
 
-
-
-
-
 <div class="timeline-labels">
 
 <span>12a</span>
@@ -338,87 +336,33 @@ CLEAR SELECTIONS
 </div>
 
 
-
-
-
-
-
 <div class="timeline-legend">
 
+    <div>
+        <span class="legend-color legend-flat"></span>
+        Flat
+    </div>
 
-<div>
-<span class="legend-color legend-go"></span>
-Go
-</div>
+    <div>
+        <span class="legend-color legend-go"></span>
+        Calm
+    </div>
 
+    <div>
+        <span class="legend-color legend-sporty"></span>
+        Sporty
+    </div>
 
-<div>
-<span class="legend-color legend-sporty"></span>
-Sporty
-</div>
-
-
-<div>
-<span class="legend-color legend-no-go"></span>
-No-Go
-</div>
-
-
-</div>
-
-
+    <div>
+        <span class="legend-color legend-no-go"></span>
+        Poor
+    </div>
 
 </div>
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="summary">
-
-
-<div>
-🌅 Sunrise:
-<strong id="sunrise"></strong>
-</div>
-
-
-<div>
-🌇 Sunset:
-<strong id="sunset"></strong>
-</div>
-
-
-<div>
-🚤 Best Conditions:
-<strong id="window"></strong>
-</div>
-
-
-<div>
-🕒 Forecast Checked:
-<strong id="checked"></strong>
-</div>
-
-
-</div>
-
+<div class="conditions-charts">
 
 <!-- CONDITION EVIDENCE TILES -->
 
@@ -439,9 +383,6 @@ Max: -- mph
 </div>
 
 
-
-
-
 <div class="evidence-card">
 
 <h3>🌊 Waves</h3>
@@ -453,9 +394,6 @@ Max: -- ft
 <canvas id="waveChart"></canvas>
 
 </div>
-
-
-
 
 
 <div class="evidence-card">
@@ -471,29 +409,33 @@ Peak: --%
 </div>
 
 
-
-
-
-<div class="evidence-card">
-
-<h3>⚠️ Advisories</h3>
-
-<div id="advisoryText">
-
-No active advisories
+</div>
 
 </div>
 
 </div>
 
 
+<h2>Breakdown</h2>
+<div class="summary combined-summary">
+
+    <div id="whyResults"></div>
+
+    <hr class="summary-divider">
+
+    <div
+        id="dailyEventTimes"
+        class="daily-event-times"
+    ></div>
+
+    <hr class="summary-divider">
+
+    <div class="advisory-breakdown">
+        <h3>⚠️ Advisories</h3>
+        <div id="advisoryText">✓ No active advisories</div>
+    </div>
 
 </div>
-
-
-
-
-
 
 <h2>Location Summary</h2>
 
@@ -501,46 +443,28 @@ No active advisories
 <div id="locationResults"></div>
 
 
-
-
-
-
-
-
-
-
-
-
-
 </div>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </div>
-
-
-
-
-
 
 
 <script src="script.js"></script>
 
-
+<button
+    id="darkModeToggle"
+    class="dark-mode-toggle"
+    type="button"
+    aria-label="Switch to dark mode"
+    aria-pressed="false"
+>
+    <span id="darkModeIcon">🌙</span>
+    <span id="darkModeText">Dark mode</span>
+</button>
+  <footer class="disclaimer">
+    <strong>⚠️ Boating Safety Disclaimer</strong><br>
+    This tool is provided for informational purposes only and is intended to assist with trip planning. Forecasts, recommendations, and conditions may be inaccurate, incomplete, or delayed. Always review official NOAA marine forecasts, weather warnings, navigation information, and current conditions before leaving the dock. Use your own judgment based on your vessel, experience, crew, and local conditions. By using this website, you acknowledge that you are solely responsible for your boating decisions. The creator of this website assumes no liability for any accidents, injuries, damages, or losses resulting from the use of this information.
+</footer>
 </body>
 
 
