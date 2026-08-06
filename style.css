@@ -66,6 +66,15 @@ h2 {
 
 }
 
+#message {
+    color: #d32f2f;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+body.dark-mode #message {
+    color: #f87171;
+}
 
 /* Locations */
 
