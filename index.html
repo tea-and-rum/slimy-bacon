@@ -33,9 +33,6 @@
 <p class="page-subheader">Should I go out on the water today?</p>
 
 
-
-
-
 <div class="card">
 
 
@@ -122,18 +119,10 @@ Delaware Site 10 Reef
 </div>
 
 
-
-
-
-
 <h2>What day are you boating?</h2>
 
 
 <input type="date" id="date">
-
-
-
-
 
 
 <h2>What are you taking out?</h2>
@@ -159,9 +148,6 @@ Under 16 ft
 </div>
 
 
-
-
-
 <div class="vessel-card" data-size="medium">
 
 <div class="vessel-icon">
@@ -179,9 +165,6 @@ Small Boat
 </div>
 
 
-
-
-
 <div class="vessel-card" data-size="large">
 
 <div class="vessel-icon">
@@ -197,9 +180,6 @@ Medium Boat
 </div>
 
 </div>
-
-
-
 
 
 <div class="vessel-card" data-size="xlarge">
@@ -222,14 +202,7 @@ Large Boat
 </div>
 
 
-
-
-
 <input type="hidden" id="boatSize" value="medium">
-
-
-
-
 
 
 <div class="action-buttons">
@@ -262,17 +235,7 @@ Large Boat
 </div>
 
 
-
-
-
-
-
-
-
 <div id="results" class="card hidden">
-
-
-
 
 
 <div id="decisionCard">
@@ -285,22 +248,6 @@ Large Boat
 
 
 </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 <div class="timeline-heading-row">
@@ -373,10 +320,6 @@ Large Boat
 </div>
 
 
-
-
-
-
 <div class="timeline-labels">
 
 <span>12a</span>
@@ -390,11 +333,6 @@ Large Boat
 <span>12a</span>
 
 </div>
-
-
-
-
-
 
 
 <div class="timeline-legend">
@@ -423,10 +361,58 @@ Large Boat
 
 
 
+<div class="conditions-charts">
+
+<!-- CONDITION EVIDENCE TILES -->
+
+<div class="evidence-grid">
+
+
+
+<div class="evidence-card">
+
+<h3>🌬 Wind</h3>
+
+<div class="evidence-summary" id="windSummary">
+Max: -- mph
+</div>
+
+<canvas id="windChart"></canvas>
+
 </div>
 
 
+<div class="evidence-card">
 
+<h3>🌊 Waves</h3>
+
+<div class="evidence-summary" id="waveSummary">
+Max: -- ft
+</div>
+
+<canvas id="waveChart"></canvas>
+
+</div>
+
+
+<div class="evidence-card">
+
+<h3>🌧 Precipitation</h3>
+
+<div class="evidence-summary" id="precipSummary">
+Peak: --%
+</div>
+
+<canvas id="precipChart"></canvas>
+
+</div>
+
+
+</div>
+
+</div>
+
+</div>
 
 
 <h2>Breakdown</h2>
@@ -453,84 +439,14 @@ Large Boat
         class="daily-event-times"
     ></div>
 
-</div>
+    <hr class="summary-divider">
 
-  
-
-<!-- CONDITION EVIDENCE TILES -->
-
-<div class="evidence-grid">
-
-
-
-<div class="evidence-card">
-
-<h3>🌬 Wind</h3>
-
-<div class="evidence-summary" id="windSummary">
-Max: -- mph
-</div>
-
-<canvas id="windChart"></canvas>
+    <div class="advisory-breakdown">
+        <h3>⚠️ Advisories</h3>
+        <div id="advisoryText">✓ No active advisories</div>
+    </div>
 
 </div>
-
-
-
-
-
-<div class="evidence-card">
-
-<h3>🌊 Waves</h3>
-
-<div class="evidence-summary" id="waveSummary">
-Max: -- ft
-</div>
-
-<canvas id="waveChart"></canvas>
-
-</div>
-
-
-
-
-
-<div class="evidence-card">
-
-<h3>🌧 Precipitation</h3>
-
-<div class="evidence-summary" id="precipSummary">
-Peak: --%
-</div>
-
-<canvas id="precipChart"></canvas>
-
-</div>
-
-
-
-
-
-<div class="evidence-card">
-
-<h3>⚠️ Advisories</h3>
-
-<div id="advisoryText">
-
-No active advisories
-
-</div>
-
-</div>
-
-
-
-</div>
-
-
-
-
-
 
 <h2>Location Summary</h2>
 
@@ -538,41 +454,10 @@ No active advisories
 <div id="locationResults"></div>
 
 
-
-
-
-
-
-
-
-
-
-
-
 </div>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </div>
-
-
-
-
-
 
 
 <script src="script.js"></script>

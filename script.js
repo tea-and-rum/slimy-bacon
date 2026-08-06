@@ -284,8 +284,6 @@ function updateChartAppearance(isDarkMode){
 }
 
 
-
-
 function setToday(){
 
     const today = new Date();
@@ -301,11 +299,6 @@ function setToday(){
         `${year}-${month}-${day}`;
 
 }
-
-
-
-
-
 
 
 function setupVesselCards(){
@@ -355,9 +348,6 @@ function setupVesselCards(){
     });
 
 
-
-
-
     const saved =
         localStorage.getItem("preferredBoatSize");
 
@@ -399,38 +389,61 @@ function setupVesselCards(){
 }
 
 
-
-
-
-
-
-
-
 function clearSelections(){
 
+    document
+        .querySelectorAll(".locations input")
+        .forEach(box => {
+            box.checked = false;
+        });
 
     document
-    .querySelectorAll(".locations input")
-    .forEach(box=>{
+        .querySelectorAll(".vessel-card")
+        .forEach(card => {
+            card.classList.remove("selected");
+        });
 
-        box.checked=false;
+    const boatInput =
+        document.getElementById("boatSize");
 
-    });
+    if(boatInput){
+        boatInput.value = "";
+    }
 
+    localStorage.removeItem(
+        "preferredBoatSize"
+    );
 
-    document
-    .getElementById("results")
-    .classList
-    .add("hidden");
+    setToday();
+
+    const checked =
+        document.getElementById("checked");
+
+    if(checked){
+        checked.textContent = "--";
+    }
+
+    const message =
+        document.getElementById("message");
+
+    if(message){
+        message.textContent = "";
+    }
+
+    const results =
+        document.getElementById("results");
+
+    if(results){
+        results.classList.add("hidden");
+    }
+
+    clearTideOverlay();
+
+    lastTidePoints = [];
+    lastTideEvents = [];
+    lastSunData = null;
 
 }
-
-
-
-
-
-
-
 
 
 async function checkConditions(){
@@ -452,6 +465,16 @@ async function checkConditions(){
 
     const boatSize =
         document.getElementById("boatSize").value;
+
+
+    if(!boatSize){
+
+        document.getElementById("message").innerHTML =
+            "Please select a boat size.";
+
+        return;
+
+    }
 
 
     const selectedDate =
@@ -762,8 +785,6 @@ setTimeout(() => {
     }
 
 }
-
-
 
 
 function escapeHTML(value){
@@ -1424,9 +1445,6 @@ function createWindChart(
 }
 
 
-
-
-
 function createWaveChart(data){
 
 
@@ -1460,13 +1478,6 @@ function createWaveChart(data){
 
 
 }
-
-
-
-
-
-
-
 
 
 function createPrecipChart(data){
@@ -1531,13 +1542,6 @@ function createPrecipChart(data){
 }
 
 
-
-
-
-
-
-
-
 function simpleChartOptions(){
 
 
@@ -1574,13 +1578,6 @@ function simpleChartOptions(){
 }
 
 
-
-
-
-
-
-
-
 function hourLabels(){
 
 
@@ -1594,13 +1591,6 @@ function hourLabels(){
     ];
 
 }
-
-
-
-
-
-
-
 
 
 function evaluateLocation(hours, boatSize){
@@ -1762,8 +1752,6 @@ function getAlertStatus(alerts){
     return "SPORTY";
 
 }
-
-
 
 
 function checkHour(hour, boatSize){
@@ -1989,9 +1977,6 @@ return {
 }
 
 
-
-
-
 function determineDailyResult(results){
 
     const validResults =
@@ -2190,12 +2175,6 @@ timeline.push("FLAT");
     return timeline;
 
 }
-
-
-
-
-
-
 
 
 function setupTideToggle(){
@@ -3168,9 +3147,6 @@ else{
 }
 
 
-
-
-
 function findGoodWindow(results){
 
     const windows = [];
@@ -4041,8 +4017,6 @@ function getSunTimes(selectedLocations, selectedDate){
 }
 
 
-
-
 function formatTimeRange(earliest, latest){
 
 
@@ -4099,8 +4073,6 @@ function timeToPercent(date){
 
 
 }
-
-
 
 
 function getDecisionSummary(result, timeline){
@@ -4217,13 +4189,6 @@ function formatHour(hour){
     return h+suffix;
 
 }
-
-
-
-
-
-
-
 
 
 function emoji(result){
