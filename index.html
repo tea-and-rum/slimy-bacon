@@ -363,52 +363,46 @@ Large Boat
 
 <div class="conditions-charts">
 
-<!-- CONDITION EVIDENCE TILES -->
+    <div class="combined-conditions-card">
 
-<div class="evidence-grid">
+        <h3>🌦 Conditions Detail</h3>
 
+        <div class="combined-chart-summaries">
+            <div id="windSummary">Wind: --</div>
+            <div id="waveSummary">Waves: --</div>
+            <div id="precipSummary">Precipitation: --</div>
+        </div>
 
+        <div
+            class="combined-chart-controls"
+            aria-label="Show or hide chart measurements"
+        >
+            <label>
+                <input type="checkbox" data-chart-dataset="0" checked>
+                Sustained wind
+            </label>
 
-<div class="evidence-card">
+            <label>
+                <input type="checkbox" data-chart-dataset="1" checked>
+                Gusts
+            </label>
 
-<h3>🌬 Wind</h3>
+            <label>
+                <input type="checkbox" data-chart-dataset="2" checked>
+                Waves
+            </label>
 
-<div class="evidence-summary" id="windSummary">
-Max: -- mph
-</div>
+            <label>
+                <input type="checkbox" data-chart-dataset="3" checked>
+                Precipitation
+            </label>
+        </div>
 
-<canvas id="windChart"></canvas>
+        <div class="combined-chart-canvas">
+            <canvas id="conditionsChart"></canvas>
+        </div>
 
-</div>
-
-
-<div class="evidence-card">
-
-<h3>🌊 Waves</h3>
-
-<div class="evidence-summary" id="waveSummary">
-Max: -- ft
-</div>
-
-<canvas id="waveChart"></canvas>
-
-</div>
-
-
-<div class="evidence-card">
-
-<h3>🌧 Precipitation</h3>
-
-<div class="evidence-summary" id="precipSummary">
-Peak: --%
-</div>
-
-<canvas id="precipChart"></canvas>
-
-</div>
-
-
-</div>
+    </div>
 
 </div>
 

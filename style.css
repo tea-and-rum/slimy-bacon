@@ -599,53 +599,94 @@ button:hover {
 }
 
 
-/* Full-width 24-hour condition charts */
+/* Combined 24-hour conditions chart */
 
 .conditions-charts {
     margin-top: 28px;
 }
 
-.evidence-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-auto-rows: auto;
-    gap: 15px;
-    margin-top: 30px;
-}
-
-.evidence-card {
-    background: #f8f8f8;
+.combined-conditions-card {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 16px;
     border: 1px solid #e5e7eb;
     border-radius: 10px;
-    padding: 15px;
-    box-sizing: border-box;
-    overflow: hidden;
+    background: #f8f8f8;
 }
 
-.evidence-card h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
+.combined-conditions-card h3 {
+    margin: 0 0 12px;
     text-align: center;
 }
 
-.evidence-summary {
+.combined-chart-summaries {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 700;
     text-align: center;
-    font-weight: bold;
-    margin-bottom: 10px;
 }
 
-.evidence-card canvas {
+.combined-chart-controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.combined-chart-controls label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.combined-chart-controls input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #1479c9;
+}
+
+.combined-chart-canvas {
+    position: relative;
+    width: 100%;
+    height: 360px;
+}
+
+.combined-chart-canvas canvas {
     display: block;
     width: 100% !important;
-    height: 220px !important;
+    height: 100% !important;
 }
 
-#advisoryText {
-    max-height: 205px;
-    overflow-y: auto;
-    padding-top: 10px;
-    text-align: left;
-    line-height: 1.5;
+body.dark-mode .combined-conditions-card {
+    background-color: #182235;
+    border-color: #334155;
+}
+
+body.dark-mode .combined-chart-summaries,
+body.dark-mode .combined-chart-controls {
+    color: #cbd5e1;
+}
+
+@media(max-width:500px){
+
+    .combined-chart-canvas {
+        height: 410px;
+    }
+
+    .combined-chart-summaries,
+    .combined-chart-controls {
+        justify-content: flex-start;
+        text-align: left;
+    }
+
 }
 
 
@@ -757,16 +798,6 @@ button:hover {
     .tide-toggle {
         margin-top: 4px;
     }
-
-
-
-    .evidence-grid {
-
-        grid-template-columns: 1fr;
-
-    }
-
-
 }
 
 

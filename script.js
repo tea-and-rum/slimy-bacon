@@ -2,9 +2,7 @@
 // Version 1.9.2
 
 
-let windChart;
-let waveChart;
-let precipChart;
+let conditionsChart;
 
 let tideStationCache = null;
 let lastTidePoints = [];
@@ -73,6 +71,8 @@ window.onload = function(){
     setupDarkMode();
 
     setupTideToggle();
+
+    setupCombinedChartToggles();
 
 };
 
@@ -229,9 +229,7 @@ function updateChartAppearance(isDarkMode){
 
 
     [
-        windChart,
-        waveChart,
-        precipChart
+        conditionsChart
     ].forEach(chart => {
 
         if(!chart){
@@ -1095,12 +1093,12 @@ const windDirections =
         );
 
 
-    document.getElementById("windSummary").innerHTML =
+    document.getElementById("windSummary").textContent =
         availableWind.length
             ? (
-                "Sustained: " +
+                "Wind — sustained: " +
                 Math.max(...availableWind) +
-                " mph | Gusts: " +
+                " mph | gusts: " +
                 (
                     availableGust.length
                         ? Math.max(...availableGust)
@@ -1108,37 +1106,33 @@ const windDirections =
                 ) +
                 " mph"
             )
-            : "No forecast data";
+            : "Wind — unavailable";
 
-
-    document.getElementById("waveSummary").innerHTML =
+    document.getElementById("waveSummary").textContent =
         availableWaves.length
             ? (
-                "Max: " +
-                Math.max(...availableWaves)
-                    .toFixed(1) +
+                "Waves — max: " +
+                Math.max(...availableWaves).toFixed(1) +
                 " ft"
             )
-            : "Wave forecast unavailable";
+            : "Waves — unavailable";
 
-
-    document.getElementById("precipSummary").innerHTML =
+    document.getElementById("precipSummary").textContent =
         availablePrecip.length
             ? (
-                "Peak: " +
+                "Precipitation — peak: " +
                 Math.max(...availablePrecip) +
                 "%"
             )
-            : "No forecast data";
+            : "Precipitation — unavailable";
 
-    createWindChart(
-    maxWind,
-    maxGust,
-    windDirections
-);
-
-    createWaveChart(maxWaves);
-    createPrecipChart(maxPrecip);
+    createCombinedConditionsChart(
+        maxWind,
+        maxGust,
+        maxWaves,
+        maxPrecip,
+        windDirections
+    );
 
 }
 
@@ -1343,60 +1337,74 @@ function getWindTravelDirection(direction){
 };
 
 
-function createWindChart(
+function setupCombinedChartToggles(){
+
+    document
+        .querySelectorAll("[data-chart-dataset]")
+        .forEach(input => {
+
+            input.addEventListener(
+                "change",
+                function(){
+
+                    if(!conditionsChart){
+                        return;
+                    }
+
+                    const datasetIndex =
+                        Number(this.dataset.chartDataset);
+
+                    if(
+                        !Number.isInteger(datasetIndex) ||
+                        !conditionsChart.data.datasets[datasetIndex]
+                    ){
+                        return;
+                    }
+
+                    conditionsChart.setDatasetVisibility(
+                        datasetIndex,
+                        this.checked
+                    );
+
+                    conditionsChart.update();
+
+                }
+            );
+
+        });
+
+}
+
+
+function createCombinedConditionsChart(
     sustainedData,
     gustData,
+    waveData,
+    precipData,
     windDirections
 ){
 
-    if(windChart){
-        windChart.destroy();
+    if(conditionsChart){
+        conditionsChart.destroy();
     }
 
+    const isDarkMode =
+        document.body.classList.contains("dark-mode");
 
-    const options =
-        simpleChartOptions();
+    const textColor =
+        isDarkMode
+            ? "#cbd5e1"
+            : "#475569";
 
+    const gridColor =
+        isDarkMode
+            ? "rgba(148, 163, 184, 0.18)"
+            : "rgba(100, 116, 139, 0.15)";
 
-    /*
-    Show the sustained-wind and gust legend.
-    */
-    options.plugins.legend.display =
-        true;
-
-
-    /*
-    Supply directions to the custom plugin.
-
-    Passing null prevents arrows from appearing
-    when multiple locations are selected.
-    */
-    options.plugins.windDirectionArrows = {
-        directions:
-            Array.isArray(windDirections)
-                ? windDirections
-                : []
-    };
-
-
-    /*
-    Reserve extra room underneath the graph
-    for the wind-direction arrows.
-    */
-    options.layout = {
-        padding: {
-            bottom: 22
-        }
-    };
-
-
-    windChart =
+    conditionsChart =
         new Chart(
-            document.getElementById(
-                "windChart"
-            ),
+            document.getElementById("conditionsChart"),
             {
-
                 type: "line",
 
                 plugins: [
@@ -1404,176 +1412,241 @@ function createWindChart(
                 ],
 
                 data: {
-
                     labels:
                         hourLabels(),
 
                     datasets: [
-
                         {
-                            label: "Sustained",
+                            label: "Sustained wind",
                             data: sustainedData,
+                            yAxisID: "windAxis",
                             borderColor: "#2563eb",
                             backgroundColor: "#2563eb",
                             pointBackgroundColor: "#2563eb",
+                            borderWidth: 2,
+                            pointRadius: 2,
                             tension: 0.3,
                             fill: false,
                             spanGaps: false
                         },
-
                         {
-                            label: "Gusts",
+                            label: "Wind gusts",
                             data: gustData,
+                            yAxisID: "windAxis",
                             borderColor: "#dc2626",
                             backgroundColor: "#dc2626",
                             pointBackgroundColor: "#dc2626",
                             borderDash: [8, 5],
+                            borderWidth: 2,
+                            pointRadius: 2,
                             tension: 0.3,
                             fill: false,
                             spanGaps: false
+                        },
+                        {
+                            label: "Waves",
+                            data: waveData,
+                            type: "bar",
+                            yAxisID: "waveAxis",
+                            backgroundColor: "rgba(14, 165, 233, 0.28)",
+                            borderColor: "#0ea5e9",
+                            borderWidth: 1,
+                            borderRadius: 3,
+                            barPercentage: 0.72,
+                            categoryPercentage: 0.86
+                        },
+                        {
+                            label: "Precipitation",
+                            data: precipData,
+                            yAxisID: "precipAxis",
+                            borderColor: "#7c3aed",
+                            backgroundColor: "rgba(124, 58, 237, 0.14)",
+                            pointBackgroundColor: "#7c3aed",
+                            borderWidth: 2,
+                            pointRadius: 1.5,
+                            tension: 0.3,
+                            fill: true,
+                            spanGaps: false
                         }
-
                     ]
-
                 },
 
-                options: options
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
 
+                    interaction: {
+                        mode: "index",
+                        intersect: false
+                    },
+
+                    layout: {
+                        padding: {
+                            bottom:
+                                Array.isArray(windDirections)
+                                    ? 22
+                                    : 0
+                        }
+                    },
+
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: textColor,
+                                usePointStyle: true,
+                                boxWidth: 10
+                            }
+                        },
+
+                        tooltip: {
+                            callbacks: {
+                                label(context){
+
+                                    const value =
+                                        context.parsed.y;
+
+                                    if(
+                                        value === null ||
+                                        value === undefined
+                                    ){
+                                        return (
+                                            context.dataset.label +
+                                            ": unavailable"
+                                        );
+                                    }
+
+                                    if(
+                                        context.dataset.yAxisID ===
+                                        "windAxis"
+                                    ){
+                                        return (
+                                            context.dataset.label +
+                                            ": " +
+                                            value +
+                                            " mph"
+                                        );
+                                    }
+
+                                    if(
+                                        context.dataset.yAxisID ===
+                                        "waveAxis"
+                                    ){
+                                        return (
+                                            context.dataset.label +
+                                            ": " +
+                                            Number(value).toFixed(1) +
+                                            " ft"
+                                        );
+                                    }
+
+                                    return (
+                                        context.dataset.label +
+                                        ": " +
+                                        value +
+                                        "%"
+                                    );
+
+                                }
+                            }
+                        },
+
+                        windDirectionArrows: {
+                            directions:
+                                Array.isArray(windDirections)
+                                    ? windDirections
+                                    : []
+                        }
+                    },
+
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: textColor,
+                                maxTicksLimit: 9
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        },
+
+                        windAxis: {
+                            type: "linear",
+                            position: "left",
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: "Wind (mph)",
+                                color: textColor
+                            },
+                            ticks: {
+                                color: textColor
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        },
+
+                        waveAxis: {
+                            type: "linear",
+                            position: "right",
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: "Waves (ft)",
+                                color: textColor
+                            },
+                            ticks: {
+                                color: textColor,
+                                callback:
+                                    value => value + " ft"
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        },
+
+                        precipAxis: {
+                            type: "linear",
+                            position: "right",
+                            min: 0,
+                            max: 100,
+                            offset: true,
+                            title: {
+                                display: true,
+                                text: "Precipitation (%)",
+                                color: textColor
+                            },
+                            ticks: {
+                                color: textColor,
+                                stepSize: 20,
+                                callback:
+                                    value => value + "%"
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
             }
         );
 
-}
+    document
+        .querySelectorAll("[data-chart-dataset]")
+        .forEach(input => {
 
+            const datasetIndex =
+                Number(input.dataset.chartDataset);
 
-function createWaveChart(data){
-
-
-    if(waveChart)
-        waveChart.destroy();
-
-
-
-    waveChart =
-    new Chart(
-        document.getElementById("waveChart"),
-        {
-
-        type:"bar",
-
-        data:{
-
-            labels:hourLabels(),
-
-            datasets:[{
-
-                data:data
-
-            }]
-
-        },
-
-        options:simpleChartOptions()
+            conditionsChart.setDatasetVisibility(
+                datasetIndex,
+                input.checked
+            );
 
         });
 
-
-}
-
-
-function createPrecipChart(data){
-
-    if(precipChart)
-        precipChart.destroy();
-
-    precipChart =
-    new Chart(
-        document.getElementById("precipChart"),
-        {
-
-        type:"line",
-
-        data:{
-
-            labels:hourLabels(),
-
-            datasets:[{
-
-                data:data,
-
-                fill:true,
-
-                tension:.3
-
-            }]
-
-        },
-
-        options:{
-
-            ...simpleChartOptions(),
-
-            scales:{
-
-                x:{
-                    ticks:{
-                        maxTicksLimit:5
-                    }
-                },
-
-                y:{
-
-                    min:0,
-
-                    max:100,
-
-                    ticks:{
-                        stepSize:20,
-                        callback:value => value + "%"
-                    }
-
-                }
-
-            }
-
-        }
-
-    });
-
-}
-
-
-function simpleChartOptions(){
-
-
-    return {
-
-        responsive:true,
-
-        maintainAspectRatio:false,
-
-        plugins:{
-
-            legend:{
-                display:false
-            }
-
-        },
-
-        scales:{
-
-            x:{
-
-                ticks:{
-
-                    maxTicksLimit:5
-
-                }
-
-            }
-
-        }
-
-    };
+    conditionsChart.update();
 
 }
 
