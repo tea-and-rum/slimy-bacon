@@ -689,13 +689,13 @@ const validTimeline =
 
 
         document.getElementById("decisionSummary").textContent =
-    getDecisionExplanation(
-        overall,
-        allWeather,
-        boatSize,
-        selectedDate,
-        validTimeline
-    );
+            getDecisionExplanation(
+                overall,
+                allWeather,
+                boatSize,
+                selectedDate,
+                validTimeline
+            );
 
 
         document.getElementById("whyResults").innerHTML =
@@ -4086,163 +4086,113 @@ function getDecisionExplanation(
     timeline
 ){
 
-    const thresholds = {
-
+    const vesselThresholds = {
         small: {
-            wind: {
-                sporty: 11,
-                noGo: 18
-            },
-            waves: {
-                sporty: 1,
-                noGo: 2
-            }
+            windSporty: 11,
+            windPoor: 18,
+            waveSporty: 1,
+            wavePoor: 2
         },
-
         medium: {
-            wind: {
-                sporty: 16,
-                noGo: 23
-            },
-            waves: {
-                sporty: 2,
-                noGo: 4
-            }
+            windSporty: 16,
+            windPoor: 23,
+            waveSporty: 2,
+            wavePoor: 4
         },
-
         large: {
-            wind: {
-                sporty: 21,
-                noGo: 31
-            },
-            waves: {
-                sporty: 4,
-                noGo: 6
-            }
+            windSporty: 21,
+            windPoor: 31,
+            waveSporty: 4,
+            wavePoor: 6
         },
-
         xlarge: {
-            wind: {
-                sporty: 26,
-                noGo: 36
-            },
-            waves: {
-                sporty: 6,
-                noGo: 8
-            }
+            windSporty: 26,
+            windPoor: 36,
+            waveSporty: 6,
+            wavePoor: 8
         }
-
     };
 
-
     const limits =
-        thresholds[boatSize];
-
+        vesselThresholds[boatSize];
 
     if(!limits){
-        return "The forecast could not be evaluated for the selected vessel.";
+        return "The selected vessel could not be evaluated.";
     }
-
 
     const now =
         new Date();
 
-
     const todayString = [
         now.getFullYear(),
-        String(
-            now.getMonth() + 1
-        ).padStart(2, "0"),
-        String(
-            now.getDate()
-        ).padStart(2, "0")
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0")
     ].join("-");
-
 
     const relevantHours = [];
 
+    weatherData.forEach(locationForecast => {
 
-    if(Array.isArray(weatherData)){
+        if(!Array.isArray(locationForecast)){
+            return;
+        }
 
-        weatherData.forEach(locationForecast => {
+        locationForecast.forEach(
+            (hour, hourIndex) => {
 
-            if(!Array.isArray(locationForecast)){
-                return;
-            }
-
-
-            locationForecast.forEach(
-                (hour, hourIndex) => {
-
-                    if(!hour){
-                        return;
-                    }
-
-
-                    if(
-                        selectedDate === todayString &&
-                        hourIndex < now.getHours()
-                    ){
-                        return;
-                    }
-
-
-                    relevantHours.push(hour);
-
+                if(!hour){
+                    return;
                 }
-            );
 
-        });
+                if(
+                    selectedDate === todayString &&
+                    hourIndex < now.getHours()
+                ){
+                    return;
+                }
 
-    }
+                relevantHours.push(hour);
 
+            }
+        );
+
+    });
 
     if(relevantHours.length === 0){
         return "No remaining forecast information is available.";
     }
 
-
-    const winds =
-        relevantHours
-            .map(hour =>
+    const maxWind =
+        Math.max(
+            ...relevantHours.map(hour =>
                 Math.max(
                     Number(hour.wind) || 0,
-                    Number.isFinite(
-                        Number(hour.gust)
-                    )
-                        ? Number(hour.gust)
-                        : Number(hour.wind) || 0
+                    Number(hour.gust) || 0
                 )
             )
-            .filter(Number.isFinite);
+        );
 
-
-    const waves =
+    const waveValues =
         relevantHours
-            .map(hour =>
-                Number(hour.waves)
+            .map(hour => hour.waves)
+            .filter(value =>
+                value !== null &&
+                value !== undefined &&
+                Number.isFinite(Number(value))
             )
-            .filter((value, index) => {
+            .map(Number);
 
-                const original =
-                    relevantHours[index].waves;
+    const maxWaves =
+        waveValues.length
+            ? Math.max(...waveValues)
+            : null;
 
-                return (
-                    original !== null &&
-                    original !== undefined &&
-                    Number.isFinite(value)
-                );
-
-            });
-
-
-    const precipitation =
-        relevantHours
-            .map(hour =>
+    const maxPrecip =
+        Math.max(
+            ...relevantHours.map(hour =>
                 Number(hour.precip) || 0
             )
-            .filter(Number.isFinite);
-
+        );
 
     const alertNames =
         [
@@ -4260,27 +4210,7 @@ function getDecisionExplanation(
             )
         ];
 
-
-    const maxWind =
-        winds.length
-            ? Math.max(...winds)
-            : 0;
-
-
-    const maxWaves =
-        waves.length
-            ? Math.max(...waves)
-            : null;
-
-
-    const maxPrecip =
-        precipitation.length
-            ? Math.max(...precipitation)
-            : 0;
-
-
-    const noGoAlertNames = [
-
+    const seriousAlertNames = [
         "Special Marine Warning",
         "Severe Thunderstorm Warning",
         "Tornado Warning",
@@ -4290,20 +4220,16 @@ function getDecisionExplanation(
         "Hurricane Warning",
         "Tropical Storm Warning",
         "Extreme Wind Warning"
-
     ];
-
 
     const seriousAlerts =
         alertNames.filter(name =>
-            noGoAlertNames.includes(name)
+            seriousAlertNames.includes(name)
         );
-
 
     const reasons = [];
 
-
-    if(seriousAlerts.length > 0){
+    if(seriousAlerts.length){
 
         reasons.push(
             seriousAlerts.length === 1
@@ -4312,25 +4238,15 @@ function getDecisionExplanation(
         );
 
     }
-    else if(alertNames.length > 0){
 
-        reasons.push(
-            alertNames.length === 1
-                ? `a ${alertNames[0]} is in effect`
-                : `${alertNames.join(" and ")} are in effect`
-        );
-
-    }
-
-
-    if(maxWind >= limits.wind.noGo){
+    if(maxWind >= limits.windPoor){
 
         reasons.push(
             `wind or gusts reach ${Math.round(maxWind)} mph, which is unsafe for the selected vessel`
         );
 
     }
-    else if(maxWind >= limits.wind.sporty){
+    else if(maxWind >= limits.windSporty){
 
         reasons.push(
             `wind or gusts reach ${Math.round(maxWind)} mph, creating sporty conditions`
@@ -4338,10 +4254,9 @@ function getDecisionExplanation(
 
     }
 
-
     if(
         maxWaves !== null &&
-        maxWaves >= limits.waves.noGo
+        maxWaves >= limits.wavePoor
     ){
 
         reasons.push(
@@ -4351,7 +4266,7 @@ function getDecisionExplanation(
     }
     else if(
         maxWaves !== null &&
-        maxWaves >= limits.waves.sporty
+        maxWaves >= limits.waveSporty
     ){
 
         reasons.push(
@@ -4359,7 +4274,6 @@ function getDecisionExplanation(
         );
 
     }
-
 
     if(maxPrecip >= 61){
 
@@ -4376,84 +4290,45 @@ function getDecisionExplanation(
 
     }
 
-
-    const validStatuses =
+    const statuses =
         Array.isArray(timeline)
-            ? timeline.filter(status =>
-                status === "FLAT" ||
-                status === "CALM" ||
-                status === "SPORTY" ||
-                status === "POOR"
-            )
+            ? timeline
             : [];
 
-
     const allFavorable =
-        validStatuses.length > 0 &&
-        validStatuses.every(status =>
+        statuses.length > 0 &&
+        statuses.every(status =>
             status === "FLAT" ||
             status === "CALM"
         );
 
-
     if(result === "GO"){
 
-        if(allFavorable){
-
-            return (
-                "Good boating conditions are expected throughout the remaining forecast period, " +
-                "with light wind, manageable waves, and no significant hazards."
-            );
-
-        }
-
-
-        return (
-            "Conditions are favorable for most of the remaining forecast period, " +
-            "with only brief less-comfortable periods."
-        );
+        return allFavorable
+            ? "Good boating conditions are expected throughout the remaining forecast period."
+            : "Conditions are favorable for most of the remaining forecast period, with only brief less-comfortable periods.";
 
     }
-
 
     if(reasons.length === 0){
 
         if(result === "MAYBE"){
-
-            return (
-                "Conditions vary during the remaining forecast period. " +
-                "Review the timeline and choose the calmest available window."
-            );
-
+            return "Conditions vary during the remaining forecast period. Review the timeline and choose the calmest available window.";
         }
-
 
         if(result === "LIMITED WINDOW"){
-
-            return (
-                "Poor conditions affect much of the remaining forecast period, " +
-                "but a shorter favorable window is available."
-            );
-
+            return "Poor conditions affect much of the remaining forecast period, but a shorter favorable window is available.";
         }
 
-
-        return (
-            "There is no meaningful favorable boating window remaining."
-        );
-
+        return "There is no meaningful favorable boating window remaining.";
     }
-
 
     const reasonText =
         reasons.length === 1
             ? reasons[0]
-            : (
-                reasons.slice(0, -1).join(", ") +
-                ", and " +
-                reasons[reasons.length - 1]
-            );
-
+            : reasons.slice(0, -1).join(", ") +
+              ", and " +
+              reasons[reasons.length - 1];
 
     if(result === "MAYBE"){
 
@@ -4465,7 +4340,6 @@ function getDecisionExplanation(
 
     }
 
-
     if(result === "LIMITED WINDOW"){
 
         return (
@@ -4476,7 +4350,6 @@ function getDecisionExplanation(
 
     }
 
-
     return (
         "Do not go out because " +
         reasonText +
@@ -4484,7 +4357,6 @@ function getDecisionExplanation(
     );
 
 }
-
 
 function formatHour(hour){
 
