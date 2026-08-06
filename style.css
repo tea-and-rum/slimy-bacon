@@ -637,7 +637,7 @@ button:hover {
 .evidence-card canvas {
     display: block;
     width: 100% !important;
-    height: 165px !important;
+    height: 130px !important;
 }
 
 #advisoryText {
