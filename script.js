@@ -77,7 +77,27 @@ const locations = {
         lat: 38.520000,
         lon: -74.513333
 
-    }
+    },
+
+    "Bass Grounds": {
+    lat: 38.295928,
+    lon: -74.910883
+},
+
+"African Queen Reef": {
+    lat: 38.151308,
+    lon: -74.953253
+},
+
+"Jackspot Reef": {
+    lat: 38.090453,
+    lon: -74.812125
+},
+
+"Great Eastern Reef (Twin Wrecks)": {
+    lat: 38.208342,
+    lon: -74.731675
+}
 
 
 };
