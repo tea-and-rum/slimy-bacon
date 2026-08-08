@@ -78,6 +78,47 @@ body.dark-mode #message {
 
 /* Locations */
 
+.locations-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:30px;
+
+    margin-top:15px;
+
+}
+
+.location-group{
+
+    background:#f8f8f8;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:10px;
+
+    padding:15px;
+
+}
+
+.location-group h3{
+
+    margin-top:0;
+
+    margin-bottom:12px;
+
+    text-align:center;
+
+}
+
+body.dark-mode .location-group{
+
+    background:#1e293b;
+
+    border-color:#334155;
+
+}
 
 .location-item {
 
@@ -1290,4 +1331,14 @@ body.dark-mode .decision-window-summary {
     .check-button-spinner {
         animation-duration: 1.6s;
     }
+}
+
+@media (max-width:700px){
+
+    .locations-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
 }
