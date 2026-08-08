@@ -3936,6 +3936,246 @@ function openMeteoWeatherSummary(code){
 }
 
 
+function getTimeZoneOffsetMilliseconds(
+    date,
+    timeZone
+){
+
+    const formatter =
+        new Intl.DateTimeFormat(
+            "en-US",
+            {
+                timeZone: timeZone,
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hourCycle: "h23"
+            }
+        );
+
+    const parts =
+        Object.fromEntries(
+            formatter
+                .formatToParts(date)
+                .filter(part =>
+                    part.type !== "literal"
+                )
+                .map(part => [
+                    part.type,
+                    part.value
+                ])
+        );
+
+    const asUTC =
+        Date.UTC(
+            Number(parts.year),
+            Number(parts.month) - 1,
+            Number(parts.day),
+            Number(parts.hour),
+            Number(parts.minute),
+            Number(parts.second)
+        );
+
+    return asUTC - date.getTime();
+
+}
+
+
+function easternHourToDate(
+    selectedDate,
+    hour
+){
+
+    const [
+        year,
+        month,
+        day
+    ] = selectedDate
+        .split("-")
+        .map(Number);
+
+    const wallClockUTC =
+        Date.UTC(
+            year,
+            month - 1,
+            day,
+            hour,
+            0,
+            0
+        );
+
+    let candidate =
+        new Date(wallClockUTC);
+
+    let offset =
+        getTimeZoneOffsetMilliseconds(
+            candidate,
+            "America/New_York"
+        );
+
+    candidate =
+        new Date(
+            wallClockUTC - offset
+        );
+
+    offset =
+        getTimeZoneOffsetMilliseconds(
+            candidate,
+            "America/New_York"
+        );
+
+    return new Date(
+        wallClockUTC - offset
+    );
+
+}
+
+
+async function getNOAAWaveForecast(
+    location,
+    selectedDate
+){
+
+    const coords =
+        locations[location];
+
+    if(!coords){
+        return new Array(24).fill(null);
+    }
+
+    try {
+
+        const pointResponse =
+            await fetch(
+                `https://api.weather.gov/points/${coords.lat},${coords.lon}`,
+                {
+                    headers: {
+                        "Accept": "application/geo+json"
+                    }
+                }
+            );
+
+        if(!pointResponse.ok){
+
+            console.warn(
+                `NOAA wave grid lookup unavailable for ${location}: ` +
+                pointResponse.status
+            );
+
+            return new Array(24).fill(null);
+
+        }
+
+        const pointData =
+            await pointResponse.json();
+
+        const gridDataURL =
+            pointData.properties
+                ?.forecastGridData;
+
+        if(!gridDataURL){
+            return new Array(24).fill(null);
+        }
+
+        const gridResponse =
+            await fetch(
+                gridDataURL,
+                {
+                    headers: {
+                        "Accept": "application/geo+json"
+                    }
+                }
+            );
+
+        if(!gridResponse.ok){
+
+            console.warn(
+                `NOAA wave grid data unavailable for ${location}: ` +
+                gridResponse.status
+            );
+
+            return new Array(24).fill(null);
+
+        }
+
+        const gridData =
+            await gridResponse.json();
+
+        const waveValues =
+            gridData.properties
+                ?.waveHeight
+                ?.values || [];
+
+        if(!waveValues.length){
+            return new Array(24).fill(null);
+        }
+
+        const waves =
+            new Array(24).fill(null);
+
+        for(
+            let hour = 0;
+            hour < 24;
+            hour++
+        ){
+
+            const hourStart =
+                easternHourToDate(
+                    selectedDate,
+                    hour
+                );
+
+            const hourEnd =
+                hour === 23
+                    ? easternHourToDate(
+                        new Date(
+                            hourStart.getTime() +
+                            24 * 60 * 60 * 1000
+                        )
+                        .toLocaleDateString(
+                            "en-CA",
+                            {
+                                timeZone:
+                                    "America/New_York"
+                            }
+                        ),
+                        0
+                    )
+                    : easternHourToDate(
+                        selectedDate,
+                        hour + 1
+                    );
+
+            waves[hour] =
+                getWaveHeightForHour(
+                    waveValues,
+                    hourStart,
+                    hourEnd
+                );
+
+        }
+
+        return waves;
+
+    }
+    catch(error){
+
+        console.warn(
+            `NOAA wave data unavailable for ${location}; ` +
+            "Open-Meteo Marine will be used instead.",
+            error
+        );
+
+        return new Array(24).fill(null);
+
+    }
+
+}
+
+
 async function getOpenMeteoHourlyWeather(
     location,
     selectedDate
@@ -4274,40 +4514,101 @@ async function getHourlyWeather(
     selectedDate
 ){
 
-    const noaaForecast =
-        await getNOAAHourlyWeather(
-            location,
-            selectedDate
-        );
-
-
-    if(
-        Array.isArray(noaaForecast) &&
-        noaaForecast.some(Boolean)
-    ){
-
-        return noaaForecast;
-
-    }
-
-
-    console.warn(
-        `Using Open-Meteo fallback forecast for ${location}.`
-    );
-
-
     try {
 
-        return await getOpenMeteoHourlyWeather(
-            location,
-            selectedDate
+        /*
+        Use Open-Meteo for the consistent hourly
+        weather fields at every location:
+        wind, gusts, wind direction, precipitation,
+        temperature, and weather condition.
+
+        getOpenMeteoHourlyWeather also supplies
+        Open-Meteo Marine wave height as the fallback.
+        */
+        const forecast =
+            await getOpenMeteoHourlyWeather(
+                location,
+                selectedDate
+            );
+
+
+        /*
+        Prefer NOAA/NWS grid wave height wherever
+        NOAA actually supplies it. Any hour without a
+        NOAA wave value keeps the Open-Meteo Marine
+        value already stored in the forecast.
+        */
+        const noaaWaves =
+            await getNOAAWaveForecast(
+                location,
+                selectedDate
+            );
+
+
+        let noaaWaveHours = 0;
+
+        forecast.forEach(
+            (hourData, hourIndex) => {
+
+                if(!hourData){
+                    return;
+                }
+
+                const noaaWave =
+                    noaaWaves[hourIndex];
+
+                if(
+                    noaaWave !== null &&
+                    noaaWave !== undefined &&
+                    Number.isFinite(
+                        Number(noaaWave)
+                    )
+                ){
+
+                    hourData.waves =
+                        Number(noaaWave);
+
+                    hourData.waveSource =
+                        "NOAA";
+
+                    noaaWaveHours++;
+
+                }
+                else {
+
+                    hourData.waveSource =
+                        hourData.waves !== null &&
+                        hourData.waves !== undefined
+                            ? "Open-Meteo Marine"
+                            : null;
+
+                }
+
+                hourData.weatherSource =
+                    "Open-Meteo";
+
+            }
         );
+
+
+        console.info(
+            `${location}: Open-Meteo weather; ` +
+            (
+                noaaWaveHours > 0
+                    ? `NOAA waves used for ${noaaWaveHours} hour(s), ` +
+                      "Open-Meteo Marine filling remaining wave gaps."
+                    : "NOAA waves unavailable, using Open-Meteo Marine waves."
+            )
+        );
+
+
+        return forecast;
 
     }
     catch(error){
 
         console.error(
-            `Fallback forecast error for ${location}:`,
+            `Forecast error for ${location}:`,
             error
         );
 
