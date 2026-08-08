@@ -211,8 +211,10 @@ Large Boat
         type="button"
         class="check-button"
         onclick="checkConditions()"
+        aria-busy="false"
     >
-        CHECK CONDITIONS
+        <span class="check-button-text">CHECK CONDITIONS</span>
+        <span class="check-button-spinner" aria-hidden="true"></span>
     </button>
 
     <button

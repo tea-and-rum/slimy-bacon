@@ -1247,3 +1247,47 @@ body.dark-mode .advisory-breakdown .active-advisory {
 body.dark-mode .decision-window-summary {
     color: #94a3b8;
 }
+
+
+/* Loading state inside CHECK CONDITIONS button */
+
+.check-button {
+    position: relative;
+}
+
+.check-button:disabled {
+    cursor: wait;
+    opacity: 0.85;
+}
+
+.check-button-spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    margin: 0 auto;
+    border: 3px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: checkButtonSpin 0.8s linear infinite;
+    box-sizing: border-box;
+}
+
+.check-button.is-loading .check-button-text {
+    display: none;
+}
+
+.check-button.is-loading .check-button-spinner {
+    display: block;
+}
+
+@keyframes checkButtonSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .check-button-spinner {
+        animation-duration: 1.6s;
+    }
+}

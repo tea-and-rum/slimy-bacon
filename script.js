@@ -446,6 +446,34 @@ function clearSelections(){
 }
 
 
+
+function setCheckConditionsLoading(isLoading){
+
+    const button =
+        document.querySelector(
+            ".check-button"
+        );
+
+    if(!button){
+        return;
+    }
+
+    button.disabled =
+        isLoading;
+
+    button.classList.toggle(
+        "is-loading",
+        isLoading
+    );
+
+    button.setAttribute(
+        "aria-busy",
+        String(isLoading)
+    );
+
+}
+
+
 async function checkConditions(){
 
     const selectedLocations =
@@ -490,6 +518,8 @@ async function checkConditions(){
 
     }
 
+
+    setCheckConditionsLoading(true);
 
     document.getElementById("message").innerHTML =
         "Checking conditions...";
@@ -799,6 +829,12 @@ setTimeout(() => {
             .getElementById("results")
             .classList
             .remove("hidden");
+
+    }
+
+    finally {
+
+        setCheckConditionsLoading(false);
 
     }
 
