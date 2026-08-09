@@ -1623,19 +1623,24 @@ const wavePeriodLabelPlugin = {
             (bar, index) => {
 
                 const period =
-                    Number(periods[index]);
+    Number(periods[index]);
 
-                if(!Number.isFinite(period)){
-                    return;
-                }
+const waveHeight =
+    Number(
+        chart.data.datasets[0]
+            .data[index]
+    );
+
+if(
+    !Number.isFinite(period) ||
+    !Number.isFinite(waveHeight) ||
+    waveHeight <= 0
+){
+    return;
+}
 
 
-                const waveHeight =
-                    Number(
-                        chart.data.datasets[0]
-                            .data[index]
-                    );
-
+                
 
                 const isShortPeriod =
                     Number.isFinite(waveHeight) &&
