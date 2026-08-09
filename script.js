@@ -56,26 +56,26 @@ const locations = {
     },
 
     "Delaware Reef Site 9":{
-        lat: 38.670583,
-        lon: -74.995300
+        lat: 38.673268,
+    lon: -74.991073
 
     },
 
     "Delaware Reef Site 10":{
-        lat:38.622925,
-        lon:-74.917270
+        lat: 38.610887,
+    lon: -74.936950
 
     },
 
     "Redbird Reef (Site 11)":{
-        lat: 38.673883,
-        lon: -74.723100
+        lat: 38.674648,
+    lon: -74.728800
 
     },
 
     "Del-Jersey-Land Reef (Site 13)":{
-        lat: 38.520000,
-        lon: -74.513333
+        lat: 38.524580,
+    lon: -74.510545
 
     },
 
