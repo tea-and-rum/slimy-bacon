@@ -1050,6 +1050,7 @@ function createEvidenceCharts(weatherData){
     const maxWind = [];
     const maxGust = [];
     const maxWaves = [];
+    const maxWavePeriods = [];
     const maxPrecip = [];
 
     /*
@@ -1081,6 +1082,7 @@ const windDirections =
             maxWind.push(null);
             maxGust.push(null);
             maxWaves.push(null);
+            maxWavePeriods.push(null);
             maxPrecip.push(null);
 
             continue;
@@ -1107,23 +1109,41 @@ const windDirections =
                 );
 
 
-        const hourlyWaveValues =
+        const hourlyWaveEntries =
             availableHours
-                .map(hourData =>
-                    Number(hourData.waves)
+                .map(hourData => ({
+
+                    height:
+                        Number(hourData.waves),
+
+                    period:
+                        Number(hourData.wavePeriod),
+
+                    originalHeight:
+                        hourData.waves,
+
+                    originalPeriod:
+                        hourData.wavePeriod
+
+                }))
+                .filter(entry => (
+
+                    entry.originalHeight !== null &&
+                    entry.originalHeight !== undefined &&
+                    Number.isFinite(entry.height)
+
+                ));
+
+
+        const maxWaveEntry =
+            hourlyWaveEntries.length
+                ? hourlyWaveEntries.reduce(
+                    (highest, entry) =>
+                        entry.height > highest.height
+                            ? entry
+                            : highest
                 )
-                .filter((value, index) => {
-
-                    const originalValue =
-                        availableHours[index].waves;
-
-                    return (
-                        originalValue !== null &&
-                        originalValue !== undefined &&
-                        Number.isFinite(value)
-                    );
-
-                });
+                : null;
 
 
         const hourlyPrecipValues =
@@ -1151,8 +1171,18 @@ const windDirections =
 
 
         maxWaves.push(
-            hourlyWaveValues.length
-                ? Math.max(...hourlyWaveValues)
+            maxWaveEntry
+                ? maxWaveEntry.height
+                : null
+        );
+
+
+        maxWavePeriods.push(
+            maxWaveEntry &&
+            maxWaveEntry.originalPeriod !== null &&
+            maxWaveEntry.originalPeriod !== undefined &&
+            Number.isFinite(maxWaveEntry.period)
+                ? maxWaveEntry.period
                 : null
         );
 
@@ -1229,7 +1259,10 @@ const windDirections =
     windDirections
 );
 
-    createWaveChart(maxWaves);
+    createWaveChart(
+        maxWaves,
+        maxWavePeriods
+    );
     createPrecipChart(maxPrecip);
 
 }
@@ -1537,39 +1570,314 @@ function createWindChart(
 }
 
 
-function createWaveChart(data){
+const wavePeriodLabelPlugin = {
+
+    id: "wavePeriodLabels",
+
+    afterDraw(chart, args, options){
+
+        const periods =
+            options?.periods;
+
+        if(
+            !Array.isArray(periods) ||
+            periods.length === 0
+        ){
+            return;
+        }
 
 
-    if(waveChart)
+        const meta =
+            chart.getDatasetMeta(0);
+
+        if(
+            !meta ||
+            !Array.isArray(meta.data)
+        ){
+            return;
+        }
+
+
+        const ctx =
+            chart.ctx;
+
+        const isDarkMode =
+            document.body.classList.contains(
+                "dark-mode"
+            );
+
+
+        ctx.save();
+
+        ctx.font =
+            "10px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+
+        meta.data.forEach(
+            (bar, index) => {
+
+                const period =
+                    Number(periods[index]);
+
+                if(!Number.isFinite(period)){
+                    return;
+                }
+
+
+                const waveHeight =
+                    Number(
+                        chart.data.datasets[0]
+                            .data[index]
+                    );
+
+
+                const isShortPeriod =
+                    Number.isFinite(waveHeight) &&
+                    period < waveHeight * 2;
+
+
+                ctx.fillStyle =
+                    isShortPeriod
+                        ? "#dc2626"
+                        : (
+                            isDarkMode
+                                ? "#93c5fd"
+                                : "#2563eb"
+                        );
+
+
+                ctx.fillText(
+                    `${period.toFixed(1).replace(/\\.0$/, "")}s`,
+                    bar.x,
+                    chart.height - 7
+                );
+
+            }
+        );
+
+
+        ctx.restore();
+
+    }
+
+};
+
+
+function createWaveChart(
+    data,
+    wavePeriods
+){
+
+
+    if(waveChart){
         waveChart.destroy();
+    }
 
+
+    const options =
+        simpleChartOptions();
+
+
+    options.layout =
+        {
+            padding: {
+                bottom: 20
+            }
+        };
+
+
+    options.plugins =
+        options.plugins || {};
+
+
+    options.plugins.wavePeriodLabels =
+        {
+            periods:
+                wavePeriods
+        };
+
+
+    options.plugins.tooltip =
+        {
+            callbacks: {
+
+                label(context){
+
+                    const waveHeight =
+                        Number(
+                            context.parsed.y
+                        );
+
+                    if(!Number.isFinite(waveHeight)){
+                        return "Wave height: unavailable";
+                    }
+
+                    return (
+                        "Wave height: " +
+                        waveHeight.toFixed(1) +
+                        " ft"
+                    );
+
+                },
+
+                afterLabel(context){
+
+                    const period =
+                        Number(
+                            wavePeriods[
+                                context.dataIndex
+                            ]
+                        );
+
+                    if(!Number.isFinite(period)){
+                        return "Wave period: unavailable";
+                    }
+
+                    const waveHeight =
+                        Number(
+                            context.parsed.y
+                        );
+
+                    const isShortPeriod =
+                        Number.isFinite(waveHeight) &&
+                        period < waveHeight * 2;
+
+                    return [
+                        (
+                            "Wave period: " +
+                            period
+                                .toFixed(1)
+                                .replace(/\\.0$/, "") +
+                            " sec"
+                        ),
+                        (
+                            isShortPeriod
+                                ? "Height/period combo: short & steep"
+                                : "Height/period combo: acceptable"
+                        )
+                    ];
+
+                }
+
+            }
+        };
 
 
     waveChart =
-    new Chart(
-        document.getElementById("waveChart"),
-        {
+        new Chart(
+            document.getElementById(
+                "waveChart"
+            ),
+            {
 
-        type:"bar",
+                type:
+                    "bar",
 
-        data:{
+                plugins: [
+                    wavePeriodLabelPlugin
+                ],
 
-            labels:hourLabels(),
+                data: {
 
-            datasets:[{
+                    labels:
+                        hourLabels(),
 
-                data:data
+                    datasets: [
+                        {
 
-            }]
+                            data:
+                                data,
 
-        },
+                            backgroundColor(context){
 
-        options:simpleChartOptions()
+                                const waveHeight =
+                                    Number(
+                                        context.raw
+                                    );
 
-        });
+                                const period =
+                                    Number(
+                                        wavePeriods[
+                                            context.dataIndex
+                                        ]
+                                    );
+
+
+                                /*
+                                User rule:
+
+                                Red when wave period is LESS THAN
+                                twice the wave height.
+
+                                Example:
+                                3 ft @ 5 sec = red
+                                3 ft @ 6 sec = blue
+                                */
+
+                                if(
+                                    Number.isFinite(waveHeight) &&
+                                    Number.isFinite(period) &&
+                                    period < waveHeight * 2
+                                ){
+                                    return "#dc2626";
+                                }
+
+
+                                return "#2563eb";
+
+                            },
+
+                            borderColor(context){
+
+                                const waveHeight =
+                                    Number(
+                                        context.raw
+                                    );
+
+                                const period =
+                                    Number(
+                                        wavePeriods[
+                                            context.dataIndex
+                                        ]
+                                    );
+
+
+                                if(
+                                    Number.isFinite(waveHeight) &&
+                                    Number.isFinite(period) &&
+                                    period < waveHeight * 2
+                                ){
+                                    return "#b91c1c";
+                                }
+
+
+                                return "#1d4ed8";
+
+                            },
+
+                            borderWidth:
+                                1
+
+                        }
+                    ]
+
+                },
+
+                options:
+                    options
+
+            }
+        );
 
 
 }
+
 
 
 function createPrecipChart(data){
@@ -4310,7 +4618,10 @@ async function getOpenMeteoHourlyWeather(
                 String(coords.lon),
 
             hourly:
-                "wave_height",
+                [
+                    "wave_height",
+                    "wave_period"
+                ].join(","),
 
             timezone:
                 "America/New_York",
@@ -4382,6 +4693,9 @@ async function getOpenMeteoHourlyWeather(
     const waveLookup =
         new Map();
 
+    const wavePeriodLookup =
+        new Map();
+
 
     waveTimes.forEach((time, index) => {
 
@@ -4392,10 +4706,24 @@ async function getOpenMeteoHourlyWeather(
                     ?.[index]
             );
 
+        const periodSeconds =
+            Number(
+                marineData.hourly
+                    ?.wave_period
+                    ?.[index]
+            );
+
         waveLookup.set(
             time,
             Number.isFinite(meters)
                 ? metersToFeet(meters)
+                : null
+        );
+
+        wavePeriodLookup.set(
+            time,
+            Number.isFinite(periodSeconds)
+                ? periodSeconds
                 : null
         );
 
@@ -4532,6 +4860,11 @@ async function getOpenMeteoHourlyWeather(
             waves:
                 waveLookup.has(time)
                     ? waveLookup.get(time)
+                    : null,
+
+            wavePeriod:
+                wavePeriodLookup.has(time)
+                    ? wavePeriodLookup.get(time)
                     : null,
 
             precip:
