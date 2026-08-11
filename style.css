@@ -13,9 +13,7 @@ body {
 
 
 .container {
-
     max-width: 750px;
-
     margin: auto;
 
 }
@@ -29,12 +27,8 @@ body {
     left: 0;
     right: 0;
     height: 64px;
-
-    background: #ffffff;
-    border-bottom: 1px solid #e2e8f0;
-
+    background: #1479c9;
     z-index: 9999;
-
     display: flex;
     align-items: center;
 }
@@ -42,10 +36,8 @@ body {
 .top-banner-inner {
     width: 100%;
     max-width: 1200px;
-
     margin: 0 auto;
     padding: 0 20px;
-
     display: flex;
     align-items: center;
 }
@@ -55,8 +47,7 @@ body {
     font-size: 38px;
     font-weight: 900;
     line-height: 1;
-
-    color: #1479c9;
+    color: #ffffff;
 }
 
 
@@ -75,9 +66,7 @@ body.dark-mode .top-banner {
 }
 
 h1 {
-
     text-align: center;
-
     margin-bottom: 25px;
 
 }
