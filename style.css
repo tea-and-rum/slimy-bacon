@@ -1437,3 +1437,110 @@ body.dark-mode .location-map .leaflet-control-attribution a {
     }
 
 }
+
+
+/* Offshore fishing spot layer */
+
+.fishing-spots-control {
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 6px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+    padding: 8px 10px;
+}
+
+.fishing-spots-control label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    cursor: pointer;
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.fishing-spots-control input {
+    margin: 0;
+}
+
+.fishing-spot-marker-wrapper {
+    background: transparent;
+    border: 0;
+}
+
+.fishing-spot-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background: #0f5f8f;
+    font-size: 16px;
+    line-height: 1;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+}
+
+.fishing-spot-popup {
+    min-width: 175px;
+    color: #1e293b;
+    line-height: 1.4;
+}
+
+.fishing-spot-popup strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.fishing-spot-coordinates {
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.use-fishing-spot-button {
+    width: 100%;
+    margin-top: 9px;
+    padding: 7px 9px;
+    border: 0;
+    border-radius: 6px;
+    background: #1479c9;
+    color: #ffffff;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+}
+
+.use-fishing-spot-button:hover {
+    filter: brightness(0.94);
+}
+
+body.dark-mode .fishing-spots-control {
+    background: rgba(30, 41, 59, 0.97);
+}
+
+body.dark-mode .fishing-spots-control label {
+    color: #f8fafc;
+}
+
+body.dark-mode .leaflet-tooltip {
+    background: #1e293b;
+    border-color: #475569;
+    color: #f8fafc;
+}
+
+body.dark-mode .leaflet-popup-content-wrapper,
+body.dark-mode .leaflet-popup-tip {
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+body.dark-mode .fishing-spot-popup {
+    color: #f8fafc;
+}
+
+body.dark-mode .fishing-spot-coordinates {
+    color: #94a3b8;
+}

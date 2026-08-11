@@ -23,6 +23,95 @@ const DEFAULT_MAP_BOUNDS = [
 ];
 
 
+const fishingSpots = [
+    {
+        name: 'Bob Mason Reef',
+        state: 'Maryland',
+        lat: 38.335967,
+        lon: -75.088672
+    },
+    {
+        name: "Purnell's Reef",
+        state: 'Maryland',
+        lat: 38.350003,
+        lon: -75.058333
+    },
+    {
+        name: "Kelly's Reef",
+        state: 'Maryland',
+        lat: 38.276817,
+        lon: -75.075344
+    },
+    {
+        name: 'Great Gull Reef',
+        state: 'Maryland',
+        lat: 38.268375,
+        lon: -75.030056
+    },
+    {
+        name: 'Isle of Wight Reef',
+        state: 'Maryland',
+        lat: 38.381806,
+        lon: -74.978475
+    },
+    {
+        name: 'Research Reef',
+        state: 'Maryland',
+        lat: 38.323508,
+        lon: -74.939678
+    },
+    {
+        name: 'Bass Grounds',
+        state: 'Maryland',
+        lat: 38.295928,
+        lon: -74.910883
+    },
+    {
+        name: 'African Queen Reef',
+        state: 'Maryland',
+        lat: 38.151308,
+        lon: -74.953253
+    },
+    {
+        name: 'Great Eastern Reef',
+        state: 'Maryland',
+        lat: 38.208342,
+        lon: -74.731675
+    },
+    {
+        name: 'Jackspot Reef',
+        state: 'Maryland',
+        lat: 38.090453,
+        lon: -74.812125
+    },
+    {
+        name: 'Delaware Reef Site 9',
+        state: 'Delaware',
+        lat: 38.673367,
+        lon: -74.995700
+    },
+    {
+        name: 'Delaware Reef Site 10',
+        state: 'Delaware',
+        lat: 38.610767,
+        lon: -74.937533
+    },
+    {
+        name: 'Redbird Reef (Site 11)',
+        state: 'Delaware',
+        lat: 38.672817,
+        lon: -74.729533
+    },
+    {
+        name: 'Del-Jersey-Land Reef (Site 13)',
+        state: 'Delaware',
+        lat: 38.516100,
+        lon: -74.512433
+    }
+];
+
+let fishingSpotsLayer = null;
+
 window.onload = function(){
 
     setToday();
@@ -84,6 +173,9 @@ function setupLocationMap(){
     );
 
 
+    setupFishingSpotsLayer();
+
+
     locationMap.fitBounds(
         DEFAULT_MAP_BOUNDS
     );
@@ -104,9 +196,214 @@ function setupLocationMap(){
 }
 
 
+function setupFishingSpotsLayer(){
+
+    if(!locationMap){
+        return;
+    }
+
+
+    fishingSpotsLayer =
+        L.layerGroup();
+
+
+    fishingSpots.forEach(
+        spot => {
+
+            const marker =
+                L.marker(
+                    [
+                        spot.lat,
+                        spot.lon
+                    ],
+                    {
+                        icon:
+                            L.divIcon({
+                                className:
+                                    "fishing-spot-marker-wrapper",
+                                html:
+                                    '<div class="fishing-spot-marker" aria-hidden="true">🎣</div>',
+                                iconSize:
+                                    [30, 30],
+                                iconAnchor:
+                                    [15, 15],
+                                popupAnchor:
+                                    [0, -14]
+                            }),
+                        title:
+                            spot.name
+                    }
+                );
+
+
+            marker.bindTooltip(
+                spot.name,
+                {
+                    direction:
+                        "top",
+                    offset:
+                        [0, -12],
+                    opacity:
+                        0.95
+                }
+            );
+
+
+            marker.bindPopup(
+                (
+                    '<div class="fishing-spot-popup">' +
+                        '<strong>' +
+                            escapeHTML(spot.name) +
+                        '</strong>' +
+                        '<div>' +
+                            escapeHTML(spot.state) +
+                        '</div>' +
+                        '<div class="fishing-spot-coordinates">' +
+                            spot.lat.toFixed(5) +
+                            ', ' +
+                            spot.lon.toFixed(5) +
+                        '</div>' +
+                        '<button type="button" class="use-fishing-spot-button">' +
+                            'Use this location' +
+                        '</button>' +
+                    '</div>'
+                )
+            );
+
+
+            marker.on(
+                "popupopen",
+                event => {
+
+                    const popupElement =
+                        event.popup.getElement();
+
+                    const button =
+                        popupElement?.querySelector(
+                            ".use-fishing-spot-button"
+                        );
+
+
+                    if(!button){
+                        return;
+                    }
+
+
+                    button.addEventListener(
+                        "click",
+                        () => {
+
+                            setSelectedMapLocation(
+                                spot.lat,
+                                spot.lon,
+                                spot.name
+                            );
+
+                            locationMap.closePopup();
+
+                        },
+                        {
+                            once: true
+                        }
+                    );
+
+                }
+            );
+
+
+            marker.addTo(
+                fishingSpotsLayer
+            );
+
+        }
+    );
+
+
+    fishingSpotsLayer.addTo(
+        locationMap
+    );
+
+
+    const FishingSpotsControl =
+        L.Control.extend({
+
+            options: {
+                position:
+                    "topright"
+            },
+
+            onAdd(){
+
+                const container =
+                    L.DomUtil.create(
+                        "div",
+                        "leaflet-control fishing-spots-control"
+                    );
+
+
+                container.innerHTML =
+                    '<label>' +
+                        '<input type="checkbox" checked>' +
+                        '<span>Fishing Spots</span>' +
+                    '</label>';
+
+
+                L.DomEvent.disableClickPropagation(
+                    container
+                );
+
+                L.DomEvent.disableScrollPropagation(
+                    container
+                );
+
+
+                const checkbox =
+                    container.querySelector(
+                        'input[type="checkbox"]'
+                    );
+
+
+                checkbox.addEventListener(
+                    "change",
+                    () => {
+
+                        if(checkbox.checked){
+
+                            fishingSpotsLayer.addTo(
+                                locationMap
+                            );
+
+                        }
+                        else {
+
+                            locationMap.removeLayer(
+                                fishingSpotsLayer
+                            );
+
+                        }
+
+                    }
+                );
+
+
+                return container;
+
+            }
+
+        });
+
+
+    locationMap.addControl(
+        new FishingSpotsControl()
+    );
+
+}
+
+
 function setSelectedMapLocation(
     lat,
-    lon
+    lon,
+    locationName = null
 ){
 
     if(
@@ -138,6 +435,7 @@ function setSelectedMapLocation(
 
 
     selectedMapLocationName =
+        locationName ||
         (
             "Selected Location (" +
             numericLat.toFixed(5) +
@@ -211,6 +509,11 @@ function setSelectedMapLocation(
     if(selectedLocationText){
 
         selectedLocationText.textContent =
+            (
+                locationName
+                    ? locationName + " — "
+                    : ""
+            ) +
             numericLat.toFixed(5) +
             ", " +
             numericLon.toFixed(5);
