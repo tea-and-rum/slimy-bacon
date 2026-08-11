@@ -21,6 +21,12 @@ body {
 
 /* Fixed top banner */
 
+.top-banner-logo-img {
+    height: 42px;
+    width: auto;
+    display: block;
+}
+
 .top-banner {
     position: fixed;
     top: 0;
