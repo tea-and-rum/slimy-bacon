@@ -11,96 +11,17 @@ let lastTidePoints = [];
 let lastTideEvents = [];
 let lastSunData = null;
 
-const locations = {
+const locations = {};
 
-    "Gunpowder River":{
-        lat:39.376819,
-        lon:-76.321522
-    },
+let locationMap = null;
+let selectedMapMarker = null;
+let selectedMapLocationName = null;
 
-    "Tolchester Marina Area":{
-        lat:39.215570,
-        lon:-76.252115
-    },
+const DEFAULT_MAP_BOUNDS = [
+    [37.85, -77.05],
+    [39.75, -74.10]
+];
 
-    "Hart-Miller Island":{
-    lat:39.262787,
-    lon:-76.381216
-},
-
-"Fort Smallwood":{
-    lat:39.176864,
-    lon:-76.495797
-},
-
-    "Bay Bridge":{
-        lat:38.999808,
-        lon:-76.365982
-    },
-
-    "Triton Beach":{
-        lat:38.879155,
-        lon:-76.491461
-    },
-
-    "Kent Narrows":{
-        lat:38.962535,
-        lon:-76.245747
-
-    },
-
-    "Poplar Island":{
-        lat:38.766405,
-        lon:-76.403985
-
-    },
-
-    "Delaware Reef Site 9":{
-        lat: 38.673268,
-    lon: -74.991073
-
-    },
-
-    "Delaware Reef Site 10":{
-        lat: 38.610887,
-    lon: -74.936950
-
-    },
-
-    "Redbird Reef (Site 11)":{
-        lat: 38.674648,
-    lon: -74.728800
-
-    },
-
-    "Del-Jersey-Land Reef (Site 13)":{
-        lat: 38.524580,
-    lon: -74.510545
-
-    },
-
-    "Bass Grounds": {
-    lat: 38.295928,
-    lon: -74.910883
-},
-
-"African Queen Reef": {
-    lat: 38.151308,
-    lon: -74.953253
-},
-
-"Jackspot Reef": {
-    lat: 38.090453,
-    lon: -74.812125
-},
-
-"Great Eastern Reef (Twin Wrecks)": {
-    lat: 38.208342,
-    lon: -74.731675
-}
-
-
-};
 
 window.onload = function(){
 
@@ -112,7 +33,262 @@ window.onload = function(){
 
     setupTideToggle();
 
+    setupLocationMap();
+
 };
+
+
+function setupLocationMap(){
+
+    const mapElement =
+        document.getElementById(
+            "locationMap"
+        );
+
+
+    if(!mapElement){
+        return;
+    }
+
+
+    if(typeof L === "undefined"){
+
+        document.getElementById(
+            "message"
+        ).textContent =
+            "The interactive map could not be loaded.";
+
+        return;
+    }
+
+
+    locationMap =
+        L.map(
+            mapElement,
+            {
+                zoomControl: true
+            }
+        );
+
+
+    L.tileLayer(
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+            maxZoom: 18,
+            attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }
+    )
+    .addTo(
+        locationMap
+    );
+
+
+    locationMap.fitBounds(
+        DEFAULT_MAP_BOUNDS
+    );
+
+
+    locationMap.on(
+        "click",
+        event => {
+
+            setSelectedMapLocation(
+                event.latlng.lat,
+                event.latlng.lng
+            );
+
+        }
+    );
+
+}
+
+
+function setSelectedMapLocation(
+    lat,
+    lon
+){
+
+    if(
+        !Number.isFinite(Number(lat)) ||
+        !Number.isFinite(Number(lon))
+    ){
+        return;
+    }
+
+
+    const numericLat =
+        Number(lat);
+
+    const numericLon =
+        Number(lon);
+
+
+    if(
+        selectedMapLocationName &&
+        Object.prototype.hasOwnProperty.call(
+            locations,
+            selectedMapLocationName
+        )
+    ){
+        delete locations[
+            selectedMapLocationName
+        ];
+    }
+
+
+    selectedMapLocationName =
+        (
+            "Selected Location (" +
+            numericLat.toFixed(5) +
+            ", " +
+            numericLon.toFixed(5) +
+            ")"
+        );
+
+
+    locations[
+        selectedMapLocationName
+    ] = {
+        lat:
+            numericLat,
+        lon:
+            numericLon
+    };
+
+
+    if(selectedMapMarker){
+
+        selectedMapMarker.setLatLng(
+            [
+                numericLat,
+                numericLon
+            ]
+        );
+
+    }
+    else {
+
+        selectedMapMarker =
+            L.circleMarker(
+                [
+                    numericLat,
+                    numericLon
+                ],
+                {
+                    radius: 8,
+                    color: "#ffffff",
+                    weight: 3,
+                    fillColor: "#1479c9",
+                    fillOpacity: 1
+                }
+            )
+            .addTo(
+                locationMap
+            );
+
+    }
+
+
+    selectedMapMarker
+        .bindPopup(
+            (
+                "<strong>Selected location</strong><br>" +
+                numericLat.toFixed(5) +
+                ", " +
+                numericLon.toFixed(5)
+            )
+        )
+        .openPopup();
+
+
+    const selectedLocationText =
+        document.getElementById(
+            "selectedMapLocation"
+        );
+
+
+    if(selectedLocationText){
+
+        selectedLocationText.textContent =
+            numericLat.toFixed(5) +
+            ", " +
+            numericLon.toFixed(5);
+
+    }
+
+
+    const message =
+        document.getElementById(
+            "message"
+        );
+
+
+    if(message){
+        message.textContent = "";
+    }
+
+}
+
+
+function clearMapSelection(){
+
+    if(
+        selectedMapMarker &&
+        locationMap
+    ){
+
+        locationMap.removeLayer(
+            selectedMapMarker
+        );
+
+    }
+
+
+    selectedMapMarker = null;
+
+
+    if(
+        selectedMapLocationName &&
+        Object.prototype.hasOwnProperty.call(
+            locations,
+            selectedMapLocationName
+        )
+    ){
+
+        delete locations[
+            selectedMapLocationName
+        ];
+
+    }
+
+
+    selectedMapLocationName = null;
+
+
+    const selectedLocationText =
+        document.getElementById(
+            "selectedMapLocation"
+        );
+
+
+    if(selectedLocationText){
+
+        selectedLocationText.textContent =
+            "No location selected";
+
+    }
+
+
+    if(locationMap){
+
+        locationMap.fitBounds(
+            DEFAULT_MAP_BOUNDS
+        );
+
+    }
+
+}
 
 
 function setupDarkMode(){
@@ -429,11 +605,7 @@ function setupVesselCards(){
 
 function clearSelections(){
 
-    document
-        .querySelectorAll(".locations input")
-        .forEach(box => {
-            box.checked = false;
-        });
+    clearMapSelection();
 
     document
         .querySelectorAll(".vessel-card")
@@ -515,14 +687,17 @@ function setCheckConditionsLoading(isLoading){
 async function checkConditions(){
 
     const selectedLocations =
-        [...document.querySelectorAll(".locations input:checked")]
-            .map(input => input.value);
+        selectedMapLocationName
+            ? [
+                selectedMapLocationName
+            ]
+            : [];
 
 
     if(selectedLocations.length === 0){
 
         document.getElementById("message").innerHTML =
-            "Please select at least one location.";
+            "Please click a boating location on the map.";
 
         return;
 
@@ -1623,27 +1798,35 @@ const wavePeriodLabelPlugin = {
             (bar, index) => {
 
                 const period =
-    Number(periods[index]);
+                    Number(periods[index]);
 
-const waveHeight =
-    Number(
-        chart.data.datasets[0]
-            .data[index]
-    );
+                const rawWaveHeight =
+                    chart.data.datasets[0]
+                        .data[index];
 
-if(
-    !Number.isFinite(period) ||
-    !Number.isFinite(waveHeight) ||
-    waveHeight <= 0
-){
-    return;
-}
+                const waveHeight =
+                    Number(
+                        rawWaveHeight
+                    );
 
 
-                
+                /*
+                Do not show a period label when there
+                is no corresponding wave-height bar.
+                */
+
+                if(
+                    !Number.isFinite(period) ||
+                    rawWaveHeight === null ||
+                    rawWaveHeight === undefined ||
+                    !Number.isFinite(waveHeight) ||
+                    waveHeight <= 0
+                ){
+                    return;
+                }
+
 
                 const isShortPeriod =
-                    Number.isFinite(waveHeight) &&
                     period < waveHeight * 2;
 
 

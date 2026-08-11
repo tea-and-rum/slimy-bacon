@@ -1342,3 +1342,98 @@ body.dark-mode .decision-window-summary {
     }
 
 }
+
+
+/* Interactive boating-location map */
+
+.location-map-section {
+    margin-top: 14px;
+}
+
+.map-instructions {
+    margin: 0 0 12px;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.location-map {
+    width: 100%;
+    height: 420px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.map-selection-status {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid #dbe3ea;
+    border-radius: 8px;
+    background: #f8fafc;
+    font-size: 14px;
+}
+
+.map-selection-status span {
+    color: #64748b;
+}
+
+.map-selection-status strong {
+    color: #1e293b;
+}
+
+body.dark-mode .map-instructions {
+    color: #94a3b8;
+}
+
+body.dark-mode .location-map {
+    border-color: #475569;
+}
+
+body.dark-mode .map-selection-status {
+    background: #182235;
+    border-color: #334155;
+}
+
+body.dark-mode .map-selection-status span {
+    color: #94a3b8;
+}
+
+body.dark-mode .map-selection-status strong {
+    color: #f8fafc;
+}
+
+/*
+Slightly dim the basemap in dark mode without
+changing the map's geographic information.
+*/
+body.dark-mode .location-map .leaflet-tile-pane {
+    filter: brightness(0.78) saturate(0.82);
+}
+
+body.dark-mode .location-map .leaflet-control-zoom a {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+body.dark-mode .location-map .leaflet-control-attribution {
+    background: rgba(15, 23, 42, 0.86);
+    color: #cbd5e1;
+}
+
+body.dark-mode .location-map .leaflet-control-attribution a {
+    color: #7dd3fc;
+}
+
+@media (max-width: 600px) {
+
+    .location-map {
+        height: 330px;
+    }
+
+}
