@@ -344,7 +344,7 @@ function setupFishingSpotsLayer(){
                 container.innerHTML =
                     '<label>' +
                         '<input type="checkbox" checked>' +
-                        '<span>Fishing Spots</span>' +
+                        '<span>Offshore Reefs</span>' +
                     '</label>';
 
 
