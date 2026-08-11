@@ -21,6 +21,58 @@ body {
 }
 
 
+/* Fixed top banner */
+
+.top-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+
+    z-index: 9999;
+
+    display: flex;
+    align-items: center;
+}
+
+.top-banner-inner {
+    width: 100%;
+    max-width: 1200px;
+
+    margin: 0 auto;
+    padding: 0 20px;
+
+    display: flex;
+    align-items: center;
+}
+
+.top-banner-logo {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 38px;
+    font-weight: 900;
+    line-height: 1;
+
+    color: #1479c9;
+}
+
+
+/* Make room for the fixed banner */
+
+body {
+    padding-top: 64px;
+}
+
+
+/* Dark mode */
+
+body.dark-mode .top-banner {
+    background: #0f172a;
+    border-bottom-color: #334155;
+}
 
 h1 {
 
