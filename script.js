@@ -956,6 +956,10 @@ function clearSelections(){
     lastTideEvents = [];
     lastSunData = null;
 
+    window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+});
 }
 
 
