@@ -2129,18 +2129,18 @@ const wavePeriodLabelPlugin = {
                 }
 
 
-                const isShortPeriod =
-                    period < waveHeight * 2;
+                const waveCondition =
+                    getWaveCondition(
+                        waveHeight,
+                        period,
+                        options?.boatSize || "medium"
+                    );
 
 
                 ctx.fillStyle =
-                    isShortPeriod
-                        ? "#dc2626"
-                        : (
-                            isDarkMode
-                                ? "#93c5fd"
-                                : "#2563eb"
-                        );
+                    getWaveConditionColor(
+                        waveCondition.status
+                    );
 
 
                 ctx.fillText(
@@ -2187,10 +2187,17 @@ function createWaveChart(
         options.plugins || {};
 
 
+    const selectedBoatSize =
+        document.getElementById("boatSize")?.value ||
+        "medium";
+
+
     options.plugins.wavePeriodLabels =
         {
             periods:
-                wavePeriods
+                wavePeriods,
+            boatSize:
+                selectedBoatSize
         };
 
 
@@ -2235,9 +2242,12 @@ function createWaveChart(
                             context.parsed.y
                         );
 
-                    const isShortPeriod =
-                        Number.isFinite(waveHeight) &&
-                        period < waveHeight * 2;
+                    const waveCondition =
+                        getWaveCondition(
+                            waveHeight,
+                            period,
+                            selectedBoatSize
+                        );
 
                     return [
                         (
@@ -2248,9 +2258,11 @@ function createWaveChart(
                             " sec"
                         ),
                         (
-                            isShortPeriod
-                                ? "Height/period combo: short & steep"
-                                : "Height/period combo: acceptable"
+                            "Wave condition: " +
+                            (
+                                waveCondition.status ||
+                                "Unavailable"
+                            )
                         )
                     ];
 
@@ -2287,68 +2299,101 @@ function createWaveChart(
 
                             backgroundColor(context){
 
+                                const rawWaveHeight =
+                                    context.raw;
+
                                 const waveHeight =
                                     Number(
-                                        context.raw
+                                        rawWaveHeight
                                     );
+
+                                const rawPeriod =
+                                    wavePeriods[
+                                        context.dataIndex
+                                    ];
 
                                 const period =
                                     Number(
-                                        wavePeriods[
-                                            context.dataIndex
-                                        ]
+                                        rawPeriod
                                     );
 
 
-                                /*
-                                User rule:
-
-                                Red when wave period is LESS THAN
-                                twice the wave height.
-
-                                Example:
-                                3 ft @ 5 sec = red
-                                3 ft @ 6 sec = blue
-                                */
-
                                 if(
-                                    Number.isFinite(waveHeight) &&
-                                    Number.isFinite(period) &&
-                                    period < waveHeight * 2
+                                    rawWaveHeight === null ||
+                                    rawWaveHeight === undefined ||
+                                    !Number.isFinite(waveHeight)
                                 ){
-                                    return "#dc2626";
+                                    return "#2563eb";
                                 }
 
 
-                                return "#2563eb";
+                                const waveCondition =
+                                    getWaveCondition(
+                                        waveHeight,
+                                        (
+                                            rawPeriod !== null &&
+                                            rawPeriod !== undefined &&
+                                            Number.isFinite(period)
+                                        )
+                                            ? period
+                                            : null,
+                                        selectedBoatSize
+                                    );
+
+
+                                return getWaveConditionColor(
+                                    waveCondition.status
+                                );
 
                             },
 
                             borderColor(context){
 
+                                const rawWaveHeight =
+                                    context.raw;
+
                                 const waveHeight =
                                     Number(
-                                        context.raw
+                                        rawWaveHeight
                                     );
+
+                                const rawPeriod =
+                                    wavePeriods[
+                                        context.dataIndex
+                                    ];
 
                                 const period =
                                     Number(
-                                        wavePeriods[
-                                            context.dataIndex
-                                        ]
+                                        rawPeriod
                                     );
 
 
                                 if(
-                                    Number.isFinite(waveHeight) &&
-                                    Number.isFinite(period) &&
-                                    period < waveHeight * 2
+                                    rawWaveHeight === null ||
+                                    rawWaveHeight === undefined ||
+                                    !Number.isFinite(waveHeight)
                                 ){
-                                    return "#b91c1c";
+                                    return "#1d4ed8";
                                 }
 
 
-                                return "#1d4ed8";
+                                const waveCondition =
+                                    getWaveCondition(
+                                        waveHeight,
+                                        (
+                                            rawPeriod !== null &&
+                                            rawPeriod !== undefined &&
+                                            Number.isFinite(period)
+                                        )
+                                            ? period
+                                            : null,
+                                        selectedBoatSize
+                                    );
+
+
+                                return getWaveConditionBorderColor(
+                                    waveCondition.status
+                                );
 
                             },
 
@@ -2645,6 +2690,300 @@ function getAlertStatus(alerts){
 }
 
 
+function getWaveCondition(
+    waveHeight,
+    wavePeriod,
+    boatSize
+){
+
+    const thresholds = {
+
+        small: {
+            sporty: 1,
+            poor: 2
+        },
+
+        medium: {
+            sporty: 2,
+            poor: 4
+        },
+
+        large: {
+            sporty: 4,
+            poor: 6
+        },
+
+        xlarge: {
+            sporty: 6,
+            poor: 8
+        }
+
+    };
+
+
+    const limits =
+        thresholds[boatSize];
+
+
+    const height =
+        Number(waveHeight);
+
+
+    if(
+        !limits ||
+        waveHeight === null ||
+        waveHeight === undefined ||
+        !Number.isFinite(height)
+    ){
+
+        return {
+            status: null,
+            heightStatus: null,
+            periodStatus: null,
+            reason: null
+        };
+
+    }
+
+
+    /*
+    Height-only rating.
+
+    Wave period is never allowed to make
+    a height-based rating BETTER.
+    */
+
+    let heightStatus;
+
+
+    if(height < 0.1){
+
+        heightStatus =
+            "FLAT";
+
+    }
+    else if(height >= limits.poor){
+
+        heightStatus =
+            "POOR";
+
+    }
+    else if(height >= limits.sporty){
+
+        heightStatus =
+            "SPORTY";
+
+    }
+    else {
+
+        heightStatus =
+            "CALM";
+
+    }
+
+
+    /*
+    Flat water stays flat. A wave period is
+    not meaningful when there is essentially
+    no measurable wave height.
+    */
+
+    if(heightStatus === "FLAT"){
+
+        return {
+            status: "FLAT",
+            heightStatus: "FLAT",
+            periodStatus: null,
+            reason: "flat"
+        };
+
+    }
+
+
+    const period =
+        Number(wavePeriod);
+
+
+    /*
+    If period data is unavailable, fall back
+    to the existing height-only rating.
+    */
+
+    if(
+        wavePeriod === null ||
+        wavePeriod === undefined ||
+        !Number.isFinite(period) ||
+        period <= 0
+    ){
+
+        return {
+            status: heightStatus,
+            heightStatus: heightStatus,
+            periodStatus: null,
+            reason:
+                heightStatus === "POOR"
+                    ? "height-unsafe"
+                    : (
+                        heightStatus === "SPORTY"
+                            ? "height-sporty"
+                            : "height-calm"
+                    )
+        };
+
+    }
+
+
+    /*
+    Period / wave-height relationship.
+
+    POOR:
+    period < 2 × wave height
+
+    SPORTY:
+    period >= 2 × height
+    but < 3 × height
+
+    CALM:
+    period >= 3 × height
+    */
+
+    let periodStatus;
+
+
+    if(period < height * 2){
+
+        periodStatus =
+            "POOR";
+
+    }
+    else if(period < height * 3){
+
+        periodStatus =
+            "SPORTY";
+
+    }
+    else {
+
+        periodStatus =
+            "CALM";
+
+    }
+
+
+    const severity = {
+        FLAT: 0,
+        CALM: 1,
+        SPORTY: 2,
+        POOR: 3
+    };
+
+
+    const finalStatus =
+        severity[periodStatus] >
+        severity[heightStatus]
+            ? periodStatus
+            : heightStatus;
+
+
+    let reason;
+
+
+    if(heightStatus === "POOR"){
+
+        reason =
+            "height-unsafe";
+
+    }
+    else if(
+        periodStatus === "POOR" &&
+        finalStatus === "POOR"
+    ){
+
+        reason =
+            "period-poor";
+
+    }
+    else if(
+        periodStatus === "SPORTY" &&
+        finalStatus === "SPORTY"
+    ){
+
+        reason =
+            "period-sporty";
+
+    }
+    else if(heightStatus === "SPORTY"){
+
+        reason =
+            "height-sporty";
+
+    }
+    else {
+
+        reason =
+            "height-calm";
+
+    }
+
+
+    return {
+        status: finalStatus,
+        heightStatus: heightStatus,
+        periodStatus: periodStatus,
+        reason: reason
+    };
+
+}
+
+
+function getWaveConditionColor(status){
+
+    switch(status){
+
+        case "FLAT":
+            return "#2196f3";
+
+        case "CALM":
+            return "#4caf50";
+
+        case "SPORTY":
+            return "#f0b429";
+
+        case "POOR":
+            return "#dc2626";
+
+        default:
+            return "#2563eb";
+
+    }
+
+}
+
+
+function getWaveConditionBorderColor(status){
+
+    switch(status){
+
+        case "FLAT":
+            return "#1976d2";
+
+        case "CALM":
+            return "#388e3c";
+
+        case "SPORTY":
+            return "#c58b00";
+
+        case "POOR":
+            return "#b91c1c";
+
+        default:
+            return "#1d4ed8";
+
+    }
+
+}
+
+
 function checkHour(hour, boatSize){
 
     const thresholds = {
@@ -2737,10 +3076,30 @@ const wind =
     const waves =
         Number(hour.waves);
 
-   const hasWaveData =
-    hour.waves !== null &&
-    hour.waves !== undefined &&
-    Number.isFinite(waves);
+    const hasWaveData =
+        hour.waves !== null &&
+        hour.waves !== undefined &&
+        Number.isFinite(waves);
+
+    const wavePeriod =
+        Number(hour.wavePeriod);
+
+    const waveCondition =
+        hasWaveData
+            ? getWaveCondition(
+                waves,
+                (
+                    hour.wavePeriod !== null &&
+                    hour.wavePeriod !== undefined &&
+                    Number.isFinite(wavePeriod)
+                )
+                    ? wavePeriod
+                    : null,
+                boatSize
+            )
+            : {
+                status: null
+            };
 
     const precip =
         Number(hour.precip) || 0;
@@ -2807,7 +3166,7 @@ const wind =
         wind >= limits.wind.noGo ||
         (
             hasWaveData &&
-            waves >= limits.waves.noGo
+            waveCondition.status === "POOR"
         ) ||
         precip >= 61
     ){
@@ -2829,7 +3188,7 @@ const wind =
         wind >= limits.wind.sporty ||
         (
             hasWaveData &&
-            waves >= limits.waves.sporty
+            waveCondition.status === "SPORTY"
         ) ||
         precip >= 31
     ){
@@ -2852,7 +3211,7 @@ is no more than 5 mph.
 
 if(
     hasWaveData &&
-    waves < 0.1 &&
+    waveCondition.status === "FLAT" &&
     wind <= 5
 ){
     return {
@@ -6030,6 +6389,79 @@ function getDecisionExplanation(
         maxWaves >= limits.waveSporty;
 
 
+    const waveConditionDetails =
+        relevantHours
+            .map(hour => {
+
+                const waveHeight =
+                    Number(hour.waves);
+
+                const wavePeriod =
+                    Number(hour.wavePeriod);
+
+
+                if(
+                    hour.waves === null ||
+                    hour.waves === undefined ||
+                    !Number.isFinite(waveHeight)
+                ){
+                    return null;
+                }
+
+
+                return {
+                    hour: hour,
+                    waveHeight: waveHeight,
+                    wavePeriod:
+                        (
+                            hour.wavePeriod !== null &&
+                            hour.wavePeriod !== undefined &&
+                            Number.isFinite(wavePeriod)
+                        )
+                            ? wavePeriod
+                            : null,
+                    condition:
+                        getWaveCondition(
+                            waveHeight,
+                            (
+                                hour.wavePeriod !== null &&
+                                hour.wavePeriod !== undefined &&
+                                Number.isFinite(wavePeriod)
+                            )
+                                ? wavePeriod
+                                : null,
+                            boatSize
+                        )
+                };
+
+            })
+            .filter(Boolean);
+
+
+    const hasPoorShortPeriodWaves =
+        waveConditionDetails.some(item =>
+            item.condition.reason === "period-poor"
+        );
+
+
+    const hasSportyShortPeriodWaves =
+        waveConditionDetails.some(item =>
+            item.condition.reason === "period-sporty"
+        );
+
+
+    const waveConditionIsPoor =
+        waveConditionDetails.some(item =>
+            item.condition.status === "POOR"
+        );
+
+
+    const waveConditionIsSporty =
+        waveConditionDetails.some(item =>
+            item.condition.status === "SPORTY"
+        );
+
+
     const heavyRain =
         maxPrecip >= 70;
 
@@ -6098,7 +6530,22 @@ function getDecisionExplanation(
         }
 
 
-        if(wavesAreSporty){
+        if(
+            hasSportyShortPeriodWaves ||
+            hasPoorShortPeriodWaves
+        ){
+
+            return (
+                "Good boating conditions are expected overall, but a few short-period waves may create brief choppy conditions."
+            );
+
+        }
+
+
+        if(
+            wavesAreSporty ||
+            waveConditionIsSporty
+        ){
 
             return (
                 "Good boating conditions are expected, with only brief periods of choppier water."
@@ -6138,7 +6585,13 @@ function getDecisionExplanation(
         }
 
 
-        if(windIsSporty && wavesAreSporty){
+        if(
+            windIsSporty &&
+            (
+                waveConditionIsSporty ||
+                waveConditionIsPoor
+            )
+        ){
 
             return (
                 "Winds and waves may become uncomfortable during parts of the remaining forecast period."
@@ -6156,7 +6609,28 @@ function getDecisionExplanation(
         }
 
 
-        if(wavesAreSporty){
+        if(hasPoorShortPeriodWaves){
+
+            return (
+                "Short-period waves may become steep and uncomfortable during parts of the remaining forecast period."
+            );
+
+        }
+
+
+        if(hasSportyShortPeriodWaves){
+
+            return (
+                "Short-period waves may create choppy conditions during parts of the remaining forecast period."
+            );
+
+        }
+
+
+        if(
+            wavesAreSporty ||
+            waveConditionIsSporty
+        ){
 
             return (
                 "Waves may become choppy during parts of the remaining forecast period."
@@ -6205,10 +6679,22 @@ function getDecisionExplanation(
         }
 
 
-        if(wavesAreUnsafe){
+        if(hasPoorShortPeriodWaves){
 
             return (
-                "Good conditions are only expected during a short window before wave heights become unsafe."
+                "Good conditions are only expected during a short window before short-period waves become steep and unsafe."
+            );
+
+        }
+
+
+        if(
+            wavesAreUnsafe ||
+            waveConditionIsPoor
+        ){
+
+            return (
+                "Good conditions are only expected during a short window before wave conditions become unsafe."
             );
 
         }
@@ -6223,7 +6709,19 @@ function getDecisionExplanation(
         }
 
 
-        if(wavesAreSporty){
+        if(hasSportyShortPeriodWaves){
+
+            return (
+                "Good conditions are only expected during a short window before short-period waves make the water choppy."
+            );
+
+        }
+
+
+        if(
+            wavesAreSporty ||
+            waveConditionIsSporty
+        ){
 
             return (
                 "Good conditions are only expected during a short window before the water becomes choppy."
@@ -6261,7 +6759,13 @@ function getDecisionExplanation(
     }
 
 
-    if(windIsUnsafe && wavesAreUnsafe){
+    if(
+        windIsUnsafe &&
+        (
+            wavesAreUnsafe ||
+            waveConditionIsPoor
+        )
+    ){
 
         return (
             "Multiple hazardous conditions are expected, including unsafe winds and rough water."
@@ -6279,10 +6783,22 @@ function getDecisionExplanation(
     }
 
 
-    if(wavesAreUnsafe){
+    if(hasPoorShortPeriodWaves){
 
         return (
-            "Wave heights are expected to become unsafe for the selected boat."
+            "Short-period waves are expected to become steep and unsafe for the selected boat."
+        );
+
+    }
+
+
+    if(
+        wavesAreUnsafe ||
+        waveConditionIsPoor
+    ){
+
+        return (
+            "Wave conditions are expected to become unsafe for the selected boat."
         );
 
     }
