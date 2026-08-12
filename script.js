@@ -820,91 +820,42 @@ function setToday(){
 
 function setupVesselCards(){
 
-
     const cards =
         document.querySelectorAll(".vessel-card");
-
 
     const boatInput =
         document.getElementById("boatSize");
 
+    /*
+    Always start with no vessel selected.
+    The user must choose a boat for the current forecast.
+    */
+    cards.forEach(card => {
 
+        card.classList.remove("selected");
 
-    cards.forEach(card=>{
+        card.addEventListener("click", function(){
 
-
-        card.addEventListener("click",function(){
-
-
-            cards.forEach(c=>{
-
+            cards.forEach(c => {
                 c.classList.remove("selected");
-
             });
-
-
 
             this.classList.add("selected");
 
-
-
-            boatInput.value =
-                this.dataset.size;
-
-
-
-            localStorage.setItem(
-                "preferredBoatSize",
-                this.dataset.size
-            );
-
+            if(boatInput){
+                boatInput.value =
+                    this.dataset.size;
+            }
 
         });
 
-
     });
 
-
-    const saved =
-        localStorage.getItem("preferredBoatSize");
-
-
-
-    if(saved){
-
-
-        const savedCard =
-            document.querySelector(
-                `.vessel-card[data-size="${saved}"]`
-            );
-
-
-        if(savedCard){
-
-            savedCard.classList.add("selected");
-
-            boatInput.value=saved;
-
-        }
-
-
-    }
-    else{
-
-
-        const defaultCard =
-            document.querySelector(
-                '.vessel-card[data-size="medium"]'
-            );
-
-
-        defaultCard.classList.add("selected");
-
-
+    if(boatInput){
+        boatInput.value = "";
     }
 
 }
-
 
 function clearSelections(){
 
@@ -1068,7 +1019,6 @@ async function checkConditions(){
 
         let allAlerts=[];
 
-        let locationHTML = "";
 
 
         for(const location of selectedLocations){
@@ -1129,34 +1079,7 @@ alerts.forEach(alert => {
             allResults.push(
                 evaluated.hourlyResults
             );
-
-
-            locationHTML += `
-
-                <div class="locationCard ${backgroundClass(evaluated.result)}">
-
-                    <strong>
-                        ${emoji(evaluated.result)}
-                        ${location}
-                    </strong>
-
-                    <br><br>
-
-                    <b>Best conditions:</b><br>
-
-                    ${findGoodWindow(evaluated.hourlyResults)}
-
-                    <br><br>
-
-                    <b>Watch:</b><br>
-
-                    ${evaluated.reason}
-
-                </div>
-
-            `;
-
-        }
+}
 
 
         const timeline =
@@ -1271,10 +1194,6 @@ const validTimeline =
 
         document.getElementById("whyResults").innerHTML =
             createWhySection(validTimeline);
-
-
-        document.getElementById("locationResults").innerHTML =
-            locationHTML;
 createEvidenceCharts(allWeather);
 const alertsForSelectedTime =
     getAlertsFromForecast(allWeather);

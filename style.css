@@ -807,7 +807,7 @@ button:hover {
 
     body {
 
-        padding: 10px;
+        padding: 75px 10px 10px;
 
     }
 
@@ -1585,3 +1585,69 @@ body.dark-mode .fishing-spot-popup {
 body.dark-mode .fishing-spot-coordinates {
     color: #94a3b8;
 }
+
+
+/* =========================================
+   WHEN + WHAT desktop layout
+   ========================================= */
+
+.when-what-row {
+    display: grid;
+    grid-template-columns: minmax(145px, 1fr) minmax(0, 4fr);
+    gap: 12px;
+    align-items: end;
+    margin-top: 20px;
+}
+
+.when-column,
+.what-column {
+    min-width: 0;
+}
+
+.when-column h2,
+.what-column h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.when-column input[type="date"] {
+    height: 100%;
+    min-height: 72px;
+}
+
+.what-column .vessel-selector {
+    margin-top: 0;
+}
+
+.what-column .vessel-card {
+    min-width: 0;
+}
+
+/*
+On mobile, return to the existing stacked layout:
+When/date first, then What/vessel cards.
+*/
+@media (max-width: 700px) {
+
+    .when-what-row {
+        display: block;
+        margin-top: 0;
+    }
+
+    .when-column h2,
+    .what-column h2 {
+        margin-top: 25px;
+        margin-bottom: 15px;
+    }
+
+    .when-column input[type="date"] {
+        min-height: 0;
+        height: auto;
+    }
+
+    .what-column .vessel-selector {
+        margin-top: 15px;
+    }
+
+}
+
