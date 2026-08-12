@@ -25,7 +25,6 @@ body {
     height: 42px;
     width: auto;
     display: block;
-    margin: 0 auto;
 }
 
 .top-banner {
@@ -42,7 +41,7 @@ body {
 
 .top-banner-inner {
     width: 100%;
-    max-width: 1200px;
+    max-width: 750px;
     margin: 0 auto;
     padding: 0 20px;
     display: flex;
