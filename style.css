@@ -1770,3 +1770,29 @@ When/date first, then What/vessel cards.
     }
 }
 
+
+
+/* =========================================
+   LIGHT / DARK MODE ACTION COLOR OVERRIDES
+   ========================================= */
+
+/* Light mode */
+.check-button,
+.check-button:hover {
+    background: #7fdfe4;
+}
+
+.vessel-card.selected::after {
+    background: #2c4c8b;
+}
+
+/* Dark mode */
+body.dark-mode .check-button,
+body.dark-mode .check-button:hover {
+    background: #2c4c8b;
+}
+
+body.dark-mode .vessel-card.selected::after {
+    background: #7fdfe4;
+}
+
