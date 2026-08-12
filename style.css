@@ -63,8 +63,7 @@ body {
 /* Dark mode */
 
 body.dark-mode .top-banner {
-    background: #0f172a;
-    border-bottom-color: #334155;
+    background: #2c4d8c;
 }
 
 h1 {
