@@ -226,7 +226,7 @@ input[type="date"] {
 
 
 .vessel-card {
-height:75px;
+
     flex: 1;
 
     border: 2px solid #ddd;
@@ -1594,7 +1594,7 @@ body.dark-mode .fishing-spot-coordinates {
 .when-what-row {
     display: grid;
     grid-template-columns: minmax(145px, 1fr) minmax(0, 4fr);
-    gap: 12px;
+    gap: 18px;
     align-items: end;
     margin-top: 20px;
 }
@@ -1604,23 +1604,58 @@ body.dark-mode .fishing-spot-coordinates {
     min-width: 0;
 }
 
+.when-column {
+    position: relative;
+    padding-right: 18px;
+}
+
+/* Vertical divider between WHEN and WHAT */
+.when-column::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 1px;
+    background: #cbd5e1;
+}
+
+body.dark-mode .when-column::after {
+    background: #475569;
+}
+
 .when-column h2,
 .what-column h2 {
     margin-top: 0;
     margin-bottom: 15px;
 }
 
+/*
+Make the calendar control and all four vessel cards
+the exact same height on desktop.
+*/
+.when-column input[type="date"],
+.what-column .vessel-card {
+    height: 86px;
+    box-sizing: border-box;
+}
+
 .when-column input[type="date"] {
-    height: 100%;
-    min-height: 75px;
+    display: block;
 }
 
 .what-column .vessel-selector {
     margin-top: 0;
+    align-items: stretch;
 }
 
 .what-column .vessel-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     min-width: 0;
+    padding-top: 8px;
+    padding-bottom: 8px;
 }
 
 /*
@@ -1634,19 +1669,32 @@ When/date first, then What/vessel cards.
         margin-top: 0;
     }
 
+    .when-column {
+        padding-right: 0;
+    }
+
+    .when-column::after {
+        display: none;
+    }
+
     .when-column h2,
     .what-column h2 {
         margin-top: 25px;
         margin-bottom: 15px;
     }
 
-    .when-column input[type="date"] {
-        min-height: 0;
+    .when-column input[type="date"],
+    .what-column .vessel-card {
         height: auto;
     }
 
     .what-column .vessel-selector {
         margin-top: 15px;
+    }
+
+    .what-column .vessel-card {
+        display: block;
+        padding: 15px 8px;
     }
 
 }
