@@ -1650,7 +1650,7 @@ the exact same height on desktop.
 }
 
 .when-column input[type="date"]::-webkit-calendar-picker-indicator {
-    margin: 0;
+    margin-right: -5px;
     padding: 0;
     cursor: pointer;
 }
