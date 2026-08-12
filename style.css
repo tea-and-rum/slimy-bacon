@@ -101,7 +101,7 @@ body.dark-mode .page-subheader {
 
 h2 {
 
-    /* margin-top: 25px; */
+    margin-top: 25px;
 
     margin-bottom: 15px;
 
@@ -226,7 +226,7 @@ input[type="date"] {
 
 
 .vessel-card {
-
+height:75px;
     flex: 1;
 
     border: 2px solid #ddd;
@@ -1612,7 +1612,7 @@ body.dark-mode .fishing-spot-coordinates {
 
 .when-column input[type="date"] {
     height: 100%;
-    min-height: 72px;
+    min-height: 75px;
 }
 
 .what-column .vessel-selector {
