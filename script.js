@@ -2663,6 +2663,7 @@ function getWaveCondition(
             status: null,
             heightStatus: null,
             periodStatus: null,
+            steepnessIndex: null,
             reason: null
         };
 
@@ -2670,66 +2671,95 @@ function getWaveCondition(
 
 
     /*
-    Height-only rating.
+    STEP 0 — ABSOLUTE VESSEL HEIGHT LIMIT
 
-    Wave period is never allowed to make
-    a height-based rating BETTER.
+    A favorable wave period can never override
+    the vessel's hard wave-height cutoff.
     */
 
-    let heightStatus;
+    if(height >= limits.poor){
 
-
-    if(height < 0.1){
-
-        heightStatus =
-            "FLAT";
-
-    }
-    else if(height >= limits.poor){
-
-        heightStatus =
-            "POOR";
-
-    }
-    else if(height >= limits.sporty){
-
-        heightStatus =
-            "SPORTY";
-
-    }
-    else {
-
-        heightStatus =
-            "CALM";
+        return {
+            status: "POOR",
+            heightStatus: "POOR",
+            periodStatus: null,
+            steepnessIndex: null,
+            reason: "height-unsafe"
+        };
 
     }
 
 
     /*
-    Flat water stays flat. A wave period is
-    not meaningful when there is essentially
-    no measurable wave height.
+    STEP 1 — SMALL-WAVE BYPASS
+
+    < 0.3 ft:
+    FLAT for every vessel.
+
+    0.3–1.5 ft:
+    SPORTY for the smallest/PWC category.
+    CALM for every larger vessel.
+
+    Period is ignored in this range.
     */
 
-    if(heightStatus === "FLAT"){
+    if(height < 0.3){
 
         return {
             status: "FLAT",
             heightStatus: "FLAT",
             periodStatus: null,
+            steepnessIndex: null,
             reason: "flat"
         };
 
     }
 
 
+    if(height <= 1.5){
+
+        const bypassStatus =
+            boatSize === "small"
+                ? "SPORTY"
+                : "CALM";
+
+
+        return {
+            status: bypassStatus,
+            heightStatus: bypassStatus,
+            periodStatus: null,
+            steepnessIndex: null,
+            reason:
+                boatSize === "small"
+                    ? "small-chop-sporty"
+                    : "small-wave-bypass"
+        };
+
+    }
+
+
+    /*
+    STEP 2 — WAVE STEEPNESS INDEX
+
+    Only applies above 1.5 ft, after the
+    vessel's hard height cutoff is checked.
+
+    steepnessIndex =
+        wave height / (wave period × wave period)
+
+    < 0.05       = CALM
+    0.05–<0.11   = SPORTY
+    >= 0.11      = POOR
+    */
+
     const period =
         Number(wavePeriod);
 
 
     /*
-    If period data is unavailable, fall back
-    to the existing height-only rating.
+    If period data is missing, retain a
+    height-only fallback instead of inventing
+    a steepness result.
     */
 
     if(
@@ -2739,124 +2769,71 @@ function getWaveCondition(
         period <= 0
     ){
 
+        const fallbackStatus =
+            height >= limits.sporty
+                ? "SPORTY"
+                : "CALM";
+
+
         return {
-            status: heightStatus,
-            heightStatus: heightStatus,
+            status: fallbackStatus,
+            heightStatus: fallbackStatus,
             periodStatus: null,
+            steepnessIndex: null,
             reason:
-                heightStatus === "POOR"
-                    ? "height-unsafe"
-                    : (
-                        heightStatus === "SPORTY"
-                            ? "height-sporty"
-                            : "height-calm"
-                    )
+                fallbackStatus === "SPORTY"
+                    ? "height-sporty"
+                    : "height-calm"
         };
 
     }
 
 
-    /*
-    Period / wave-height relationship.
-
-    POOR:
-    period < 2 × wave height
-
-    SPORTY:
-    period >= 2 × height
-    but < 3 × height
-
-    CALM:
-    period >= 3 × height
-    */
-
-    let periodStatus;
+    const steepnessIndex =
+        height /
+        (period * period);
 
 
-    if(period < height * 2){
+    let steepnessStatus;
 
-        periodStatus =
-            "POOR";
+
+    if(steepnessIndex < 0.05){
+
+        steepnessStatus =
+            "CALM";
 
     }
-    else if(period < height * 3){
+    else if(steepnessIndex < 0.11){
 
-        periodStatus =
+        steepnessStatus =
             "SPORTY";
 
     }
     else {
 
-        periodStatus =
-            "CALM";
-
-    }
-
-
-    const severity = {
-        FLAT: 0,
-        CALM: 1,
-        SPORTY: 2,
-        POOR: 3
-    };
-
-
-    const finalStatus =
-        severity[periodStatus] >
-        severity[heightStatus]
-            ? periodStatus
-            : heightStatus;
-
-
-    let reason;
-
-
-    if(heightStatus === "POOR"){
-
-        reason =
-            "height-unsafe";
-
-    }
-    else if(
-        periodStatus === "POOR" &&
-        finalStatus === "POOR"
-    ){
-
-        reason =
-            "period-poor";
-
-    }
-    else if(
-        periodStatus === "SPORTY" &&
-        finalStatus === "SPORTY"
-    ){
-
-        reason =
-            "period-sporty";
-
-    }
-    else if(heightStatus === "SPORTY"){
-
-        reason =
-            "height-sporty";
-
-    }
-    else {
-
-        reason =
-            "height-calm";
+        steepnessStatus =
+            "POOR";
 
     }
 
 
     return {
-        status: finalStatus,
-        heightStatus: heightStatus,
-        periodStatus: periodStatus,
-        reason: reason
+        status: steepnessStatus,
+        heightStatus: null,
+        periodStatus: steepnessStatus,
+        steepnessIndex: steepnessIndex,
+        reason:
+            steepnessStatus === "POOR"
+                ? "steepness-poor"
+                : (
+                    steepnessStatus === "SPORTY"
+                        ? "steepness-sporty"
+                        : "steepness-calm"
+                )
     };
 
 }
+
 
 
 function getWaveConditionColor(status){
@@ -6361,15 +6338,15 @@ function getDecisionExplanation(
             .filter(Boolean);
 
 
-    const hasPoorShortPeriodWaves =
+    const hasPoorSteepWaves =
         waveConditionDetails.some(item =>
-            item.condition.reason === "period-poor"
+            item.condition.reason === "steepness-poor"
         );
 
 
-    const hasSportyShortPeriodWaves =
+    const hasSportySteepWaves =
         waveConditionDetails.some(item =>
-            item.condition.reason === "period-sporty"
+            item.condition.reason === "steepness-sporty"
         );
 
 
@@ -6454,12 +6431,12 @@ function getDecisionExplanation(
 
 
         if(
-            hasSportyShortPeriodWaves ||
-            hasPoorShortPeriodWaves
+            hasSportySteepWaves ||
+            hasPoorSteepWaves
         ){
 
             return (
-                "Good boating conditions are expected overall, but a few short-period waves may create brief choppy conditions."
+                "Good boating conditions are expected overall, but a few steeper waves may create brief choppy conditions."
             );
 
         }
@@ -6532,19 +6509,19 @@ function getDecisionExplanation(
         }
 
 
-        if(hasPoorShortPeriodWaves){
+        if(hasPoorSteepWaves){
 
             return (
-                "Short-period waves may become steep and uncomfortable during parts of the remaining forecast period."
+                "Wave height and period may combine to create steep, uncomfortable seas during parts of the remaining forecast period."
             );
 
         }
 
 
-        if(hasSportyShortPeriodWaves){
+        if(hasSportySteepWaves){
 
             return (
-                "Short-period waves may create choppy conditions during parts of the remaining forecast period."
+                "Wave height and period may combine to create sporty, choppy conditions during parts of the remaining forecast period."
             );
 
         }
@@ -6602,10 +6579,10 @@ function getDecisionExplanation(
         }
 
 
-        if(hasPoorShortPeriodWaves){
+        if(hasPoorSteepWaves){
 
             return (
-                "Good conditions are only expected during a short window before short-period waves become steep and unsafe."
+                "Good conditions are only expected during a short window before wave steepness becomes unsafe."
             );
 
         }
@@ -6632,10 +6609,10 @@ function getDecisionExplanation(
         }
 
 
-        if(hasSportyShortPeriodWaves){
+        if(hasSportySteepWaves){
 
             return (
-                "Good conditions are only expected during a short window before short-period waves make the water choppy."
+                "Good conditions are only expected during a short window before wave steepness makes the water choppy."
             );
 
         }
@@ -6706,10 +6683,10 @@ function getDecisionExplanation(
     }
 
 
-    if(hasPoorShortPeriodWaves){
+    if(hasPoorSteepWaves){
 
         return (
-            "Short-period waves are expected to become steep and unsafe for the selected boat."
+            "Wave height and period are expected to combine into steep, unsafe seas for the selected boat."
         );
 
     }
