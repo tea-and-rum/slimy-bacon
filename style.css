@@ -257,7 +257,7 @@ input[type="date"] {
 
 .vessel-card.selected {
 
-    border: 3px solid #1976d2;
+    border: 3px solid #2c4c8b;
 
     background: #e7f1ff;
 
@@ -278,7 +278,7 @@ input[type="date"] {
 
     right: 8px;
 
-    background: #1976d2;
+    background: #2c4c8b;
 
     color: white;
 
