@@ -151,6 +151,9 @@ body.dark-mode #message {
     text-align:left;
 
 }
+body.dark-mode .vessel-card.selected .vessel-check {
+    background: #5e94d2;
+}
 
 body.dark-mode .location-group{
 
