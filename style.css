@@ -1717,3 +1717,54 @@ When/date first, then What/vessel cards.
     margin-top: 0;
 }
 
+
+
+/* =========================================
+   MOBILE / NARROW VIEW: FULL-WIDTH CONTENT
+   =========================================
+   Remove the "card floating on blue background" treatment to maximize
+   usable space on phones and very narrow browser windows.
+*/
+@media (max-width: 700px) {
+
+    body {
+        background: #ffffff;
+        padding: 64px 0 0;
+    }
+
+    .container {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .card {
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 18px;
+        border-radius: 0;
+        box-shadow: none;
+        background: #ffffff;
+    }
+
+    /* Keep some separation before the results without recreating gutters. */
+    #results.card {
+        margin-top: 12px;
+    }
+
+    .disclaimer {
+        margin: 24px 18px 18px;
+    }
+
+    /* Preserve the same edge-to-edge treatment in dark mode. */
+    body.dark-mode {
+        background: #1e293b;
+    }
+
+    body.dark-mode .card {
+        background: #1e293b;
+    }
+}
+
