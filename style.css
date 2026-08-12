@@ -17,7 +17,7 @@ body {
     margin: auto;
 
 
-    padding: 32px;
+    padding: 24px 32px 32px;
 }
 
 
@@ -1595,8 +1595,8 @@ body.dark-mode .fishing-spot-coordinates {
 
 .when-what-row {
     display: grid;
-    grid-template-columns: minmax(175px, 1.15fr) minmax(0, 4fr);
-    gap: 18px;
+    grid-template-columns: minmax(160px, 0.95fr) minmax(0, 4fr);
+    gap: 14px;
     align-items: end;
     margin-top: 20px;
 }
@@ -1608,7 +1608,7 @@ body.dark-mode .fishing-spot-coordinates {
 
 .when-column {
     position: relative;
-    padding-right: 18px;
+    padding-right: 14px;
 }
 
 /* Vertical divider between WHEN and WHAT */
