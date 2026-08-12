@@ -896,12 +896,12 @@ button:hover {
 /* Check Conditions takes more space */
 
 .check-button {
-    background: #7fdfe4;
-    color: #2c4d8c;
+    background: #2c4d8c;
+    color: #7fdfe4;
 }
 
 .check-button:hover {
-    background: #0f68ae;
+    background: #2c4d8c;
 }
 
 .check-button,
