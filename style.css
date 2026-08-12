@@ -983,7 +983,7 @@ button:hover {
 }
 
 .dark-mode-toggle:focus-visible {
-    outline: 3px solid #38bdf8;
+    outline: 3px solid #7fdfe4;
     outline-offset: 3px;
 }
 
@@ -1075,7 +1075,7 @@ body.dark-mode .location-option:hover {
 
 body.dark-mode .vessel-card.selected {
     background-color: #0c4a6e;
-    border-color: #38bdf8;
+    border-color: #7fdfe4;
 }
 
 
