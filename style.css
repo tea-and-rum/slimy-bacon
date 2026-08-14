@@ -2096,3 +2096,57 @@ input[type="date"] {
 .vessel-card.selected::after {
     background: #1976d2;
 }
+
+/* =========================================
+   Consistent section-heading spacing
+   ========================================= */
+
+/*
+Give section headings clear separation from the content above,
+while keeping them visually connected to the content below.
+*/
+h2 {
+    margin-top: 28px;
+    margin-bottom: 10px;
+}
+
+/* The first heading inside the main card does not need extra top space. */
+.card > h2:first-child {
+    margin-top: 0;
+}
+
+/* These headings sit at the top of their side-by-side columns. */
+.when-column h2,
+.what-column h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+/* The timeline heading shares a row with the Tides control. */
+.timeline-heading-row {
+    margin-top: 28px;
+    margin-bottom: 10px;
+}
+
+.timeline-heading-row h2 {
+    margin: 0;
+}
+
+/* Avoid stacking additional margins beneath 24-Hour Conditions. */
+.conditions-charts,
+.evidence-grid {
+    margin-top: 0;
+}
+
+@media (max-width: 700px) {
+    /* When the When/What columns stack, each section gets the same top rhythm. */
+    .when-column h2,
+    .what-column h2 {
+        margin-top: 28px;
+        margin-bottom: 10px;
+    }
+
+    .when-column:first-child h2 {
+        margin-top: 0;
+    }
+}
