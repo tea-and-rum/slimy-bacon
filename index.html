@@ -36,6 +36,9 @@
     alt="Logo"
     class="top-banner-logo-img"
 >
+        <button id="customSettingsButton" class="custom-settings-button" type="button" aria-label="Custom vessel settings" title="Custom vessel settings">
+            <span aria-hidden="true">⚙</span>
+        </button>
     </div>
 </header>
 
@@ -88,62 +91,28 @@
 
 
 <div class="vessel-card" data-size="small">
-
-
-
-<div class="vessel-name">
-PWC
+<div class="vessel-name">Small</div>
+<div class="vessel-size">Under 16 ft</div>
 </div>
-
-<div class="vessel-size">
-Under 16 ft
-</div>
-
-</div>
-
 
 <div class="vessel-card" data-size="medium">
-
-
-
-<div class="vessel-name">
-Small Boat
+<div class="vessel-name">Medium</div>
+<div class="vessel-size">16-26 ft</div>
 </div>
-
-<div class="vessel-size">
-16-26 ft
-</div>
-
-</div>
-
 
 <div class="vessel-card" data-size="large">
-
-
-
-<div class="vessel-name">
-Medium Boat
+<div class="vessel-name">Large</div>
+<div class="vessel-size">27-39 ft</div>
 </div>
 
-<div class="vessel-size">
-27-39 ft
+<div class="vessel-card" data-size="baller">
+<div class="vessel-name">Baller</div>
+<div class="vessel-size">40+ ft</div>
 </div>
 
-</div>
-
-
-<div class="vessel-card" data-size="xlarge">
-
-
-
-<div class="vessel-name">
-Large Boat
-</div>
-
-<div class="vessel-size">
-40+ ft
-</div>
-
+<div class="vessel-card vessel-card-custom" data-size="custom">
+<div class="vessel-name">Custom</div>
+<div class="vessel-size">Your profile</div>
 </div>
 
 
@@ -395,6 +364,65 @@ Peak: --%
 </div>
 
 
+<div id="customSettingsModal" class="custom-modal hidden" role="dialog" aria-modal="true" aria-labelledby="customSettingsTitle">
+  <div class="custom-modal-backdrop" data-custom-close="true"></div>
+  <div class="custom-modal-panel">
+    <div class="custom-modal-header">
+      <div>
+        <h2 id="customSettingsTitle">Custom Profile</h2>
+        <p>Choose the limits Drift should use when <strong>Custom</strong> is selected.</p>
+      </div>
+      <button id="customSettingsClose" class="custom-modal-close" type="button" aria-label="Close custom settings">×</button>
+    </div>
+
+    <form id="customSettingsForm">
+      <div class="custom-settings-section">
+        <h3>Wind</h3>
+        <p>Drift uses the higher of sustained wind or gust speed.</p>
+        <div class="custom-field-grid">
+          <label>Sporty starts at (mph)<input id="customWindSporty" type="number" min="0" step="1" required></label>
+          <label>Poor starts at (mph)<input id="customWindPoor" type="number" min="0" step="1" required></label>
+          <label>Flat max wind (mph)<input id="customFlatWind" type="number" min="0" step="1" required></label>
+        </div>
+      </div>
+
+      <div class="custom-settings-section">
+        <h3>Waves</h3>
+        <div class="custom-field-grid">
+          <label>Sporty starts at (ft)<input id="customWaveSporty" type="number" min="0" step="0.1" required></label>
+          <label>Poor starts at (ft)<input id="customWavePoor" type="number" min="0" step="0.1" required></label>
+          <label>Flat below (ft)<input id="customFlatWave" type="number" min="0" step="0.1" required></label>
+          <label>Small-wave bypass through (ft)<input id="customWaveBypass" type="number" min="0" step="0.1" required></label>
+          <label>Steepness: Sporty starts<input id="customSteepSporty" type="number" min="0" step="0.01" required></label>
+          <label>Steepness: Poor starts<input id="customSteepPoor" type="number" min="0" step="0.01" required></label>
+        </div>
+        <p class="custom-help">Above the bypass height, Drift uses wave height ÷ wave period² to judge steepness.</p>
+      </div>
+
+      <div class="custom-settings-section">
+        <h3>Rain / precipitation</h3>
+        <label class="custom-switch-row"><input id="customUsePrecip" type="checkbox"><span>Let precipitation probability affect the rating</span></label>
+        <div id="customPrecipFields" class="custom-field-grid">
+          <label>Sporty starts at (%)<input id="customPrecipSporty" type="number" min="0" max="100" step="1" required></label>
+          <label>Poor starts at (%)<input id="customPrecipPoor" type="number" min="0" max="100" step="1" required></label>
+        </div>
+      </div>
+
+      <div class="custom-settings-section">
+        <h3>Weather alerts</h3>
+        <label class="custom-switch-row"><input id="customUseAlerts" type="checkbox"><span>Let active marine/weather alerts affect the rating</span></label>
+        <label class="custom-switch-row"><input id="customUseThunder" type="checkbox"><span>Treat a thunderstorm forecast as Poor</span></label>
+      </div>
+
+      <div id="customSettingsError" class="custom-settings-error" role="alert"></div>
+      <div class="custom-modal-actions">
+        <button id="customRestoreDefaults" class="custom-secondary-button" type="button">RESTORE DEFAULTS</button>
+        <button class="custom-save-button" type="submit">SAVE CUSTOM PROFILE</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script src="script.js"></script>
 
 <button
@@ -409,7 +437,7 @@ Peak: --%
 </button>
   <footer class="disclaimer">
     <strong>⚠️ Boating Safety Disclaimer</strong><br>
-    This tool is provided for informational purposes only and is intended to assist with trip planning. Forecasts, recommendations, and conditions may be inaccurate, incomplete, or delayed. Always review official NOAA marine forecasts, weather warnings, navigation information, and current conditions before leaving the dock. Use your own judgment based on your vessel, experience, crew, and local conditions. By using this website, you acknowledge that you are solely responsible for your boating decisions. The creator of this website assumes no liability for any accidents, injuries, damages, or losses resulting from the use of this information. Version 4.2.
+    This tool is provided for informational purposes only and is intended to assist with trip planning. Forecasts, recommendations, and conditions may be inaccurate, incomplete, or delayed. Always review official NOAA marine forecasts, weather warnings, navigation information, and current conditions before leaving the dock. Use your own judgment based on your vessel, experience, crew, and local conditions. By using this website, you acknowledge that you are solely responsible for your boating decisions. The creator of this website assumes no liability for any accidents, injuries, damages, or losses resulting from the use of this information. Version 4.3.
 </footer>
 </body>
 

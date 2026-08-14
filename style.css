@@ -1795,3 +1795,273 @@ body.dark-mode .check-button:hover {
 body.dark-mode .vessel-card.selected::after {
     background: #7fdfe4;
 }
+/* ===========================
+   Custom vessel profile
+   =========================== */
+.top-banner-inner {
+    justify-content: space-between;
+}
+
+.custom-settings-button {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    margin: 0 0 0 auto;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #ffffff;
+    font-size: 28px;
+    line-height: 1;
+    box-shadow: none;
+}
+
+.custom-settings-button:hover {
+    background: rgba(255,255,255,.14);
+    opacity: 1;
+}
+
+.custom-settings-button:focus-visible {
+    outline: 3px solid rgba(255,255,255,.8);
+    outline-offset: 2px;
+}
+
+.vessel-selector {
+    align-items: stretch;
+}
+
+.vessel-card {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.vessel-card-custom .vessel-size {
+    white-space: nowrap;
+}
+
+body.custom-modal-open {
+    overflow: hidden;
+}
+
+.custom-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.custom-modal.hidden {
+    display: none;
+}
+
+.custom-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, .62);
+    backdrop-filter: blur(3px);
+}
+
+.custom-modal-panel {
+    position: relative;
+    z-index: 1;
+    width: min(760px, 100%);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    background: #ffffff;
+    color: #1e293b;
+    border-radius: 16px;
+    box-shadow: 0 24px 70px rgba(0,0,0,.28);
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.custom-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.custom-modal-header h2 {
+    margin: 0 0 6px;
+}
+
+.custom-modal-header p,
+.custom-settings-section p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.45;
+}
+
+.custom-modal-close {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    background: #eef2f6;
+    color: #334155;
+    font-size: 26px;
+    line-height: 1;
+}
+
+.custom-settings-section {
+    padding: 18px 0;
+    border-top: 1px solid #e2e8f0;
+}
+
+.custom-settings-section h3 {
+    margin: 0 0 8px;
+    text-align: left;
+}
+
+.custom-field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.custom-field-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.custom-field-grid input[type="number"] {
+    width: 100%;
+    margin: 0;
+    padding: 10px 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font: inherit;
+}
+
+.custom-switch-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.custom-switch-row input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    flex: 0 0 auto;
+    accent-color: #1479c9;
+}
+
+.custom-help {
+    margin-top: 10px !important;
+    font-size: 12px;
+}
+
+.custom-fields-disabled {
+    opacity: .45;
+}
+
+.custom-settings-error {
+    min-height: 20px;
+    color: #b91c1c;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.custom-modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.custom-modal-actions button {
+    width: auto;
+    flex: 1;
+    margin: 0;
+    font-size: 14px;
+}
+
+.custom-secondary-button {
+    background: #e7ebef;
+    color: #263746;
+}
+
+.custom-save-button {
+    background: #7fdfe4;
+    color: #ffffff;
+}
+
+body.dark-mode .custom-modal-panel {
+    background: #1e293b;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+}
+
+body.dark-mode .custom-modal-header p,
+body.dark-mode .custom-settings-section p {
+    color: #94a3b8;
+}
+
+body.dark-mode .custom-settings-section {
+    border-color: #334155;
+}
+
+body.dark-mode .custom-modal-close,
+body.dark-mode .custom-secondary-button {
+    background: #334155;
+    color: #f8fafc;
+}
+
+body.dark-mode .custom-field-grid label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .custom-settings-error {
+    color: #f87171;
+}
+
+@media (max-width: 700px) {
+    .vessel-card {
+        flex: 1 1 calc(50% - 12px);
+        min-width: 0;
+    }
+
+    .custom-field-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 430px) {
+    .vessel-card {
+        flex-basis: 100%;
+    }
+
+    .custom-modal {
+        padding: 10px;
+    }
+
+    .custom-modal-panel {
+        max-height: calc(100vh - 20px);
+        padding: 18px;
+    }
+
+    .custom-modal-actions {
+        flex-direction: column;
+    }
+}

@@ -116,6 +116,8 @@ window.onload = function(){
 
     setToday();
 
+    setupCustomSettings();
+
     setupVesselCards();
 
     setupDarkMode();
@@ -125,6 +127,244 @@ window.onload = function(){
     setupLocationMap();
 
 };
+
+
+
+
+const CUSTOM_PROFILE_STORAGE_KEY = "driftCustomProfileV1";
+
+const DEFAULT_CUSTOM_PROFILE = {
+    windSporty: 16,
+    windPoor: 23,
+    flatWind: 5,
+    waveSporty: 2,
+    wavePoor: 4,
+    flatWave: 0.3,
+    waveBypass: 1.5,
+    steepSporty: 0.05,
+    steepPoor: 0.11,
+    usePrecip: true,
+    precipSporty: 31,
+    precipPoor: 61,
+    useAlerts: true,
+    useThunder: true
+};
+
+function getSavedCustomProfile(){
+    try{
+        const raw = localStorage.getItem(CUSTOM_PROFILE_STORAGE_KEY);
+        if(!raw) return null;
+        const parsed = JSON.parse(raw);
+        return {
+            ...DEFAULT_CUSTOM_PROFILE,
+            ...parsed
+        };
+    }
+    catch(error){
+        console.warn("Unable to read custom profile:", error);
+        return null;
+    }
+}
+
+function getCustomProfile(){
+    return getSavedCustomProfile() || { ...DEFAULT_CUSTOM_PROFILE };
+}
+
+function setupCustomSettings(){
+    const gear = document.getElementById("customSettingsButton");
+    const modal = document.getElementById("customSettingsModal");
+    const close = document.getElementById("customSettingsClose");
+    const form = document.getElementById("customSettingsForm");
+    const restore = document.getElementById("customRestoreDefaults");
+    const usePrecip = document.getElementById("customUsePrecip");
+
+    if(!gear || !modal || !form) return;
+
+    const closeModal = () => {
+        modal.classList.add("hidden");
+        document.body.classList.remove("custom-modal-open");
+    };
+
+    gear.addEventListener("click", () => openCustomSettingsModal());
+    close?.addEventListener("click", closeModal);
+    modal.querySelectorAll('[data-custom-close="true"]').forEach(el => {
+        el.addEventListener("click", closeModal);
+    });
+
+    document.addEventListener("keydown", event => {
+        if(event.key === "Escape" && !modal.classList.contains("hidden")){
+            closeModal();
+        }
+    });
+
+    usePrecip?.addEventListener("change", updateCustomPrecipFieldsState);
+
+    restore?.addEventListener("click", () => {
+        populateCustomSettingsForm(DEFAULT_CUSTOM_PROFILE);
+        document.getElementById("customSettingsError").textContent = "";
+    });
+
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        const profile = readCustomSettingsForm();
+        const validationMessage = validateCustomProfile(profile);
+        const error = document.getElementById("customSettingsError");
+
+        if(validationMessage){
+            error.textContent = validationMessage;
+            return;
+        }
+
+        localStorage.setItem(CUSTOM_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+        error.textContent = "";
+        closeModal();
+    });
+}
+
+function openCustomSettingsModal(){
+    const modal = document.getElementById("customSettingsModal");
+    if(!modal) return;
+
+    populateCustomSettingsForm(getCustomProfile());
+    document.getElementById("customSettingsError").textContent = "";
+    modal.classList.remove("hidden");
+    document.body.classList.add("custom-modal-open");
+
+    window.setTimeout(() => {
+        document.getElementById("customWindSporty")?.focus();
+    }, 0);
+}
+
+function populateCustomSettingsForm(profile){
+    const values = {
+        customWindSporty: profile.windSporty,
+        customWindPoor: profile.windPoor,
+        customFlatWind: profile.flatWind,
+        customWaveSporty: profile.waveSporty,
+        customWavePoor: profile.wavePoor,
+        customFlatWave: profile.flatWave,
+        customWaveBypass: profile.waveBypass,
+        customSteepSporty: profile.steepSporty,
+        customSteepPoor: profile.steepPoor,
+        customPrecipSporty: profile.precipSporty,
+        customPrecipPoor: profile.precipPoor
+    };
+
+    Object.entries(values).forEach(([id, value]) => {
+        const input = document.getElementById(id);
+        if(input) input.value = value;
+    });
+
+    document.getElementById("customUsePrecip").checked = Boolean(profile.usePrecip);
+    document.getElementById("customUseAlerts").checked = Boolean(profile.useAlerts);
+    document.getElementById("customUseThunder").checked = Boolean(profile.useThunder);
+    updateCustomPrecipFieldsState();
+}
+
+function updateCustomPrecipFieldsState(){
+    const enabled = Boolean(document.getElementById("customUsePrecip")?.checked);
+    const wrapper = document.getElementById("customPrecipFields");
+    wrapper?.classList.toggle("custom-fields-disabled", !enabled);
+    wrapper?.querySelectorAll("input").forEach(input => {
+        input.disabled = !enabled;
+    });
+}
+
+function readCustomSettingsForm(){
+    const number = id => Number(document.getElementById(id)?.value);
+    return {
+        windSporty: number("customWindSporty"),
+        windPoor: number("customWindPoor"),
+        flatWind: number("customFlatWind"),
+        waveSporty: number("customWaveSporty"),
+        wavePoor: number("customWavePoor"),
+        flatWave: number("customFlatWave"),
+        waveBypass: number("customWaveBypass"),
+        steepSporty: number("customSteepSporty"),
+        steepPoor: number("customSteepPoor"),
+        usePrecip: Boolean(document.getElementById("customUsePrecip")?.checked),
+        precipSporty: number("customPrecipSporty"),
+        precipPoor: number("customPrecipPoor"),
+        useAlerts: Boolean(document.getElementById("customUseAlerts")?.checked),
+        useThunder: Boolean(document.getElementById("customUseThunder")?.checked)
+    };
+}
+
+function validateCustomProfile(profile){
+    const requiredNumbers = [
+        profile.windSporty, profile.windPoor, profile.flatWind,
+        profile.waveSporty, profile.wavePoor, profile.flatWave,
+        profile.waveBypass, profile.steepSporty, profile.steepPoor
+    ];
+
+    if(requiredNumbers.some(value => !Number.isFinite(value) || value < 0)){
+        return "Enter a valid non-negative number for every wind and wave setting.";
+    }
+
+    if(profile.windPoor <= profile.windSporty){
+        return "Poor wind must be higher than the Sporty wind threshold.";
+    }
+    if(profile.flatWind >= profile.windSporty){
+        return "Flat max wind must be lower than the Sporty wind threshold.";
+    }
+    if(profile.wavePoor <= profile.waveSporty){
+        return "Poor wave height must be higher than the Sporty wave threshold.";
+    }
+    if(profile.flatWave > profile.waveBypass){
+        return "Flat wave height cannot be higher than the small-wave bypass height.";
+    }
+    if(profile.steepPoor <= profile.steepSporty){
+        return "Poor wave steepness must be higher than the Sporty steepness threshold.";
+    }
+
+    if(profile.usePrecip){
+        if(
+            !Number.isFinite(profile.precipSporty) ||
+            !Number.isFinite(profile.precipPoor) ||
+            profile.precipSporty < 0 || profile.precipPoor > 100 ||
+            profile.precipPoor <= profile.precipSporty
+        ){
+            return "Precipitation thresholds must be between 0–100%, with Poor higher than Sporty.";
+        }
+    }
+
+    return "";
+}
+
+function getVesselLimits(boatSize){
+    const presets = {
+        small: { windSporty: 11, windPoor: 18, waveSporty: 1, wavePoor: 2 },
+        medium: { windSporty: 16, windPoor: 23, waveSporty: 2, wavePoor: 4 },
+        large: { windSporty: 21, windPoor: 31, waveSporty: 4, wavePoor: 6 },
+        baller: { windSporty: 26, windPoor: 36, waveSporty: 6, wavePoor: 8 }
+    };
+
+    if(boatSize === "custom"){
+        const profile = getCustomProfile();
+        return {
+            ...profile,
+            isCustom: true
+        };
+    }
+
+    const preset = presets[boatSize];
+    if(!preset) return null;
+
+    return {
+        ...preset,
+        flatWind: 5,
+        flatWave: 0.3,
+        waveBypass: 1.5,
+        steepSporty: 0.05,
+        steepPoor: 0.11,
+        usePrecip: true,
+        precipSporty: 31,
+        precipPoor: 61,
+        useAlerts: true,
+        useThunder: false,
+        isCustom: false
+    };
+}
 
 
 function setupLocationMap(){
@@ -845,6 +1085,13 @@ function setupVesselCards(){
             if(boatInput){
                 boatInput.value =
                     this.dataset.size;
+            }
+
+            if(
+                this.dataset.size === "custom" &&
+                !getSavedCustomProfile()
+            ){
+                openCustomSettingsModal();
             }
 
         });
@@ -2618,39 +2865,8 @@ function getWaveCondition(
     wavePeriod,
     boatSize
 ){
-
-    const thresholds = {
-
-        small: {
-            sporty: 1,
-            poor: 2
-        },
-
-        medium: {
-            sporty: 2,
-            poor: 4
-        },
-
-        large: {
-            sporty: 4,
-            poor: 6
-        },
-
-        xlarge: {
-            sporty: 6,
-            poor: 8
-        }
-
-    };
-
-
-    const limits =
-        thresholds[boatSize];
-
-
-    const height =
-        Number(waveHeight);
-
+    const limits = getVesselLimits(boatSize);
+    const height = Number(waveHeight);
 
     if(
         !limits ||
@@ -2658,7 +2874,6 @@ function getWaveCondition(
         waveHeight === undefined ||
         !Number.isFinite(height)
     ){
-
         return {
             status: null,
             heightStatus: null,
@@ -2666,19 +2881,9 @@ function getWaveCondition(
             steepnessIndex: null,
             reason: null
         };
-
     }
 
-
-    /*
-    STEP 0 — ABSOLUTE VESSEL HEIGHT LIMIT
-
-    A favorable wave period can never override
-    the vessel's hard wave-height cutoff.
-    */
-
-    if(height >= limits.poor){
-
+    if(height >= limits.wavePoor){
         return {
             status: "POOR",
             heightStatus: "POOR",
@@ -2686,25 +2891,9 @@ function getWaveCondition(
             steepnessIndex: null,
             reason: "height-unsafe"
         };
-
     }
 
-
-    /*
-    STEP 1 — SMALL-WAVE BYPASS
-
-    < 0.3 ft:
-    FLAT for every vessel.
-
-    0.3–1.5 ft:
-    SPORTY for the smallest/PWC category.
-    CALM for every larger vessel.
-
-    Period is ignored in this range.
-    */
-
-    if(height < 0.3){
-
+    if(height < limits.flatWave){
         return {
             status: "FLAT",
             heightStatus: "FLAT",
@@ -2712,17 +2901,23 @@ function getWaveCondition(
             steepnessIndex: null,
             reason: "flat"
         };
-
     }
 
+    if(height <= limits.waveBypass){
+        let bypassStatus;
 
-    if(height <= 1.5){
-
-        const bypassStatus =
-            boatSize === "small"
-                ? "SPORTY"
-                : "CALM";
-
+        if(limits.isCustom){
+            bypassStatus =
+                height >= limits.waveSporty
+                    ? "SPORTY"
+                    : "CALM";
+        }
+        else{
+            bypassStatus =
+                boatSize === "small"
+                    ? "SPORTY"
+                    : "CALM";
+        }
 
         return {
             status: bypassStatus,
@@ -2730,37 +2925,13 @@ function getWaveCondition(
             periodStatus: null,
             steepnessIndex: null,
             reason:
-                boatSize === "small"
+                bypassStatus === "SPORTY"
                     ? "small-chop-sporty"
                     : "small-wave-bypass"
         };
-
     }
 
-
-    /*
-    STEP 2 — WAVE STEEPNESS INDEX
-
-    Only applies above 1.5 ft, after the
-    vessel's hard height cutoff is checked.
-
-    steepnessIndex =
-        wave height / (wave period × wave period)
-
-    < 0.05       = CALM
-    0.05–<0.11   = SPORTY
-    >= 0.11      = POOR
-    */
-
-    const period =
-        Number(wavePeriod);
-
-
-    /*
-    If period data is missing, retain a
-    height-only fallback instead of inventing
-    a steepness result.
-    */
+    const period = Number(wavePeriod);
 
     if(
         wavePeriod === null ||
@@ -2768,12 +2939,10 @@ function getWaveCondition(
         !Number.isFinite(period) ||
         period <= 0
     ){
-
         const fallbackStatus =
-            height >= limits.sporty
+            height >= limits.waveSporty
                 ? "SPORTY"
                 : "CALM";
-
 
         return {
             status: fallbackStatus,
@@ -2785,37 +2954,20 @@ function getWaveCondition(
                     ? "height-sporty"
                     : "height-calm"
         };
-
     }
 
-
-    const steepnessIndex =
-        height /
-        (period * period);
-
-
+    const steepnessIndex = height / (period * period);
     let steepnessStatus;
 
-
-    if(steepnessIndex < 0.05){
-
-        steepnessStatus =
-            "CALM";
-
+    if(steepnessIndex < limits.steepSporty){
+        steepnessStatus = "CALM";
     }
-    else if(steepnessIndex < 0.11){
-
-        steepnessStatus =
-            "SPORTY";
-
+    else if(steepnessIndex < limits.steepPoor){
+        steepnessStatus = "SPORTY";
     }
-    else {
-
-        steepnessStatus =
-            "POOR";
-
+    else{
+        steepnessStatus = "POOR";
     }
-
 
     return {
         status: steepnessStatus,
@@ -2831,9 +2983,7 @@ function getWaveCondition(
                         : "steepness-calm"
                 )
     };
-
 }
-
 
 
 function getWaveConditionColor(status){
@@ -2885,133 +3035,42 @@ function getWaveConditionBorderColor(status){
 
 
 function checkHour(hour, boatSize){
-
-    const thresholds = {
-
-        small: {
-            wind: {
-                sporty: 11,
-                noGo: 18
-            },
-            waves: {
-                sporty: 1,
-                noGo: 2
-            }
-        },
-
-        medium: {
-            wind: {
-                sporty: 16,
-                noGo: 23
-            },
-            waves: {
-                sporty: 2,
-                noGo: 4
-            }
-        },
-
-        large: {
-            wind: {
-                sporty: 21,
-                noGo: 31
-            },
-            waves: {
-                sporty: 4,
-                noGo: 6
-            }
-        },
-
-        xlarge: {
-            wind: {
-                sporty: 26,
-                noGo: 36
-            },
-            waves: {
-                sporty: 6,
-                noGo: 8
-            }
-        }
-
-    };
-
-
-    const limits =
-        thresholds[boatSize];
-
+    const limits = getVesselLimits(boatSize);
 
     if(!limits){
-
-        console.error(
-            "Unknown vessel size:",
-            boatSize
-        );
-
-        return {
-            status: "POOR"
-        };
-
+        console.error("Unknown vessel size:", boatSize);
+        return { status: "POOR" };
     }
 
-
-    const sustainedWind =
-    Number(hour.wind) || 0;
-
-const gustWind =
-    Number.isFinite(
-        Number(hour.gust)
-    )
+    const sustainedWind = Number(hour.wind) || 0;
+    const gustWind = Number.isFinite(Number(hour.gust))
         ? Number(hour.gust)
         : sustainedWind;
+    const wind = Math.max(sustainedWind, gustWind);
 
-/*
-Use whichever wind measurement creates
-the more restrictive result.
-*/
-const wind =
-    Math.max(
-        sustainedWind,
-        gustWind
-    );
-
-    const waves =
-        Number(hour.waves);
-
+    const waves = Number(hour.waves);
     const hasWaveData =
         hour.waves !== null &&
         hour.waves !== undefined &&
         Number.isFinite(waves);
 
-    const wavePeriod =
-        Number(hour.wavePeriod);
+    const wavePeriod = Number(hour.wavePeriod);
+    const waveCondition = hasWaveData
+        ? getWaveCondition(
+            waves,
+            (
+                hour.wavePeriod !== null &&
+                hour.wavePeriod !== undefined &&
+                Number.isFinite(wavePeriod)
+            ) ? wavePeriod : null,
+            boatSize
+        )
+        : { status: null };
 
-    const waveCondition =
-        hasWaveData
-            ? getWaveCondition(
-                waves,
-                (
-                    hour.wavePeriod !== null &&
-                    hour.wavePeriod !== undefined &&
-                    Number.isFinite(wavePeriod)
-                )
-                    ? wavePeriod
-                    : null,
-                boatSize
-            )
-            : {
-                status: null
-            };
-
-    const precip =
-        Number(hour.precip) || 0;
-
-    const alerts =
-        Array.isArray(hour.alerts)
-            ? hour.alerts
-            : [];
-
+    const precip = Number(hour.precip) || 0;
+    const alerts = Array.isArray(hour.alerts) ? hour.alerts : [];
 
     const noGoAlertNames = [
-
         "Special Marine Warning",
         "Severe Thunderstorm Warning",
         "Tornado Warning",
@@ -3021,12 +3080,9 @@ const wind =
         "Hurricane Warning",
         "Tropical Storm Warning",
         "Extreme Wind Warning"
-
     ];
 
-
     const sportyAlertNames = [
-
         "Severe Thunderstorm Watch",
         "Tornado Watch",
         "Gale Watch",
@@ -3037,93 +3093,61 @@ const wind =
         "Dense Fog Advisory",
         "Wind Advisory",
         "Coastal Flood Advisory"
-
     ];
 
-
     const hasNoGoAlert =
-        alerts.some(alert =>
-            noGoAlertNames.includes(
-                alert.event
-            )
-        );
-
+        limits.useAlerts &&
+        alerts.some(alert => noGoAlertNames.includes(alert.event));
 
     const hasSportyAlert =
-        alerts.some(alert =>
-            sportyAlertNames.includes(
-                alert.event
-            )
-        );
+        limits.useAlerts &&
+        alerts.some(alert => sportyAlertNames.includes(alert.event));
 
+    const hasOtherAlert =
+        limits.useAlerts &&
+        alerts.length > 0;
 
-    /*
-    NO-GO takes priority.
-    */
+    const thunderstormForecast =
+        limits.useThunder &&
+        String(hour.shortForecast || "").toLowerCase().includes("thunder");
+
+    const precipIsPoor =
+        limits.usePrecip &&
+        precip >= limits.precipPoor;
+
+    const precipIsSporty =
+        limits.usePrecip &&
+        precip >= limits.precipSporty;
 
     if(
         hasNoGoAlert ||
-        wind >= limits.wind.noGo ||
-        (
-            hasWaveData &&
-            waveCondition.status === "POOR"
-        ) ||
-        precip >= 61
+        thunderstormForecast ||
+        wind >= limits.windPoor ||
+        (hasWaveData && waveCondition.status === "POOR") ||
+        precipIsPoor
     ){
-
-        return {
-            status: "POOR"
-        };
-
+        return { status: "POOR" };
     }
-
-
-    /*
-    SPORTY comes next.
-    */
 
     if(
         hasSportyAlert ||
-        alerts.length > 0 ||
-        wind >= limits.wind.sporty ||
-        (
-            hasWaveData &&
-            waveCondition.status === "SPORTY"
-        ) ||
-        precip >= 31
+        hasOtherAlert ||
+        wind >= limits.windSporty ||
+        (hasWaveData && waveCondition.status === "SPORTY") ||
+        precipIsSporty
     ){
-
-        return {
-            status: "SPORTY"
-        };
-
+        return { status: "SPORTY" };
     }
 
+    if(
+        hasWaveData &&
+        waveCondition.status === "FLAT" &&
+        wind <= limits.flatWind
+    ){
+        return { status: "FLAT" };
+    }
 
-    /*
-FLAT is better than CALM.
-
-Only classify the hour as FLAT when NOAA
-provides wave data, reports zero-foot waves,
-and the higher of sustained wind or gusts
-is no more than 5 mph.
-*/
-
-if(
-    hasWaveData &&
-    waveCondition.status === "FLAT" &&
-    wind <= 5
-){
-    return {
-        status: "FLAT"
-    };
-}
-
-
-return {
-    status: "CALM"
-};
-
+    return { status: "CALM" };
 }
 
 
@@ -6083,41 +6107,8 @@ function getDecisionExplanation(
     timeline
 ){
 
-    const vesselThresholds = {
-
-        small: {
-            windSporty: 11,
-            windPoor: 18,
-            waveSporty: 1,
-            wavePoor: 2
-        },
-
-        medium: {
-            windSporty: 16,
-            windPoor: 23,
-            waveSporty: 2,
-            wavePoor: 4
-        },
-
-        large: {
-            windSporty: 21,
-            windPoor: 31,
-            waveSporty: 4,
-            wavePoor: 6
-        },
-
-        xlarge: {
-            windSporty: 26,
-            windPoor: 36,
-            waveSporty: 6,
-            wavePoor: 8
-        }
-
-    };
-
-
     const limits =
-        vesselThresholds[boatSize];
+        getVesselLimits(boatSize);
 
 
     if(!limits){
@@ -6266,9 +6257,11 @@ function getDecisionExplanation(
 
 
     const primaryAlert =
-        seriousAlertPriority.find(alertName =>
-            alertNames.includes(alertName)
-        );
+        limits.useAlerts
+            ? seriousAlertPriority.find(alertName =>
+                alertNames.includes(alertName)
+            )
+            : undefined;
 
 
     const windIsUnsafe =
@@ -6363,10 +6356,12 @@ function getDecisionExplanation(
 
 
     const heavyRain =
-        maxPrecip >= 70;
+        limits.usePrecip &&
+        maxPrecip >= Math.max(70, limits.precipPoor || 0);
 
 
     const thunderstormForecast =
+        (!limits.isCustom || limits.useThunder) &&
         relevantHours.some(hour =>
             String(
                 hour.shortForecast || ""
