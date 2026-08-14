@@ -1490,13 +1490,23 @@ setTimeout(() => {
 
     const resultsElement = document.getElementById("results");
     const headerElement = document.querySelector(".top-banner");
-    const headerOffset = headerElement ? headerElement.offsetHeight + 16 : 16;
-    const resultsTop = resultsElement.getBoundingClientRect().top + window.scrollY - headerOffset;
 
-    window.scrollTo({
-        top: resultsTop,
-        behavior: "smooth"
-    });
+    if(resultsElement){
+        const headerHeight = headerElement
+            ? headerElement.getBoundingClientRect().height
+            : 0;
+
+        const targetTop =
+            resultsElement.getBoundingClientRect().top +
+            window.scrollY -
+            headerHeight -
+            16;
+
+        window.scrollTo({
+            top: Math.max(0, targetTop),
+            behavior: "smooth"
+        });
+    }
 
 }, 150);
        
@@ -4400,7 +4410,9 @@ function getBestWindowDetails(results){
         timeRange:
             formatHour(bestStart) +
             " - " +
-            (bestEnd === 24 ? "11:59PM" : formatHour(bestEnd)),
+            (bestEnd === 24
+                ? "11:59PM"
+                : formatHour(bestEnd)),
 
         length:
             bestEnd - bestStart
