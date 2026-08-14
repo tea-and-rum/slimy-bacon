@@ -1488,32 +1488,15 @@ renderAdvisoryTile(
 
 setTimeout(() => {
 
-    const resultsElement =
-        document.getElementById("results");
+    const resultsElement = document.getElementById("results");
+    const headerElement = document.querySelector(".top-banner");
+    const headerOffset = headerElement ? headerElement.offsetHeight + 16 : 16;
+    const resultsTop = resultsElement.getBoundingClientRect().top + window.scrollY - headerOffset;
 
-    const headerElement =
-        document.querySelector(".top-banner");
-
-    if(resultsElement){
-
-        const headerHeight =
-            headerElement
-                ? headerElement.getBoundingClientRect().height
-                : 0;
-
-        const resultsTop =
-            resultsElement.getBoundingClientRect().top +
-            window.scrollY;
-
-        window.scrollTo({
-            top: Math.max(
-                0,
-                resultsTop - headerHeight - 16
-            ),
-            behavior: "smooth"
-        });
-
-    }
+    window.scrollTo({
+        top: resultsTop,
+        behavior: "smooth"
+    });
 
 }, 150);
        
@@ -4417,7 +4400,7 @@ function getBestWindowDetails(results){
         timeRange:
             formatHour(bestStart) +
             " - " +
-            formatWindowEndHour(bestEnd),
+            (bestEnd === 24 ? "11:59PM" : formatHour(bestEnd)),
 
         length:
             bestEnd - bestStart
@@ -4448,7 +4431,7 @@ function findGoodWindow(results){
     });
 
     if(start !== null){
-        windows.push(formatHour(start) + " - " + formatWindowEndHour(24));
+        windows.push(formatHour(start) + " - " + formatHour(24));
     }
 
     return windows.length > 0
@@ -6744,23 +6727,6 @@ function getDecisionExplanation(
     );
 
 }
-
-function formatWindowEndHour(hour){
-
-    /*
-    A favorable window that reaches hour 24
-    runs through the end of the selected day.
-    Showing 11:59 PM avoids making midnight
-    look like noon or the start of another day.
-    */
-    if(hour === 24){
-        return "11:59 PM";
-    }
-
-    return formatHour(hour);
-
-}
-
 
 function formatHour(hour){
 
