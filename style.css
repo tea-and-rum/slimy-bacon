@@ -2150,3 +2150,106 @@ h2 {
         margin-top: 0;
     }
 }
+
+/* =========================================
+   Next 6 Days mini forecast timelines
+   ========================================= */
+
+.next-six-days-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.next-day-card {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.next-day-label {
+    margin-bottom: 9px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    color: #334155;
+}
+
+.next-day-timeline {
+    display: flex;
+    width: 100%;
+    height: 18px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e2e8f0;
+}
+
+.next-day-hour {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.next-day-hour.timeline-flat {
+    background: #2196f3;
+}
+
+.next-day-hour.timeline-go {
+    background: #4caf50;
+}
+
+.next-day-hour.timeline-sporty {
+    background: #e6b800;
+}
+
+.next-day-hour.timeline-no-go {
+    background: #d9534f;
+}
+
+.next-day-unavailable {
+    height: 18px;
+    border-radius: 999px;
+    background: repeating-linear-gradient(
+        45deg,
+        #cbd5e1,
+        #cbd5e1 5px,
+        #e2e8f0 5px,
+        #e2e8f0 10px
+    );
+}
+
+body.dark-mode .next-day-card {
+    background: #182235;
+    border-color: #334155;
+}
+
+body.dark-mode .next-day-label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .next-day-timeline {
+    background: #334155;
+}
+
+body.dark-mode .next-day-unavailable {
+    background: repeating-linear-gradient(
+        45deg,
+        #334155,
+        #334155 5px,
+        #475569 5px,
+        #475569 10px
+    );
+}
+
+@media (max-width: 700px) {
+    .next-six-days-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 430px) {
+    .next-six-days-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -10,6 +10,7 @@ let tideStationCache = null;
 let lastTidePoints = [];
 let lastTideEvents = [];
 let lastSunData = null;
+let nextSixDaysRequestId = 0;
 
 const locations = {};
 
@@ -1480,6 +1481,15 @@ function getAlertsFromForecast(weatherData){
 renderAdvisoryTile(
     alertsForSelectedTime
 );
+
+renderNextSixDays(
+    selectedLocations,
+    selectedDate,
+    boatSize,
+    allAlerts
+).catch(error => {
+    console.warn("Unable to render the next six days:", error);
+});
 
         document
             .getElementById("results")
@@ -4257,6 +4267,117 @@ function createSmoothSvgPath(points){
 
     return path;
 
+}
+
+
+function addDaysToDateString(dateString, daysToAdd){
+    const date = new Date(`${dateString}T12:00:00Z`);
+    date.setUTCDate(date.getUTCDate() + daysToAdd);
+    return [
+        date.getUTCFullYear(),
+        String(date.getUTCMonth() + 1).padStart(2, "0"),
+        String(date.getUTCDate()).padStart(2, "0")
+    ].join("-");
+}
+
+function formatNextDayLabel(dateString){
+    const date = new Date(`${dateString}T12:00:00Z`);
+    return new Intl.DateTimeFormat(
+        "en-US",
+        {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+            timeZone: "UTC"
+        }
+    ).format(date);
+}
+
+function miniTimelineClass(status){
+    switch(status){
+        case "FLAT": return "timeline-flat";
+        case "CALM": return "timeline-go";
+        case "SPORTY": return "timeline-sporty";
+        case "POOR": return "timeline-no-go";
+        default: return "";
+    }
+}
+
+async function renderNextSixDays(
+    selectedLocations,
+    selectedDate,
+    boatSize,
+    currentAlerts = []
+){
+    const grid = document.getElementById("nextSixDaysGrid");
+    if(!grid) return;
+
+    const requestId = ++nextSixDaysRequestId;
+    const dates = Array.from(
+        { length: 6 },
+        (_, index) => addDaysToDateString(selectedDate, index + 1)
+    );
+
+    grid.innerHTML = dates.map(date => `
+        <div class="next-day-card">
+            <div class="next-day-label">${escapeHTML(formatNextDayLabel(date))}</div>
+            <div class="next-day-unavailable" aria-label="Loading forecast"></div>
+        </div>
+    `).join("");
+
+    const dayResults = await Promise.all(
+        dates.map(async date => {
+            try {
+                const locationResults = await Promise.all(
+                    selectedLocations.map(async location => {
+                        const forecast = await getHourlyWeather(location, date);
+                        const locationAlerts = currentAlerts.filter(alert =>
+                            !alert.location || alert.location === location
+                        );
+                        applyAlertsToForecast(forecast, locationAlerts);
+                        return evaluateLocation(forecast, boatSize).hourlyResults;
+                    })
+                );
+
+                return {
+                    date,
+                    timeline: combineTimelineResults(locationResults)
+                };
+            }
+            catch(error){
+                console.warn(`Next-six-days forecast unavailable for ${date}:`, error);
+                return { date, timeline: null };
+            }
+        })
+    );
+
+    if(requestId !== nextSixDaysRequestId) return;
+
+    grid.innerHTML = dayResults.map(day => {
+        const label = escapeHTML(formatNextDayLabel(day.date));
+
+        if(!Array.isArray(day.timeline)){
+            return `
+                <div class="next-day-card">
+                    <div class="next-day-label">${label}</div>
+                    <div class="next-day-unavailable" aria-label="Forecast unavailable"></div>
+                </div>
+            `;
+        }
+
+        const segments = day.timeline.map(status =>
+            `<span class="next-day-hour ${miniTimelineClass(status)}"></span>`
+        ).join("");
+
+        return `
+            <div class="next-day-card">
+                <div class="next-day-label">${label}</div>
+                <div class="next-day-timeline" aria-label="24-hour boating conditions for ${label}">
+                    ${segments}
+                </div>
+            </div>
+        `;
+    }).join("");
 }
 
 
