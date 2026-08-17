@@ -2253,3 +2253,13 @@ body.dark-mode .next-day-unavailable {
         grid-template-columns: 1fr;
     }
 }
+/* Clickable Next 6 Days cards */
+.next-day-clickable {
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.next-day-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,.12);
+}

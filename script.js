@@ -3565,10 +3565,19 @@ async function renderTideOverlay(
         ]);
 
 
-        if(hourlyPredictions.length >= 2){
+        const now = new Date();
+        const selectedDateObject = new Date(selectedDate + "T00:00:00");
+        const isToday = selectedDateObject.toDateString() === now.toDateString();
+        const currentHour = now.getHours();
+
+        const visibleTidePredictions = isToday
+            ? hourlyPredictions.filter(point => point.hour >= currentHour)
+            : hourlyPredictions;
+
+        if(visibleTidePredictions.length >= 2){
 
             drawTidePath(
-                hourlyPredictions
+                visibleTidePredictions
             );
 
         }
@@ -4303,6 +4312,39 @@ function miniTimelineClass(status){
     }
 }
 
+function setupNextSixDaysClickHandlers(){
+    const grid = document.getElementById("nextSixDaysGrid");
+    if(!grid || grid.dataset.clickReady === "true") return;
+
+    grid.dataset.clickReady = "true";
+
+    grid.addEventListener("click", event => {
+        const card = event.target.closest(".next-day-clickable");
+        if(!card) return;
+
+        const dateInput = document.getElementById("date");
+        if(!dateInput) return;
+
+        dateInput.value = card.dataset.nextDate;
+        checkConditions();
+        document.getElementById("results")?.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+    });
+
+    grid.addEventListener("keydown", event => {
+        if(event.key !== "Enter" && event.key !== " ") return;
+        const card = event.target.closest(".next-day-clickable");
+        if(!card) return;
+        event.preventDefault();
+        const dateInput = document.getElementById("date");
+        if(!dateInput) return;
+        dateInput.value = card.dataset.nextDate;
+        checkConditions();
+    });
+}
+
 async function renderNextSixDays(
     selectedLocations,
     selectedDate,
@@ -4311,6 +4353,8 @@ async function renderNextSixDays(
 ){
     const grid = document.getElementById("nextSixDaysGrid");
     if(!grid) return;
+
+    setupNextSixDaysClickHandlers();
 
     const requestId = ++nextSixDaysRequestId;
     const dates = Array.from(
@@ -4370,7 +4414,7 @@ async function renderNextSixDays(
         ).join("");
 
         return `
-            <div class="next-day-card">
+            <div class="next-day-card next-day-clickable" data-next-date="${day.date}" tabindex="0" role="button" aria-label="Load forecast for ${label}">
                 <div class="next-day-label">${label}</div>
                 <div class="next-day-timeline" aria-label="24-hour boating conditions for ${label}">
                     ${segments}
