@@ -1048,33 +1048,23 @@ function getHumanDecisionSummaryHTML(
                 ? 2
                 : 0;
 
-    const concerns = [
-        {
-            name:
-                "Wind",
-            severity:
-                windSeverity
-        },
-        {
-            name:
-                "Waves",
-            severity:
-                waveSeverity
-        },
-        {
-            name:
-                "Rain",
-            severity:
-                rainSeverity
-        }
-    ].sort(
-        (a, b) =>
-            b.severity - a.severity
-    );
+    const concerns = [];
+
+    if(windSeverity > 0){
+        concerns.push("Wind");
+    }
+
+    if(waveSeverity > 0){
+        concerns.push("Waves");
+    }
+
+    if(rainSeverity > 0){
+        concerns.push("Rain");
+    }
 
     const primary =
-        concerns[0].severity > 0
-            ? concerns[0].name
+        concerns.length
+            ? concerns.join(" + ")
             : "None";
 
     let forecastText = "";
