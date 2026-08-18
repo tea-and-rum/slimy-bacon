@@ -11,13 +11,17 @@ let lastTidePoints = [];
 let lastTideEvents = [];
 let lastSunData = null;
 let nextSixDaysRequestId = 0;
-let forecastSourceInfo = null;
 
 const locations = {};
 
 let locationMap = null;
 let selectedMapMarker = null;
 let selectedMapLocationName = null;
+
+let forecastSourceMarker = null;
+let forecastSourceLine = null;
+let lastForecastSourceMeta = null;
+
 
 const DEFAULT_MAP_BOUNDS = [
     [37.85, -77.05],
@@ -124,11 +128,11 @@ window.onload = function(){
 
     setupDarkMode();
 
-    setupForecastSourceToggle();
-
     setupTideToggle();
 
     setupLocationMap();
+
+    setupForecastSourceUI();
 
 };
 
@@ -368,6 +372,162 @@ function getVesselLimits(boatSize){
         useThunder: false,
         isCustom: false
     };
+}
+
+
+
+function haversineMiles(lat1, lon1, lat2, lon2){
+    const toRad = value => value * Math.PI / 180;
+    const earthRadiusMiles = 3958.8;
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) ** 2;
+
+    return earthRadiusMiles *
+        2 *
+        Math.atan2(
+            Math.sqrt(a),
+            Math.sqrt(1 - a)
+        );
+}
+
+function clearForecastSourceMapOverlay(){
+    if(locationMap && forecastSourceMarker){
+        locationMap.removeLayer(forecastSourceMarker);
+    }
+
+    if(locationMap && forecastSourceLine){
+        locationMap.removeLayer(forecastSourceLine);
+    }
+
+    forecastSourceMarker = null;
+    forecastSourceLine = null;
+}
+
+function setupForecastSourceUI(){
+    const toggle = document.getElementById("forecastSourceToggle");
+    const details = document.getElementById("forecastSourceDetails");
+
+    if(!toggle || !details){
+        return;
+    }
+
+    if(toggle.dataset.bound === "true"){
+        return;
+    }
+
+    toggle.dataset.bound = "true";
+
+    toggle.addEventListener("click", () => {
+        const expanded = toggle.getAttribute("aria-expanded") === "true";
+        toggle.setAttribute("aria-expanded", String(!expanded));
+        details.classList.toggle("hidden", expanded);
+    });
+}
+
+function updateForecastSourceVerification(location, weatherData){
+    const requested = locations[location];
+
+    if(
+        !requested ||
+        !weatherData ||
+        !Number.isFinite(Number(weatherData.latitude)) ||
+        !Number.isFinite(Number(weatherData.longitude))
+    ){
+        return;
+    }
+
+    const requestedLat = Number(requested.lat);
+    const requestedLon = Number(requested.lon);
+    const gridLat = Number(weatherData.latitude);
+    const gridLon = Number(weatherData.longitude);
+
+    const distanceMiles =
+        haversineMiles(
+            requestedLat,
+            requestedLon,
+            gridLat,
+            gridLon
+        );
+
+    lastForecastSourceMeta = {
+        location,
+        requestedLat,
+        requestedLon,
+        gridLat,
+        gridLon,
+        distanceMiles
+    };
+
+    const panel = document.getElementById("forecastSourcePanel");
+    const details = document.getElementById("forecastSourceDetails");
+
+    if(panel && details){
+        panel.classList.remove("hidden");
+
+        details.innerHTML = `
+            <div class="forecast-source-grid">
+                <div>
+                    <span class="forecast-source-label">Selected location</span>
+                    <span class="forecast-source-value">${escapeHTML(location)}</span><br>
+                    ${requestedLat.toFixed(5)}, ${requestedLon.toFixed(5)}
+                </div>
+                <div>
+                    <span class="forecast-source-label">Forecast grid</span>
+                    <span class="forecast-source-value">${gridLat.toFixed(5)}, ${gridLon.toFixed(5)}</span><br>
+                    Sea grid · ${distanceMiles.toFixed(2)} mi away
+                </div>
+            </div>
+        `;
+    }
+
+    setupForecastSourceUI();
+
+    if(!locationMap){
+        return;
+    }
+
+    clearForecastSourceMapOverlay();
+
+    forecastSourceMarker =
+        L.circleMarker(
+            [gridLat, gridLon],
+            {
+                radius: 7,
+                color: "#ffffff",
+                weight: 3,
+                fillColor: "#16a34a",
+                fillOpacity: 1
+            }
+        )
+        .addTo(locationMap)
+        .bindPopup(
+            "<strong>Forecast grid</strong><br>" +
+            gridLat.toFixed(5) + ", " +
+            gridLon.toFixed(5) + "<br>" +
+            distanceMiles.toFixed(2) + " mi from selected point"
+        );
+
+    forecastSourceLine =
+        L.polyline(
+            [
+                [requestedLat, requestedLon],
+                [gridLat, gridLon]
+            ],
+            {
+                color: "#16a34a",
+                weight: 2,
+                opacity: 0.9,
+                dashArray: "6,6"
+            }
+        )
+        .addTo(locationMap);
 }
 
 
@@ -779,6 +939,16 @@ function setSelectedMapLocation(
 
 
 function clearMapSelection(){
+
+    clearForecastSourceMapOverlay();
+
+    const sourcePanel = document.getElementById("forecastSourcePanel");
+    const sourceDetails = document.getElementById("forecastSourceDetails");
+    const sourceToggle = document.getElementById("forecastSourceToggle");
+    sourcePanel?.classList.add("hidden");
+    sourceDetails?.classList.add("hidden");
+    sourceToggle?.setAttribute("aria-expanded", "false");
+    lastForecastSourceMeta = null;
 
     if(
         selectedMapMarker &&
@@ -5634,6 +5804,11 @@ async function getOpenMeteoHourlyWeather(
     const weatherData =
         await weatherResponse.json();
 
+    updateForecastSourceVerification(
+        location,
+        weatherData
+    );
+
 
     let marineData = null;
 
@@ -5643,21 +5818,7 @@ async function getOpenMeteoHourlyWeather(
             await marineResponse.json();
 
     }
-
-    // Store the actual Open-Meteo grid location used for this forecast.
-    // This lets Drift show users the relationship between their clicked
-    // location and the model grid used for the forecast.
-    forecastSourceInfo = {
-        requestedLat: coords.lat,
-        requestedLon: coords.lon,
-        forecastLat: weatherData.latitude,
-        forecastLon: weatherData.longitude,
-        gridType: "Sea"
-    };
-
-    updateForecastSourceDisplay(location);
-
-    if(marineResponse.ok === false){
+    else {
 
         console.warn(
             `Open-Meteo wave data unavailable for ${location}: ` +
@@ -5896,83 +6057,6 @@ async function getOpenMeteoHourlyWeather(
 
     return hourlyForecast;
 
-}
-
-
-
-function updateForecastSourceDisplay(location){
-
-    const panel =
-        document.getElementById("forecastSourceInfo");
-
-    if(!panel || !forecastSourceInfo){
-        return;
-    }
-
-    const distance =
-        calculateDistanceMiles(
-            forecastSourceInfo.requestedLat,
-            forecastSourceInfo.requestedLon,
-            forecastSourceInfo.forecastLat,
-            forecastSourceInfo.forecastLon
-        );
-
-    panel.innerHTML =
-        "<strong>Forecast Source</strong><br>" +
-        "Selected location: " +
-        escapeHTML(location || "Map selection") +
-        "<br>" +
-        forecastSourceInfo.requestedLat.toFixed(5) +
-        ", " +
-        forecastSourceInfo.requestedLon.toFixed(5) +
-        "<br><br>" +
-        "Forecast grid: " +
-        forecastSourceInfo.forecastLat.toFixed(5) +
-        ", " +
-        forecastSourceInfo.forecastLon.toFixed(5) +
-        "<br>" +
-        "Grid type: " +
-        forecastSourceInfo.gridType +
-        "<br>" +
-        "Distance: " +
-        distance.toFixed(1) +
-        " miles";
-
-    panel.classList.remove("hidden");
-    document.getElementById("forecastSourceToggle")?.classList.remove("hidden");
-
-    if(locationMap && L){
-        if(forecastSourceMarker){
-            locationMap.removeLayer(forecastSourceMarker);
-        }
-        if(forecastSourceLine){
-            locationMap.removeLayer(forecastSourceLine);
-        }
-        forecastSourceMarker = L.circleMarker(
-            [forecastSourceInfo.forecastLat, forecastSourceInfo.forecastLon],
-            {radius:8,color:"#ffffff",weight:3,fillColor:"#22c55e",fillOpacity:1}
-        ).addTo(locationMap).bindPopup("<strong>Forecast grid</strong><br>" + forecastSourceInfo.forecastLat.toFixed(5) + ", " + forecastSourceInfo.forecastLon.toFixed(5));
-        forecastSourceLine = L.polyline(
-            [[forecastSourceInfo.requestedLat, forecastSourceInfo.requestedLon],[forecastSourceInfo.forecastLat, forecastSourceInfo.forecastLon]],
-            {color:"#22c55e",dashArray:"6,6",weight:2}
-        ).addTo(locationMap);
-    }
-}
-
-
-function calculateDistanceMiles(lat1, lon1, lat2, lon2){
-
-    const R = 3958.8;
-    const dLat = (lat2-lat1) * Math.PI/180;
-    const dLon = (lon2-lon1) * Math.PI/180;
-
-    const a =
-        Math.sin(dLat/2)**2 +
-        Math.cos(lat1*Math.PI/180) *
-        Math.cos(lat2*Math.PI/180) *
-        Math.sin(dLon/2)**2;
-
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
 

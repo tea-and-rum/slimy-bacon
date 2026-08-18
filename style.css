@@ -2264,42 +2264,72 @@ body.dark-mode .next-day-unavailable {
     box-shadow: 0 4px 10px rgba(0,0,0,.12);
 }
 
-/* Forecast source transparency */
-.forecast-source-info {
-    margin-top: 15px;
-    padding: 14px;
-    border-radius: 10px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    font-size: 13px;
-    line-height: 1.5;
-    text-align: left;
+/* ===========================
+   Forecast source verification
+   =========================== */
+.forecast-source-panel {
+    margin: 14px 0 4px;
 }
-
-body.dark-mode .forecast-source-info {
-    background: #1e293b;
-    border-color: #334155;
-    color: #e2e8f0;
-}
-
 
 .forecast-source-toggle {
-    width:auto;
-    margin:12px auto;
-    display:block;
-    padding:8px 14px;
-    border-radius:8px;
-    background:#eef6fb;
-    border:1px solid #cbd5e1;
-    font-size:14px;
+    width: auto;
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
 }
 
-.forecast-source-info {
-    margin-top:10px;
-    padding:12px;
-    border-radius:8px;
-    background:#f8fafc;
-    border:1px solid #e2e8f0;
-    font-size:14px;
-    line-height:1.5;
+.forecast-source-details {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border: 1px solid #dbe3ea;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.forecast-source-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+}
+
+.forecast-source-label {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    margin-bottom: 2px;
+}
+
+.forecast-source-value {
+    font-weight: 700;
+}
+
+body.dark-mode .forecast-source-toggle {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+body.dark-mode .forecast-source-details {
+    background: #182235;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+
+body.dark-mode .forecast-source-label {
+    color: #94a3b8;
+}
+
+@media (max-width: 600px) {
+    .forecast-source-grid {
+        grid-template-columns: 1fr;
+    }
 }
