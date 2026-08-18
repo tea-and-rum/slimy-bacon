@@ -1062,8 +1062,16 @@ function getHumanDecisionSummaryHTML(
         concerns.push("Rain");
     }
 
+    // Do not show a concern unless the timeline actually contains
+    // Sporty or Poor conditions. This prevents isolated forecast values
+    // from creating a concern on an otherwise all-day calm forecast.
+    const hasUnfavorableTimeline =
+        document.querySelector(
+            "#timelineBar .timeline-sporty, #timelineBar .timeline-no-go"
+        ) !== null;
+
     const primary =
-        concerns.length
+        hasUnfavorableTimeline && concerns.length
             ? concerns.join(" + ")
             : "None";
 
