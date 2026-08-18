@@ -21,6 +21,8 @@ let selectedMapLocationName = null;
 let forecastSourceMarker = null;
 let forecastSourceLine = null;
 let lastForecastSourceMeta = null;
+let lastForecastConfidence = null;
+let forecastConfidenceRequestId = 0;
 
 
 const DEFAULT_MAP_BOUNDS = [
@@ -118,92 +120,6 @@ const fishingSpots = [
 
 let fishingSpotsLayer = null;
 
-
-
-let driftForecastConfidence = null;
-
-function updateForecastConfidenceUI(weatherData){
-    const panel = document.getElementById("forecastConfidencePanel");
-    const button = document.getElementById("forecastConfidenceToggle");
-    const details = document.getElementById("forecastConfidenceDetails");
-
-    if(!panel || !button || !details) return;
-
-    // Initial confidence engine. Designed to expand when multiple models are added.
-    let stars = 3;
-    let reasons = [
-        "Forecast inputs are internally consistent."
-    ];
-
-    const wind = weatherData?.hourly?.wind_speed_10m || [];
-    const gust = weatherData?.hourly?.wind_gusts_10m || [];
-
-    if(wind.length && gust.length){
-        const windRange = Math.max(...wind) - Math.min(...wind);
-        const gustRange = Math.max(...gust) - Math.min(...gust);
-
-        if(windRange > 15 || gustRange > 20){
-            stars = 2;
-            reasons = [
-                "Wind forecast changes significantly throughout the forecast period."
-            ];
-        }
-    }
-
-    driftForecastConfidence = {
-        stars,
-        reasons
-    };
-
-    button.textContent =
-        "★".repeat(stars) +
-        "☆".repeat(3-stars) +
-        " Forecast Confidence";
-
-    details.innerHTML =
-        "<strong>Forecast Confidence</strong><br><br>" +
-        reasons.map(r => "• " + r).join("<br>");
-
-    panel.classList.remove("hidden");
-
-    if(button.dataset.bound !== "true"){
-        button.dataset.bound = "true";
-        button.addEventListener("click", () => {
-            const open = button.getAttribute("aria-expanded") === "true";
-            button.setAttribute("aria-expanded", String(!open));
-            details.classList.toggle("hidden", open);
-        });
-    }
-}
-
-function createPrimaryConcernHTML(result){
-    if(!result) return "";
-
-    const issues = [];
-
-    if(result.wind === "poor") issues.push("Wind");
-    if(result.waves === "poor") issues.push("Waves");
-    if(result.precip === "poor") issues.push("Rain");
-
-    if(!issues.length){
-        return `
-        <div class="primary-concern">
-            <strong>Primary concern:</strong><br>
-            None<br><br>
-            Conditions are within your selected comfort range.
-        </div>`;
-    }
-
-    return `
-    <div class="primary-concern">
-        <strong>Primary concern:</strong><br>
-        ${issues[0]}<br><br>
-        <strong>Forecast:</strong><br>
-        ${issues.join(" + ")} are driving today's rating.
-    </div>`;
-}
-
-
 window.onload = function(){
 
     setToday();
@@ -219,6 +135,8 @@ window.onload = function(){
     setupLocationMap();
 
     setupForecastSourceUI();
+
+    setupForecastConfidenceUI();
 
 };
 
@@ -614,6 +532,620 @@ function updateForecastSourceVerification(location, weatherData){
             }
         )
         .addTo(locationMap);
+}
+
+
+
+function setupForecastConfidenceUI(){
+    const button = document.getElementById("forecastConfidenceButton");
+    const modal = document.getElementById("forecastConfidenceModal");
+    const close = document.getElementById("forecastConfidenceClose");
+
+    if(!button || !modal){
+        return;
+    }
+
+    if(button.dataset.bound === "true"){
+        return;
+    }
+
+    button.dataset.bound = "true";
+
+    const closeModal = () => {
+        modal.classList.add("hidden");
+    };
+
+    button.addEventListener("click", () => {
+        modal.classList.remove("hidden");
+    });
+
+    close?.addEventListener("click", closeModal);
+
+    modal.querySelectorAll('[data-confidence-close="true"]').forEach(element => {
+        element.addEventListener("click", closeModal);
+    });
+
+    document.addEventListener("keydown", event => {
+        if(event.key === "Escape" && !modal.classList.contains("hidden")){
+            closeModal();
+        }
+    });
+}
+
+function getAvailableNumericValues(values){
+    if(!Array.isArray(values)){
+        return [];
+    }
+
+    return values
+        .map(value => Number(value))
+        .filter(value => Number.isFinite(value));
+}
+
+function getMaxModelDifference(valuesA, valuesB){
+    if(!Array.isArray(valuesA) || !Array.isArray(valuesB)){
+        return null;
+    }
+
+    const length = Math.min(valuesA.length, valuesB.length);
+    let maxDifference = null;
+
+    for(let index = 0; index < length; index++){
+        const a = Number(valuesA[index]);
+        const b = Number(valuesB[index]);
+
+        if(!Number.isFinite(a) || !Number.isFinite(b)){
+            continue;
+        }
+
+        const difference = Math.abs(a - b);
+
+        maxDifference =
+            maxDifference === null
+                ? difference
+                : Math.max(maxDifference, difference);
+    }
+
+    return maxDifference;
+}
+
+async function fetchConfidenceModel(endpoint, coords, selectedDate){
+    const parameters =
+        new URLSearchParams({
+            latitude:
+                String(coords.lat),
+            longitude:
+                String(coords.lon),
+            hourly:
+                [
+                    "wind_speed_10m",
+                    "wind_gusts_10m",
+                    "precipitation_probability"
+                ].join(","),
+            wind_speed_unit:
+                "mph",
+            cell_selection:
+                "sea",
+            timezone:
+                "America/New_York",
+            start_date:
+                selectedDate,
+            end_date:
+                selectedDate
+        });
+
+    const response =
+        await fetch(
+            endpoint + "?" +
+            parameters.toString()
+        );
+
+    if(!response.ok){
+        throw new Error(
+            "Model request failed: " +
+            response.status
+        );
+    }
+
+    return response.json();
+}
+
+async function getForecastConfidence(location, selectedDate){
+    const coords = locations[location];
+
+    if(!coords){
+        return null;
+    }
+
+    const [
+        gfsResult,
+        ecmwfResult
+    ] = await Promise.allSettled([
+        fetchConfidenceModel(
+            "https://api.open-meteo.com/v1/gfs",
+            coords,
+            selectedDate
+        ),
+        fetchConfidenceModel(
+            "https://api.open-meteo.com/v1/ecmwf",
+            coords,
+            selectedDate
+        )
+    ]);
+
+    const models = [];
+
+    if(gfsResult.status === "fulfilled"){
+        models.push({
+            name:
+                "NOAA GFS / HRRR",
+            data:
+                gfsResult.value
+        });
+    }
+
+    if(ecmwfResult.status === "fulfilled"){
+        models.push({
+            name:
+                "ECMWF IFS",
+            data:
+                ecmwfResult.value
+        });
+    }
+
+    if(models.length < 2){
+        return {
+            stars:
+                1,
+            label:
+                "Low",
+            reasons:
+                [
+                    "Drift could not retrieve enough independent forecast models to verify agreement."
+                ],
+            models:
+                models
+        };
+    }
+
+    const gfs =
+        models.find(model =>
+            model.name.includes("NOAA")
+        ).data;
+
+    const ecmwf =
+        models.find(model =>
+            model.name.includes("ECMWF")
+        ).data;
+
+    const windDifference =
+        getMaxModelDifference(
+            gfs.hourly?.wind_speed_10m,
+            ecmwf.hourly?.wind_speed_10m
+        );
+
+    const gustDifference =
+        getMaxModelDifference(
+            gfs.hourly?.wind_gusts_10m,
+            ecmwf.hourly?.wind_gusts_10m
+        );
+
+    const precipDifference =
+        getMaxModelDifference(
+            gfs.hourly?.precipitation_probability,
+            ecmwf.hourly?.precipitation_probability
+        );
+
+    let stars = 3;
+    const reasons = [];
+
+    if(windDifference !== null){
+        if(windDifference > 10){
+            stars = 1;
+            reasons.push(
+                `Wind models disagree by as much as ${Math.round(windDifference)} mph.`
+            );
+        }
+        else if(windDifference > 5){
+            stars = Math.min(stars, 2);
+            reasons.push(
+                `Wind models differ by as much as ${Math.round(windDifference)} mph.`
+            );
+        }
+        else {
+            reasons.push(
+                `Wind models agree within about ${Math.max(1, Math.round(windDifference))} mph.`
+            );
+        }
+    }
+
+    if(gustDifference !== null){
+        if(gustDifference > 12){
+            stars = Math.min(stars, 1);
+            reasons.push(
+                `Gust forecasts differ by as much as ${Math.round(gustDifference)} mph.`
+            );
+        }
+        else if(gustDifference > 7){
+            stars = Math.min(stars, 2);
+            reasons.push(
+                `Gust forecasts differ by as much as ${Math.round(gustDifference)} mph.`
+            );
+        }
+        else {
+            reasons.push(
+                `Gust forecasts are within about ${Math.max(1, Math.round(gustDifference))} mph.`
+            );
+        }
+    }
+
+    if(precipDifference !== null){
+        if(precipDifference > 40){
+            stars = Math.min(stars, 1);
+            reasons.push(
+                `Rain probability differs by as much as ${Math.round(precipDifference)} percentage points.`
+            );
+        }
+        else if(precipDifference > 25){
+            stars = Math.min(stars, 2);
+            reasons.push(
+                `Rain probability differs by as much as ${Math.round(precipDifference)} percentage points.`
+            );
+        }
+        else {
+            reasons.push(
+                `Rain forecasts are within about ${Math.round(precipDifference)} percentage points.`
+            );
+        }
+    }
+
+    if(reasons.length === 0){
+        reasons.push(
+            "The available models are in close agreement."
+        );
+    }
+
+    return {
+        stars:
+            stars,
+        label:
+            stars === 3
+                ? "High"
+                : stars === 2
+                    ? "Moderate"
+                    : "Low",
+        reasons:
+            reasons,
+        models:
+            models.map(model => {
+                const winds =
+                    getAvailableNumericValues(
+                        model.data.hourly?.wind_speed_10m
+                    );
+                const gusts =
+                    getAvailableNumericValues(
+                        model.data.hourly?.wind_gusts_10m
+                    );
+                const precip =
+                    getAvailableNumericValues(
+                        model.data.hourly?.precipitation_probability
+                    );
+
+                return {
+                    name:
+                        model.name,
+                    maxWind:
+                        winds.length
+                            ? Math.max(...winds)
+                            : null,
+                    maxGust:
+                        gusts.length
+                            ? Math.max(...gusts)
+                            : null,
+                    maxPrecip:
+                        precip.length
+                            ? Math.max(...precip)
+                            : null
+                };
+            })
+    };
+}
+
+function renderForecastConfidence(confidence){
+    const panel =
+        document.getElementById(
+            "forecastConfidencePanel"
+        );
+
+    const stars =
+        document.getElementById(
+            "forecastConfidenceStars"
+        );
+
+    const label =
+        document.getElementById(
+            "forecastConfidenceLabel"
+        );
+
+    const body =
+        document.getElementById(
+            "forecastConfidenceBody"
+        );
+
+    if(!panel || !stars || !label || !body){
+        return;
+    }
+
+    if(!confidence){
+        panel.classList.add("hidden");
+        return;
+    }
+
+    lastForecastConfidence = confidence;
+
+    stars.textContent =
+        "★".repeat(confidence.stars) +
+        "☆".repeat(3 - confidence.stars);
+
+    label.textContent =
+        confidence.label +
+        " confidence";
+
+    const modelCards =
+        confidence.models
+            .map(model => `
+                <div class="confidence-model-card">
+                    <strong>${escapeHTML(model.name)}</strong>
+                    <div>Max wind: ${
+                        model.maxWind === null
+                            ? "--"
+                            : Math.round(model.maxWind) + " mph"
+                    }</div>
+                    <div>Max gust: ${
+                        model.maxGust === null
+                            ? "--"
+                            : Math.round(model.maxGust) + " mph"
+                    }</div>
+                    <div>Peak rain chance: ${
+                        model.maxPrecip === null
+                            ? "--"
+                            : Math.round(model.maxPrecip) + "%"
+                    }</div>
+                </div>
+            `)
+            .join("");
+
+    body.innerHTML = `
+        ${confidence.reasons
+            .map(reason =>
+                `<div class="confidence-reason">${escapeHTML(reason)}</div>`
+            )
+            .join("")}
+
+        <div class="confidence-model-grid">
+            ${modelCards}
+        </div>
+
+        <p class="confidence-help">
+            Drift compares independent atmospheric forecast models in the background.
+            The confidence rating does not replace official marine forecasts or current conditions.
+        </p>
+    `;
+
+    panel.classList.remove("hidden");
+}
+
+function getHumanDecisionSummaryHTML(
+    weatherData,
+    boatSize,
+    selectedDate,
+    timeline
+){
+    const limits =
+        getVesselLimits(boatSize);
+
+    if(!limits){
+        return "The selected vessel could not be evaluated.";
+    }
+
+    const now = new Date();
+
+    const todayString = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, "0"),
+        String(now.getDate()).padStart(2, "0")
+    ].join("-");
+
+    const hours = [];
+
+    weatherData.forEach(locationForecast => {
+        if(!Array.isArray(locationForecast)){
+            return;
+        }
+
+        locationForecast.forEach((hour, hourIndex) => {
+            if(!hour){
+                return;
+            }
+
+            if(
+                selectedDate === todayString &&
+                hourIndex < now.getHours()
+            ){
+                return;
+            }
+
+            hours.push(hour);
+        });
+    });
+
+    if(!hours.length){
+        return "No remaining forecast information is available.";
+    }
+
+    const sustained =
+        hours
+            .map(hour => Number(hour.wind))
+            .filter(Number.isFinite);
+
+    const gusts =
+        hours
+            .map(hour => Number(hour.gust))
+            .filter(Number.isFinite);
+
+    const waves =
+        hours
+            .map(hour => Number(hour.waves))
+            .filter(Number.isFinite);
+
+    const precip =
+        hours
+            .map(hour => Number(hour.precip))
+            .filter(Number.isFinite);
+
+    const maxWind =
+        sustained.length
+            ? Math.max(...sustained)
+            : 0;
+
+    const maxGust =
+        gusts.length
+            ? Math.max(...gusts)
+            : maxWind;
+
+    const maxWaves =
+        waves.length
+            ? Math.max(...waves)
+            : null;
+
+    const maxPrecip =
+        precip.length
+            ? Math.max(...precip)
+            : 0;
+
+    const windSeverity =
+        Math.max(maxWind, maxGust) >= limits.windPoor
+            ? 3
+            : Math.max(maxWind, maxGust) >= limits.windSporty
+                ? 2
+                : 0;
+
+    const waveSeverity =
+        maxWaves !== null &&
+        maxWaves >= limits.wavePoor
+            ? 3
+            : maxWaves !== null &&
+              maxWaves >= limits.waveSporty
+                ? 2
+                : 0;
+
+    const rainSeverity =
+        limits.usePrecip &&
+        maxPrecip >= limits.precipPoor
+            ? 3
+            : limits.usePrecip &&
+              maxPrecip >= limits.precipSporty
+                ? 2
+                : 0;
+
+    const concerns = [
+        {
+            name:
+                "Wind",
+            severity:
+                windSeverity
+        },
+        {
+            name:
+                "Waves",
+            severity:
+                waveSeverity
+        },
+        {
+            name:
+                "Rain",
+            severity:
+                rainSeverity
+        }
+    ].sort(
+        (a, b) =>
+            b.severity - a.severity
+    );
+
+    const primary =
+        concerns[0].severity > 0
+            ? concerns[0].name
+            : "None";
+
+    let forecastText = "";
+
+    if(primary === "Wind"){
+        forecastText =
+            `${Math.round(maxWind)} mph winds<br>` +
+            `${Math.round(maxGust)} mph gusts`;
+    }
+    else if(primary === "Waves"){
+        forecastText =
+            maxWaves === null
+                ? "Wave forecast unavailable"
+                : `${maxWaves.toFixed(1)} ft maximum waves`;
+    }
+    else if(primary === "Rain"){
+        forecastText =
+            `${Math.round(maxPrecip)}% peak precipitation chance`;
+    }
+    else {
+        forecastText =
+            `${Math.round(maxWind)} mph max winds · ` +
+            `${Math.round(maxGust)} mph max gusts` +
+            (
+                maxWaves === null
+                    ? ""
+                    : ` · ${maxWaves.toFixed(1)} ft max waves`
+            );
+    }
+
+    let recommendation = "";
+
+    if(primary === "None"){
+        recommendation =
+            "Conditions are within the selected vessel's comfort limits for the favorable periods shown below.";
+    }
+    else if(primary === "Wind"){
+        recommendation =
+            windSeverity >= 3
+                ? "Wind is the main factor pushing conditions into Poor territory."
+                : "Wind is the main factor making conditions Sporty.";
+    }
+    else if(primary === "Waves"){
+        recommendation =
+            waveSeverity >= 3
+                ? "Wave conditions are the main factor pushing conditions into Poor territory."
+                : "Wave conditions are the main factor making conditions Sporty.";
+    }
+    else {
+        recommendation =
+            rainSeverity >= 3
+                ? "Rain probability is the main factor pushing conditions into Poor territory."
+                : "Rain probability is the main factor making conditions Sporty.";
+    }
+
+    return `
+        <div class="human-summary-block">
+            <span class="human-summary-label">Primary concern:</span>
+            <span class="human-summary-value">${escapeHTML(primary)}</span>
+        </div>
+
+        <div class="human-summary-block">
+            <span class="human-summary-label">Forecast:</span>
+            <span class="human-summary-value">${forecastText}</span>
+        </div>
+
+        <div class="human-summary-block">
+            <span class="human-summary-label">Recommendation:</span>
+            <div class="human-summary-detail">${escapeHTML(recommendation)}</div>
+        </div>
+    `;
 }
 
 
@@ -1401,6 +1933,21 @@ function clearSelections(){
         message.textContent = "";
     }
 
+    const confidencePanel =
+        document.getElementById(
+            "forecastConfidencePanel"
+        );
+
+    if(confidencePanel){
+        confidencePanel.classList.add(
+            "hidden"
+        );
+    }
+
+    forecastConfidenceRequestId++;
+    lastForecastConfidence = null;
+
+
     const results =
         document.getElementById("results");
 
@@ -1501,6 +2048,35 @@ async function checkConditions(){
 
     document.getElementById("message").innerHTML =
         "Checking conditions...";
+
+
+    const confidenceRequestId =
+        ++forecastConfidenceRequestId;
+
+    document
+        .getElementById("forecastConfidencePanel")
+        ?.classList.add("hidden");
+
+    getForecastConfidence(
+        selectedLocations[0],
+        selectedDate
+    )
+    .then(confidence => {
+        if(
+            confidenceRequestId ===
+            forecastConfidenceRequestId
+        ){
+            renderForecastConfidence(
+                confidence
+            );
+        }
+    })
+    .catch(error => {
+        console.warn(
+            "Unable to compare forecast models:",
+            error
+        );
+    });
 
 
     document
@@ -1668,9 +2244,17 @@ const validTimeline =
             overallClass(overall);
 
 
-        document.getElementById("decisionSummary").textContent =
-            getDecisionExplanation(
-                overall,
+        const decisionSummaryElement =
+            document.getElementById(
+                "decisionSummary"
+            );
+
+        decisionSummaryElement.classList.add(
+            "human-decision-summary"
+        );
+
+        decisionSummaryElement.innerHTML =
+            getHumanDecisionSummaryHTML(
                 allWeather,
                 boatSize,
                 selectedDate,
