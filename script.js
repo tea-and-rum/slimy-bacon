@@ -5554,6 +5554,11 @@ async function getOpenMeteoHourlyWeather(
             temperature_unit:
                 "fahrenheit",
 
+            // Use offshore/open-water cells instead of the nearest land grid cell.
+            // This keeps wind, rain, and temperature tied to the selected water location.
+            cell_selection:
+                "sea",
+
             timezone:
                 "America/New_York",
 
@@ -5578,6 +5583,11 @@ async function getOpenMeteoHourlyWeather(
                     "wave_height",
                     "wave_period"
                 ].join(","),
+
+            // Use offshore/open-water cells instead of the nearest land grid cell.
+            // This provides a more appropriate marine forecast for reefs and offshore locations.
+            cell_selection:
+                "sea",
 
             timezone:
                 "America/New_York",
