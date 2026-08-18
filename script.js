@@ -124,6 +124,8 @@ window.onload = function(){
 
     setupDarkMode();
 
+    setupForecastSourceToggle();
+
     setupTideToggle();
 
     setupLocationMap();
@@ -5935,6 +5937,26 @@ function updateForecastSourceDisplay(location){
         "Distance: " +
         distance.toFixed(1) +
         " miles";
+
+    panel.classList.remove("hidden");
+    document.getElementById("forecastSourceToggle")?.classList.remove("hidden");
+
+    if(locationMap && L){
+        if(forecastSourceMarker){
+            locationMap.removeLayer(forecastSourceMarker);
+        }
+        if(forecastSourceLine){
+            locationMap.removeLayer(forecastSourceLine);
+        }
+        forecastSourceMarker = L.circleMarker(
+            [forecastSourceInfo.forecastLat, forecastSourceInfo.forecastLon],
+            {radius:8,color:"#ffffff",weight:3,fillColor:"#22c55e",fillOpacity:1}
+        ).addTo(locationMap).bindPopup("<strong>Forecast grid</strong><br>" + forecastSourceInfo.forecastLat.toFixed(5) + ", " + forecastSourceInfo.forecastLon.toFixed(5));
+        forecastSourceLine = L.polyline(
+            [[forecastSourceInfo.requestedLat, forecastSourceInfo.requestedLon],[forecastSourceInfo.forecastLat, forecastSourceInfo.forecastLon]],
+            {color:"#22c55e",dashArray:"6,6",weight:2}
+        ).addTo(locationMap);
+    }
 }
 
 

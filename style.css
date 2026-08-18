@@ -2281,3 +2281,25 @@ body.dark-mode .forecast-source-info {
     border-color: #334155;
     color: #e2e8f0;
 }
+
+
+.forecast-source-toggle {
+    width:auto;
+    margin:12px auto;
+    display:block;
+    padding:8px 14px;
+    border-radius:8px;
+    background:#eef6fb;
+    border:1px solid #cbd5e1;
+    font-size:14px;
+}
+
+.forecast-source-info {
+    margin-top:10px;
+    padding:12px;
+    border-radius:8px;
+    background:#f8fafc;
+    border:1px solid #e2e8f0;
+    font-size:14px;
+    line-height:1.5;
+}
