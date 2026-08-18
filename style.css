@@ -2350,29 +2350,28 @@ body.dark-mode .forecast-source-label {
 .forecast-confidence-toggle {
     width:auto;
     margin:0;
-    padding:8px 12px;
+    padding:8px 14px;
     border-radius:999px;
-    background:#fff;
+    background:white;
     border:1px solid #cbd5e1;
-    font-size:14px;
     font-weight:700;
     cursor:pointer;
 }
 
 .forecast-confidence-details {
     margin-top:10px;
-    padding:12px;
+    padding:14px;
+    max-width:420px;
     border-radius:10px;
     background:#f8fafc;
     border:1px solid #dbe3ea;
-    max-width:420px;
     line-height:1.5;
 }
 
 .primary-concern {
-    text-align:left;
-    margin-top:15px;
+    margin-top:14px;
     padding:14px;
     border-radius:10px;
     background:#f8fafc;
+    text-align:left;
 }
