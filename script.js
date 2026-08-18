@@ -531,6 +531,93 @@ function updateForecastSourceVerification(location, weatherData){
 }
 
 
+
+
+let forecastConfidenceMeta = null;
+
+function calculateForecastConfidence(weatherData){
+    // Initial confidence model:
+    // Uses available forecast spread fields when present.
+    // Falls back to conservative moderate confidence.
+    let score = 3;
+    let reasons = [];
+
+    const wind = weatherData?.hourly?.wind_speed_10m || [];
+    const gust = weatherData?.hourly?.wind_gusts_10m || [];
+
+    if(wind.length && gust.length){
+        const windSpread = Math.max(...wind) - Math.min(...wind);
+        const gustSpread = Math.max(...gust) - Math.min(...gust);
+
+        if(windSpread > 12 || gustSpread > 15){
+            score = Math.min(score,2);
+            reasons.push("Wind forecast varies significantly through the forecast period.");
+        } else {
+            reasons.push("Wind forecast remains consistent.");
+        }
+    }
+
+    if(!reasons.length){
+        reasons.push("Forecast models show normal agreement.");
+    }
+
+    return {
+        stars: score,
+        text: score === 3 ? "High" : score === 2 ? "Moderate" : "Low",
+        reasons
+    };
+}
+
+function updateForecastConfidence(weatherData){
+    const panel = document.getElementById("forecastConfidencePanel");
+    const button = document.getElementById("forecastConfidenceToggle");
+    const details = document.getElementById("forecastConfidenceDetails");
+
+    if(!panel || !button || !details) return;
+
+    const confidence = calculateForecastConfidence(weatherData);
+    forecastConfidenceMeta = confidence;
+
+    const stars = "★".repeat(confidence.stars) + "☆".repeat(3-confidence.stars);
+
+    button.textContent = `${stars} Forecast Confidence`;
+
+    details.innerHTML = `
+        <strong>Forecast Confidence: ${confidence.text}</strong><br><br>
+        ${confidence.reasons.map(r => "• " + r).join("<br>")}
+    `;
+
+    panel.classList.remove("hidden");
+
+    if(button.dataset.bound !== "true"){
+        button.dataset.bound = "true";
+        button.addEventListener("click",()=>{
+            const open = button.getAttribute("aria-expanded") === "true";
+            button.setAttribute("aria-expanded", String(!open));
+            details.classList.toggle("hidden", open);
+        });
+    }
+}
+
+function buildPrimaryConcernSummary(conditions){
+    const issues = [];
+
+    if(conditions.wind === "poor") issues.push("Wind");
+    if(conditions.waves === "poor") issues.push("Waves");
+    if(conditions.precip === "poor") issues.push("Rain");
+
+    if(!issues.length) return "";
+
+    return `
+    <div class="primary-concern">
+        <strong>Primary concern:</strong><br>
+        ${issues[0]}<br><br>
+        <strong>Recommendation:</strong><br>
+        ${issues.join(" + ")} are driving the rating.
+    </div>`;
+}
+
+
 function setupLocationMap(){
 
     const mapElement =
