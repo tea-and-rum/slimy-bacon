@@ -5654,7 +5654,8 @@ async function getOpenMeteoHourlyWeather(
     };
 
     updateForecastSourceDisplay(location);
-    else {
+
+    if(marineResponse.ok === false){
 
         console.warn(
             `Open-Meteo wave data unavailable for ${location}: ` +
