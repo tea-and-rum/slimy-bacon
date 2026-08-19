@@ -164,242 +164,133 @@
 
 <div id="results" class="card hidden">
 
-
 <section class="results-category results-summary-category">
-<div id="decisionCard">
+    <div id="decisionCard">
+        <h1 id="decision"></h1>
+        <p id="decisionSummary"></p>
+        <p id="decisionWindowSummary" class="decision-window-summary"></p>
+    </div>
 
-
-<h1 id="decision"></h1>
-
-
-<p id="decisionSummary"></p>
-<p id="decisionWindowSummary" class="decision-window-summary"></p>
-
-
-</div>
-
-
-<div class="forecast-tools-row">
-<div id="forecastSourcePanel" class="forecast-source-panel hidden">
-    <button id="forecastSourceToggle" class="forecast-source-toggle" type="button" aria-expanded="false">
-        ⓘ Forecast Source
-    </button>
-    <div id="forecastSourceDetails" class="forecast-source-details hidden" aria-live="polite"></div>
-</div>
-<div id="forecastConfidencePanel" class="forecast-confidence-panel hidden">
-    <button id="forecastConfidenceButton" class="forecast-confidence-button" type="button" aria-label="View forecast confidence details">
-        <span id="forecastConfidenceStars" class="forecast-confidence-stars">★★★</span>
-        <span>Forecast Confidence</span>
-    </button>
-</div>
-</div>
-
+    <div class="forecast-tools-row">
+        <div id="forecastSourcePanel" class="forecast-source-panel hidden">
+            <button id="forecastSourceToggle" class="forecast-source-toggle" type="button" aria-expanded="false">
+                ⓘ Forecast Source
+            </button>
+            <div id="forecastSourceDetails" class="forecast-source-details hidden" aria-live="polite"></div>
+        </div>
+        <div id="forecastConfidencePanel" class="forecast-confidence-panel hidden">
+            <button id="forecastConfidenceButton" class="forecast-confidence-button" type="button" aria-label="View forecast confidence details">
+                <span id="forecastConfidenceStars" class="forecast-confidence-stars">★★★</span>
+                <span>Forecast Confidence</span>
+            </button>
+        </div>
+    </div>
 </section>
 
 <section class="results-category results-timeline-category">
-<div class="timeline-heading-row">
+    <div class="timeline-heading-row">
+        <h2>24-Hour Timeline</h2>
 
-    <h2>24-Hour Timeline</h2>
-
-    <label class="tide-toggle" for="tideToggle">
-        <span>Tides</span>
-        <input
-            id="tideToggle"
-            type="checkbox"
-            checked
-        >
-    </label>
-
-</div>
-
-
-
-<div class="timeline-container">
-
-
-
-<div class="timeline-wrapper">
-
-
-<div id="timelineBar"></div>
-
-<svg
-    id="tideOverlay"
-    class="tide-overlay hidden"
-    viewBox="0 0 1000 100"
-    preserveAspectRatio="none"
-    role="img"
-    aria-label="Predicted tide movement across the selected day"
->
-    <path
-        id="tidePathOutline"
-        class="tide-path-outline"
-    ></path>
-
-    <path
-        id="tidePath"
-        class="tide-path"
-    ></path>
-</svg>
-
-
-
-<div id="sunriseMarker" class="sun-marker">
-
-☀
-
-
-
-</div>
-
-
-
-<div id="sunsetMarker" class="sun-marker">
-
-🌙
-
-
-
-</div>
-
-
-
-</div>
-
-
-<div class="timeline-labels">
-
-<span>12a</span>
-<span>3a</span>
-<span>6a</span>
-<span>9a</span>
-<span>12p</span>
-<span>3p</span>
-<span>6p</span>
-<span>9p</span>
-<span>12a</span>
-
-</div>
-
-
-<div class="timeline-legend">
-
-    <div>
-        <span class="legend-color legend-flat"></span>
-        Flat
+        <label class="tide-toggle" for="tideToggle">
+            <span>Tides</span>
+            <input id="tideToggle" type="checkbox" checked>
+        </label>
     </div>
 
-    <div>
-        <span class="legend-color legend-go"></span>
-        Calm
+    <div class="timeline-container">
+        <div class="timeline-wrapper">
+            <div id="timelineBar"></div>
+
+            <svg
+                id="tideOverlay"
+                class="tide-overlay hidden"
+                viewBox="0 0 1000 100"
+                preserveAspectRatio="none"
+                role="img"
+                aria-label="Predicted tide movement across the selected day"
+            >
+                <path id="tidePathOutline" class="tide-path-outline"></path>
+                <path id="tidePath" class="tide-path"></path>
+            </svg>
+
+            <div id="sunriseMarker" class="sun-marker">☀</div>
+            <div id="sunsetMarker" class="sun-marker">🌙</div>
+        </div>
+
+        <div class="timeline-labels">
+            <span>12a</span>
+            <span>3a</span>
+            <span>6a</span>
+            <span>9a</span>
+            <span>12p</span>
+            <span>3p</span>
+            <span>6p</span>
+            <span>9p</span>
+            <span>12a</span>
+        </div>
+
+        <div class="timeline-legend">
+            <div><span class="legend-color legend-flat"></span>Flat</div>
+            <div><span class="legend-color legend-go"></span>Calm</div>
+            <div><span class="legend-color legend-sporty"></span>Sporty</div>
+            <div><span class="legend-color legend-no-go"></span>Poor</div>
+        </div>
     </div>
-
-    <div>
-        <span class="legend-color legend-sporty"></span>
-        Sporty
-    </div>
-
-    <div>
-        <span class="legend-color legend-no-go"></span>
-        Poor
-    </div>
-
-</div>
-
 </section>
 
 <section class="results-category results-conditions-category">
-<h2>24-Hour Conditions</h2>
+    <h2>24-Hour Conditions</h2>
 
-<div class="conditions-charts">
+    <div class="conditions-charts">
+        <div class="evidence-grid">
+            <div class="evidence-card">
+                <h3>🌬 Wind</h3>
+                <div class="evidence-summary" id="windSummary">Max: -- mph</div>
+                <canvas id="windChart"></canvas>
+            </div>
 
-<!-- CONDITION EVIDENCE TILES -->
+            <div class="evidence-card">
+                <h3>🌊 Waves</h3>
+                <div class="evidence-summary" id="waveSummary">Max: -- ft</div>
+                <canvas id="waveChart"></canvas>
+            </div>
 
-<div class="evidence-grid">
-
-
-
-<div class="evidence-card">
-
-<h3>🌬 Wind</h3>
-
-<div class="evidence-summary" id="windSummary">
-Max: -- mph
-</div>
-
-<canvas id="windChart"></canvas>
-
-</div>
-
-
-<div class="evidence-card">
-
-<h3>🌊 Waves</h3>
-
-<div class="evidence-summary" id="waveSummary">
-Max: -- ft
-</div>
-
-<canvas id="waveChart"></canvas>
-
-</div>
-
-
-<div class="evidence-card">
-
-<h3>🌧 Precipitation</h3>
-
-<div class="evidence-summary" id="precipSummary">
-Peak: --%
-</div>
-
-<canvas id="precipChart"></canvas>
-
-</div>
-
-
-</div>
-
-</div>
-
-</div>
-
+            <div class="evidence-card">
+                <h3>🌧 Precipitation</h3>
+                <div class="evidence-summary" id="precipSummary">Peak: --%</div>
+                <canvas id="precipChart"></canvas>
+            </div>
+        </div>
+    </div>
 </section>
 
 <section class="results-category results-breakdown-category">
-<h2>Breakdown</h2>
-<div class="summary combined-summary">
+    <h2>Breakdown</h2>
 
-    <div id="whyResults"></div>
+    <div class="summary combined-summary">
+        <div id="whyResults"></div>
 
-    <hr class="summary-divider">
+        <hr class="summary-divider">
 
-    <div
-        id="dailyEventTimes"
-        class="daily-event-times"
-    ></div>
+        <div id="dailyEventTimes" class="daily-event-times"></div>
 
-    <hr class="summary-divider">
+        <hr class="summary-divider">
 
-    <div class="advisory-breakdown">
-        <h3>⚠️ Advisories</h3>
-        <div id="advisoryText">✓ No active advisories</div>
+        <div class="advisory-breakdown">
+            <h3>⚠️ Advisories</h3>
+            <div id="advisoryText">✓ No active advisories</div>
+        </div>
     </div>
-
-</div>
-
 </section>
 
 <section class="results-category results-next-days-category">
-<h2>The Next 6 Days</h2>
-<div id="nextSixDaysGrid" class="next-six-days-grid" aria-live="polite"></div>
+    <h2>The Next 6 Days</h2>
+    <div id="nextSixDaysGrid" class="next-six-days-grid" aria-live="polite"></div>
 </section>
 
 </div>
 
-
 </div>
-
 
 <div id="customSettingsModal" class="custom-modal hidden" role="dialog" aria-modal="true" aria-labelledby="customSettingsTitle">
   <div class="custom-modal-backdrop" data-custom-close="true"></div>
