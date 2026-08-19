@@ -231,9 +231,9 @@ input[type="date"] {
 
     flex: 1;
 
-    border: 2px solid #ddd;
+    border: 1px solid #ddd;
 
-    border-radius: 12px;
+    border-radius: 6px;
 
     padding: 15px 8px;
 
