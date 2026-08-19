@@ -1,6 +1,6 @@
 body {
 
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Roboto-Slab', sans-serif;
 
     background: #eef6fb;
 
@@ -2079,7 +2079,7 @@ body.dark-mode .custom-settings-error {
 
 /* Retain visual choices from the user's latest uploaded stylesheet. */
 body {
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Roboto-Slab', sans-serif;
 }
 
 input[type="date"] {
