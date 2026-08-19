@@ -1019,6 +1019,31 @@ function getHumanDecisionSummaryHTML(
             ? Math.max(...waves)
             : null;
 
+    // Pair the maximum wave height with the wave period from the same hour.
+    // If the maximum height occurs more than once, use the shortest valid
+    // period at that height because it represents the steeper/rougher case.
+    const maxWavePeriods =
+        maxWaves === null
+            ? []
+            : hours
+                .filter(hour => {
+                    const waveHeight = Number(hour.waves);
+                    return (
+                        Number.isFinite(waveHeight) &&
+                        Math.abs(waveHeight - maxWaves) < 0.0001
+                    );
+                })
+                .map(hour => Number(hour.wavePeriod))
+                .filter(period =>
+                    Number.isFinite(period) &&
+                    period > 0
+                );
+
+    const maxWavePeriod =
+        maxWavePeriods.length
+            ? Math.min(...maxWavePeriods)
+            : null;
+
     const maxPrecip =
         precip.length
             ? Math.max(...precip)
@@ -1088,7 +1113,15 @@ function getHumanDecisionSummaryHTML(
             </div>
             <div class="forecast-metric">
                 <span class="forecast-metric-label">Max Waves</span>
-                <span class="forecast-metric-value">${maxWaves === null ? "--" : `${maxWaves.toFixed(1)} ft`}</span>
+                <span class="forecast-metric-value">${
+                    maxWaves === null
+                        ? "--"
+                        : `${maxWaves.toFixed(1)} ft${
+                            maxWavePeriod === null
+                                ? ""
+                                : ` @ ${maxWavePeriod.toFixed(1)} sec`
+                        }`
+                }</span>
             </div>
             <div class="forecast-metric">
                 <span class="forecast-metric-label">Max Precip</span>
