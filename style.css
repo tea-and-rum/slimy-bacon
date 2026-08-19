@@ -2489,8 +2489,9 @@ body.dark-mode .forecast-source-label {
 }
 
 .human-summary-value {
-    font-size: 18px;
-    font-weight: 700;
+    margin-top: 2px;
+    color: #475569;
+    font-size: 14px;
 }
 
 .human-summary-detail {
@@ -2511,7 +2512,8 @@ body.dark-mode .confidence-modal-panel {
 }
 
 body.dark-mode .confidence-modal-header p,
-body.dark-mode .human-summary-detail {
+body.dark-mode .human-summary-detail,
+body.dark-mode .human-summary-value {
     color: #94a3b8;
 }
 
