@@ -2710,3 +2710,49 @@ body.dark-mode #whyResults {
 body.dark-mode .summary-divider {
     border-top-color: #334155;
 }
+
+
+/* ---------------------------------
+   Results category containers
+---------------------------------- */
+
+.results-category {
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+}
+
+/* The summary category already contains the decision card, so avoid a second gray panel. */
+.results-summary-category #decisionCard {
+    background: transparent;
+}
+
+/* Breakdown should use the category container as its background. */
+.results-breakdown-category .summary,
+.results-breakdown-category #whyResults {
+    background: transparent;
+}
+
+/* Main-category divider lines are no longer used. */
+.results-section-divider {
+    display: none;
+}
+
+/* Keep the category containers distinct in dark mode. */
+body.dark-mode .results-category {
+    background: #1e293b;
+}
+
+body.dark-mode .results-summary-category #decisionCard,
+body.dark-mode .results-breakdown-category .summary,
+body.dark-mode .results-breakdown-category #whyResults {
+    background: transparent;
+}
+
+@media (max-width: 700px) {
+    .results-category {
+        padding: 16px;
+    }
+}
