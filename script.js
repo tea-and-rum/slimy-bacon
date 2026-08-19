@@ -939,7 +939,8 @@ function getHumanDecisionSummaryHTML(
     weatherData,
     boatSize,
     selectedDate,
-    timeline
+    timeline,
+    windowRecommendation = ""
 ){
     const limits =
         getVesselLimits(boatSize);
@@ -1141,7 +1142,7 @@ function getHumanDecisionSummaryHTML(
 
         <div class="human-summary-block">
             <span class="human-summary-label">Recommendation:</span>
-            <div class="human-summary-detail">${escapeHTML(recommendation)}</div>
+            <div class="human-summary-detail">${escapeHTML(windowRecommendation)} ${escapeHTML(recommendation)}</div>
         </div>
     `;
 }
@@ -2251,24 +2252,12 @@ const validTimeline =
             "human-decision-summary"
         );
 
-        decisionSummaryElement.innerHTML =
-            getHumanDecisionSummaryHTML(
-                allWeather,
-                boatSize,
-                selectedDate,
-                validTimeline
-            );
-
-
         const bestWindow =
             getBestWindowDetails(
                 relevantTimeline
             );
 
-
-        document.getElementById(
-            "decisionWindowSummary"
-        ).textContent =
+        const windowRecommendation =
             bestWindow
                 ? (
                     `Go between ${bestWindow.timeRange}. ` +
@@ -2279,6 +2268,19 @@ const validTimeline =
                     )
                 )
                 : "No flat or calm boating window is available.";
+
+        decisionSummaryElement.innerHTML =
+            getHumanDecisionSummaryHTML(
+                allWeather,
+                boatSize,
+                selectedDate,
+                validTimeline,
+                windowRecommendation
+            );
+
+        document.getElementById(
+            "decisionWindowSummary"
+        ).textContent = "";
 
 
         document.getElementById("whyResults").innerHTML =
