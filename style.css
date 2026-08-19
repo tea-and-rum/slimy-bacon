@@ -1,16 +1,18 @@
 body {
-
-    font-family: 'Roboto Slab', sans-serif;
-
+    font-family: 'Roboto', sans-serif;
     background: #eef6fb;
-
     margin: 0;
-
     padding: 20px;
-
 }
 
-
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Roboto Slab', serif;
+}
 
 .container {
     max-width: 750px;
@@ -2077,10 +2079,7 @@ body.dark-mode .custom-settings-error {
     }
 }
 
-/* Retain visual choices from the user's latest uploaded stylesheet. */
-body {
-    font-family: 'Roboto Slab', sans-serif;
-}
+
 
 input[type="date"] {
     border-radius: 6px;
