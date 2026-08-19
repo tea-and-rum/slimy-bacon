@@ -1076,33 +1076,26 @@ function getHumanDecisionSummaryHTML(
             ? concerns.join(" + ")
             : "None";
 
-    let forecastText = "";
-
-    if(primary === "Wind"){
-        forecastText =
-            `${Math.round(maxWind)} mph winds<br>` +
-            `${Math.round(maxGust)} mph gusts`;
-    }
-    else if(primary === "Waves"){
-        forecastText =
-            maxWaves === null
-                ? "Wave forecast unavailable"
-                : `${maxWaves.toFixed(1)} ft maximum waves`;
-    }
-    else if(primary === "Rain"){
-        forecastText =
-            `${Math.round(maxPrecip)}% peak precipitation chance`;
-    }
-    else {
-        forecastText =
-            `${Math.round(maxWind)} mph max winds · ` +
-            `${Math.round(maxGust)} mph max gusts` +
-            (
-                maxWaves === null
-                    ? ""
-                    : ` · ${maxWaves.toFixed(1)} ft max waves`
-            );
-    }
+    const forecastText = `
+        <div class="forecast-metrics-grid">
+            <div class="forecast-metric">
+                <span class="forecast-metric-label">Max Winds</span>
+                <span class="forecast-metric-value">${Math.round(maxWind)} mph</span>
+            </div>
+            <div class="forecast-metric">
+                <span class="forecast-metric-label">Max Gusts</span>
+                <span class="forecast-metric-value">${Math.round(maxGust)} mph</span>
+            </div>
+            <div class="forecast-metric">
+                <span class="forecast-metric-label">Max Waves</span>
+                <span class="forecast-metric-value">${maxWaves === null ? "--" : `${maxWaves.toFixed(1)} ft`}</span>
+            </div>
+            <div class="forecast-metric">
+                <span class="forecast-metric-label">Max Precip</span>
+                <span class="forecast-metric-value">${Math.round(maxPrecip)}%</span>
+            </div>
+        </div>
+    `;
 
     let recommendation = "";
 

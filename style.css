@@ -447,6 +447,7 @@ button:hover {
 
     background: #f7f7f7;
 
+    padding: 15px;
 
     border-radius: 8px;
 
@@ -2468,7 +2469,7 @@ body.dark-mode .forecast-source-label {
     text-align: left;
     white-space: normal;
     margin: 14px auto 0;
-    max-width: 660px;
+    max-width: 520px;
 }
 
 .human-summary-block {
@@ -2497,6 +2498,75 @@ body.dark-mode .forecast-source-label {
     margin-top: 2px;
     color: #475569;
     font-size: 14px;
+}
+
+.forecast-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-top: 6px;
+}
+
+.forecast-metric {
+    text-align: center;
+    padding: 0 10px;
+    border: 0;
+    border-right: 1px solid #dbe3ea;
+}
+
+.forecast-metric:first-child {
+    padding-left: 0;
+}
+
+.forecast-metric:last-child {
+    border-right: 0;
+    padding-right: 0;
+}
+
+.forecast-metric-label,
+.forecast-metric-value {
+    display: block;
+}
+
+.forecast-metric-label {
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 4px;
+    white-space: nowrap;
+}
+
+.forecast-metric-value {
+    color: #475569;
+}
+
+body.dark-mode .forecast-metric {
+    border-color: #334155;
+}
+
+body.dark-mode .forecast-metric-label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .forecast-metric-value {
+    color: #94a3b8;
+}
+
+@media (max-width: 600px) {
+    .forecast-metrics-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .forecast-metric {
+        padding: 0 6px;
+    }
+
+    .forecast-metric-label {
+        white-space: normal;
+        font-size: 12px;
+    }
+
+    .forecast-metric-value {
+        font-size: 13px;
+    }
 }
 
 body.dark-mode .forecast-confidence-button {
