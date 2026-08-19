@@ -2507,10 +2507,9 @@ body.dark-mode .forecast-source-label {
 }
 
 .forecast-metric {
-    text-align: center;
+    text-align: left;
     padding: 0 10px;
     border: 0;
-    border-right: 1px solid #dbe3ea;
 }
 
 .forecast-metric:first-child {
