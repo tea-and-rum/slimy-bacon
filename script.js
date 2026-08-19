@@ -1128,6 +1128,7 @@ function getHumanDecisionSummaryHTML(
                 <span class="forecast-metric-value">${Math.round(maxPrecip)}%</span>
             </div>
         </div>
+        <div id="forecastToolsMount"></div>
     `;
 
     let recommendation = "";
@@ -2307,6 +2308,15 @@ const validTimeline =
         document.getElementById(
             "decisionWindowSummary"
         ).textContent = "";
+
+        const forecastToolsMount =
+            document.getElementById("forecastToolsMount");
+        const forecastToolsRow =
+            document.querySelector(".forecast-tools-row");
+
+        if(forecastToolsMount && forecastToolsRow){
+            forecastToolsMount.appendChild(forecastToolsRow);
+        }
 
 
         document.getElementById("whyResults").innerHTML =

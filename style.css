@@ -2614,3 +2614,99 @@ body.dark-mode .human-summary-block {
         grid-template-columns: 1fr;
     }
 }
+
+/* =========================================
+   RESULTS VISUAL REFINEMENTS
+   ========================================= */
+
+/* Remove the gray panel behind the main boating summary. */
+#decisionCard {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+body.dark-mode #decisionCard {
+    background: transparent;
+    border: 0;
+}
+
+/* Place Forecast Source + Forecast Confidence directly under forecast metrics. */
+#forecastToolsMount {
+    margin-top: 12px;
+}
+
+#forecastToolsMount .forecast-tools-row {
+    margin: 0;
+}
+
+/* Strong dividers between the major results sections. */
+.results-section-divider {
+    margin: 28px 0;
+    border: 0;
+    border-top: 1px solid #b8c2cc;
+}
+
+body.dark-mode .results-section-divider {
+    border-top-color: #475569;
+}
+
+/* Remove cards around the Wind / Waves / Precipitation charts. */
+.evidence-grid {
+    gap: 0;
+}
+
+.evidence-card {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 18px 0;
+}
+
+.evidence-card:first-child {
+    padding-top: 0;
+}
+
+.evidence-card + .evidence-card {
+    border-top: 1px solid #dbe3ea;
+}
+
+body.dark-mode .evidence-card {
+    background: transparent;
+    border-color: transparent;
+}
+
+body.dark-mode .evidence-card + .evidence-card {
+    border-top-color: #334155;
+}
+
+/* Remove the gray panel behind Breakdown. */
+.summary.combined-summary,
+#whyResults {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+}
+
+.summary.combined-summary {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+body.dark-mode .summary.combined-summary,
+body.dark-mode #whyResults {
+    background: transparent;
+    border: 0;
+}
+
+/* Breakdown dividers match the lighter chart separators. */
+.summary-divider {
+    border: 0;
+    border-top: 1px solid #dbe3ea;
+}
+
+body.dark-mode .summary-divider {
+    border-top-color: #334155;
+}
