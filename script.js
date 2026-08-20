@@ -153,8 +153,8 @@ const DEFAULT_CUSTOM_PROFILE = {
     wavePoor: 4,
     flatWave: 0.3,
     waveBypass: 1.5,
-    steepSporty: 0.05,
-    steepPoor: 0.09,
+    steepSporty: 0.3333,
+    steepPoor: 0.5,
     usePrecip: true,
     precipSporty: 31,
     precipPoor: 61,
@@ -367,8 +367,8 @@ function getVesselLimits(boatSize){
         flatWind: 5,
         flatWave: 0.3,
         waveBypass: 1.5,
-        steepSporty: 0.05,
-        steepPoor: 0.09,
+        steepSporty: 0.3333,
+        steepPoor: 0.5,
         usePrecip: true,
         precipSporty: 31,
         precipPoor: 61,
@@ -3777,17 +3777,21 @@ function getWaveCondition(
     }
 
     /*
-    True wave steepness = height / wavelength.
-    Wavelength isn't the same as period — under the
-    deep-water wave relationship, wavelength (ft) is
-    approximately 5.12 * period(seconds)^2.
+    Steepness index = height / period (the inverse of the
+    period-to-height ratio rule of thumb: period >= 3x
+    height is comfortable, 2-3x is sporty, <2x is unsafe).
 
-    Using height / period^2 directly (without the 5.12
-    wavelength conversion) overstates steepness by about
-    5x, which made this classification far too aggressive.
+    Using this ratio directly instead of true physics-based
+    wave steepness (height / wavelength, where wavelength
+    ≈ 5.12 * period^2) matters because the wavelength formula
+    squares the period. That makes it scale very differently
+    from the height/period rule of thumb, especially at the
+    longer 5-7s periods common on the Bay/ocean — steepness
+    stays low there even when the period-to-height ratio says
+    conditions are rough. height/period matches the rule of
+    thumb directly: 1/3 ≈ 0.333 (sporty) and 1/2 = 0.5 (poor).
     */
-    const wavelengthFeet = 5.12 * period * period;
-    const steepnessIndex = height / wavelengthFeet;
+    const steepnessIndex = height / period;
     let steepnessStatus;
 
     if(steepnessIndex < limits.steepSporty){
