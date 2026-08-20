@@ -1,5 +1,5 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.10.1
+// Version 1.10.2
 
 
 let windChart;
@@ -2350,6 +2350,24 @@ const validTimeline =
                 )
                 : "No flat or calm boating window is available.";
 
+        /*
+        The forecast tools row (Source + Confidence buttons)
+        gets moved into a mount point inside the summary HTML
+        below. That mount point is destroyed and recreated on
+        every check, so the row has to be detached BEFORE the
+        rebuild instead of being searched for AFTER it -
+        otherwise the row (and its buttons) gets deleted along
+        with the old mount point on the second and later checks.
+        */
+        const forecastToolsRow =
+            document.querySelector(".forecast-tools-row");
+
+        if(forecastToolsRow && forecastToolsRow.parentNode){
+            forecastToolsRow.parentNode.removeChild(
+                forecastToolsRow
+            );
+        }
+
         decisionSummaryElement.innerHTML =
             getHumanDecisionSummaryHTML(
                 allWeather,
@@ -2365,8 +2383,6 @@ const validTimeline =
 
         const forecastToolsMount =
             document.getElementById("forecastToolsMount");
-        const forecastToolsRow =
-            document.querySelector(".forecast-tools-row");
 
         if(forecastToolsMount && forecastToolsRow){
             forecastToolsMount.appendChild(forecastToolsRow);
