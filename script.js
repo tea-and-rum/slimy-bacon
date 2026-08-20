@@ -31,65 +31,6 @@ const DEFAULT_MAP_BOUNDS = [
 ];
 
 
-/*
-Approximate ocean-facing shoreline for this app's coverage
-area (Chesapeake Bay + Delaware Bay to the west, Atlantic
-Ocean to the east), used to tell wind-driven Bay/tributary
-chop apart from ocean swell. Points run south to north along
-the barrier-island coastline, jumping across the mouth of
-Delaware Bay (Cape Henlopen to Cape May) so Delaware Bay is
-treated like Chesapeake Bay rather than open ocean.
-
-This is a coastline approximation, not a survey — it's meant
-to be right for the vast majority of taps, not perfect at
-every inlet.
-*/
-const OCEAN_BOUNDARY_POINTS = [
-    { lat: 37.85, lon: -75.55 },
-    { lat: 38.02, lon: -75.28 },
-    { lat: 38.35, lon: -75.10 },
-    { lat: 38.75, lon: -75.075 },
-    { lat: 38.80, lon: -75.095 },
-    { lat: 39.00, lon: -74.90 },
-    { lat: 39.35, lon: -74.55 },
-    { lat: 39.75, lon: -74.15 }
-];
-
-let selectedWaterBodyType = null;
-
-
-function classifyWaterBody(lat, lon){
-
-    const points = OCEAN_BOUNDARY_POINTS;
-
-    if(lat <= points[0].lat){
-        return lon > points[0].lon ? "OCEAN" : "BAY_TRIBUTARY";
-    }
-
-    const lastPoint = points[points.length - 1];
-
-    if(lat >= lastPoint.lat){
-        return lon > lastPoint.lon ? "OCEAN" : "BAY_TRIBUTARY";
-    }
-
-    for(let i = 0; i < points.length - 1; i++){
-
-        const a = points[i];
-        const b = points[i + 1];
-
-        if(lat >= a.lat && lat <= b.lat){
-
-            const t = (lat - a.lat) / (b.lat - a.lat);
-            const boundaryLon = a.lon + t * (b.lon - a.lon);
-
-            return lon > boundaryLon ? "OCEAN" : "BAY_TRIBUTARY";
-        }
-    }
-
-    return "BAY_TRIBUTARY";
-}
-
-
 const fishingSpots = [
     {
         name: 'Bob Mason Reef',
@@ -212,8 +153,8 @@ const DEFAULT_CUSTOM_PROFILE = {
     wavePoor: 4,
     flatWave: 0.3,
     waveBypass: 1.5,
-    steepSporty: 0.3333,
-    steepPoor: 0.5,
+    steepSporty: 0.05,
+    steepPoor: 0.09,
     usePrecip: true,
     precipSporty: 31,
     precipPoor: 61,
@@ -426,13 +367,13 @@ function getVesselLimits(boatSize){
         flatWind: 5,
         flatWave: 0.3,
         waveBypass: 1.5,
-        steepSporty: 0.3333,
-        steepPoor: 0.5,
+        steepSporty: 0.05,
+        steepPoor: 0.09,
         usePrecip: true,
         precipSporty: 31,
         precipPoor: 61,
         useAlerts: true,
-        useThunder: false,
+        useThunder: true,
         isCustom: false
     };
 }
@@ -669,9 +610,6 @@ function getMaxModelDifference(valuesA, valuesB){
 }
 
 async function fetchConfidenceModel(endpoint, coords, selectedDate){
-    const waterBodyType =
-        classifyWaterBody(coords.lat, coords.lon);
-
     const parameters =
         new URLSearchParams({
             latitude:
@@ -686,12 +624,8 @@ async function fetchConfidenceModel(endpoint, coords, selectedDate){
                 ].join(","),
             wind_speed_unit:
                 "mph",
-            // Ocean points prefer an open-water cell; Bay/tributary
-            // points prefer the nearest cell, since many enclosed
-            // Bay coordinates have no "sea"-classified cell nearby
-            // and the search otherwise comes back empty.
             cell_selection:
-                waterBodyType === "OCEAN" ? "sea" : "land",
+                "sea",
             timezone:
                 "America/New_York",
             start_date:
@@ -1614,13 +1548,6 @@ function setSelectedMapLocation(
         .openPopup();
 
 
-    selectedWaterBodyType =
-        classifyWaterBody(
-            numericLat,
-            numericLon
-        );
-
-
     const selectedLocationText =
         document.getElementById(
             "selectedMapLocation"
@@ -1638,29 +1565,6 @@ function setSelectedMapLocation(
             numericLat.toFixed(5) +
             ", " +
             numericLon.toFixed(5);
-
-    }
-
-
-    const waterBodyBadge =
-        document.getElementById(
-            "selectedWaterBodyBadge"
-        );
-
-    if(waterBodyBadge){
-
-        waterBodyBadge.textContent =
-            selectedWaterBodyType === "OCEAN"
-                ? "Atlantic Ocean"
-                : "Bay & Tributaries";
-
-        waterBodyBadge.className =
-            "water-body-badge " +
-            (
-                selectedWaterBodyType === "OCEAN"
-                    ? "water-body-ocean"
-                    : "water-body-bay"
-            );
 
     }
 
@@ -1721,7 +1625,6 @@ function clearMapSelection(){
 
 
     selectedMapLocationName = null;
-    selectedWaterBodyType = null;
 
 
     const selectedLocationText =
@@ -1734,19 +1637,6 @@ function clearMapSelection(){
 
         selectedLocationText.textContent =
             "No location selected";
-
-    }
-
-
-    const waterBodyBadge =
-        document.getElementById(
-            "selectedWaterBodyBadge"
-        );
-
-    if(waterBodyBadge){
-
-        waterBodyBadge.textContent = "";
-        waterBodyBadge.className = "water-body-badge";
 
     }
 
@@ -3793,8 +3683,7 @@ function getLocationReason(result){
 function getWaveCondition(
     waveHeight,
     wavePeriod,
-    boatSize,
-    waterBodyType = selectedWaterBodyType
+    boatSize
 ){
     const limits = getVesselLimits(boatSize);
     const height = Number(waveHeight);
@@ -3864,34 +3753,6 @@ function getWaveCondition(
 
     const period = Number(wavePeriod);
 
-    /*
-    Bay and tributary chop is locally wind-generated and
-    fetch-limited, so short periods (1-3s) are simply normal
-    there — they aren't a sign of dangerous, closely-spaced
-    waves the way they are on the ocean. The period-to-height
-    steepness rule below was calibrated for ocean swell, so
-    skip it here and judge Bay/tributary conditions on wave
-    height alone, same as the "no period data" fallback.
-    */
-    if(waterBodyType === "BAY_TRIBUTARY"){
-
-        const bayStatus =
-            height >= limits.waveSporty
-                ? "SPORTY"
-                : "CALM";
-
-        return {
-            status: bayStatus,
-            heightStatus: bayStatus,
-            periodStatus: null,
-            steepnessIndex: null,
-            reason:
-                bayStatus === "SPORTY"
-                    ? "bay-height-sporty"
-                    : "bay-height-calm"
-        };
-    }
-
     if(
         wavePeriod === null ||
         wavePeriod === undefined ||
@@ -3915,22 +3776,7 @@ function getWaveCondition(
         };
     }
 
-    /*
-    Steepness index = height / period (the inverse of the
-    period-to-height ratio rule of thumb: period >= 3x
-    height is comfortable, 2-3x is sporty, <2x is unsafe).
-
-    Using this ratio directly instead of true physics-based
-    wave steepness (height / wavelength, where wavelength
-    ≈ 5.12 * period^2) matters because the wavelength formula
-    squares the period. That makes it scale very differently
-    from the height/period rule of thumb, especially at the
-    longer 5-7s periods common on the Bay/ocean — steepness
-    stays low there even when the period-to-height ratio says
-    conditions are rough. height/period matches the rule of
-    thumb directly: 1/3 ≈ 0.333 (sporty) and 1/2 = 0.5 (poor).
-    */
-    const steepnessIndex = height / period;
+    const steepnessIndex = height / (period * period);
     let steepnessStatus;
 
     if(steepnessIndex < limits.steepSporty){
@@ -5814,6 +5660,304 @@ function getWindGustForHour(
 
 }
 
+async function getNOAAHourlyWeather(
+    location,
+    selectedDate
+){
+
+    try {
+
+        const coords =
+            locations[location];
+
+
+        if(!coords){
+
+            throw new Error(
+                `Coordinates are missing for ${location}`
+            );
+
+        }
+
+
+        /*
+        Find the NOAA forecast grid for
+        the selected latitude and longitude.
+        */
+
+        const pointResponse =
+            await fetch(
+                `https://api.weather.gov/points/${coords.lat},${coords.lon}`
+            );
+
+
+        if(!pointResponse.ok){
+
+            throw new Error(
+                `NOAA location lookup failed for ${location}: ` +
+                pointResponse.status
+            );
+
+        }
+
+
+        const pointData =
+            await pointResponse.json();
+
+
+        const hourlyURL =
+            pointData.properties?.forecastHourly;
+
+        const gridDataURL =
+            pointData.properties?.forecastGridData;
+
+
+        /*
+        Offshore locations may not provide the
+        standard hourly forecast endpoint.
+        */
+
+        if(!hourlyURL){
+
+            throw new Error(
+                `NOAA hourly forecast is unavailable for ${location}`
+            );
+
+        }
+
+
+        const hourlyResponse =
+            await fetch(hourlyURL);
+
+
+        if(!hourlyResponse.ok){
+
+            throw new Error(
+                `NOAA hourly forecast failed for ${location}: ` +
+                hourlyResponse.status
+            );
+
+        }
+
+
+        /*
+        Declare hourlyData exactly once.
+        */
+
+        const hourlyData =
+            await hourlyResponse.json();
+
+
+        let waveValues = [];
+        let gustValues = [];
+
+
+        /*
+        Grid data supplies waves and gusts.
+
+        Failure here should not prevent the
+        normal hourly forecast from loading.
+        */
+
+        if(gridDataURL){
+
+            try {
+
+                const gridResponse =
+                    await fetch(gridDataURL);
+
+
+                if(!gridResponse.ok){
+
+                    throw new Error(
+                        `NOAA grid forecast failed for ${location}: ` +
+                        gridResponse.status
+                    );
+
+                }
+
+
+                const gridData =
+                    await gridResponse.json();
+
+
+                waveValues =
+                    gridData
+                        .properties
+                        ?.waveHeight
+                        ?.values || [];
+
+
+                gustValues =
+                    gridData
+                        .properties
+                        ?.windGust
+                        ?.values || [];
+
+            }
+            catch(error){
+
+                console.warn(
+                    `Wave or gust data unavailable for ${location}:`,
+                    error
+                );
+
+                waveValues = [];
+                gustValues = [];
+
+            }
+
+        }
+
+
+        const hourlyForecast =
+            new Array(24).fill(null);
+
+
+        const periods =
+            hourlyData
+                .properties
+                ?.periods;
+
+
+        if(!Array.isArray(periods)){
+
+            throw new Error(
+                `NOAA returned no hourly periods for ${location}`
+            );
+
+        }
+
+
+        periods.forEach(period => {
+
+            const periodDate =
+                period.startTime?.slice(0, 10);
+
+
+            if(periodDate !== selectedDate){
+
+                return;
+
+            }
+
+
+            const hour =
+                Number(
+                    period.startTime.slice(
+                        11,
+                        13
+                    )
+                );
+
+
+            if(
+                !Number.isInteger(hour) ||
+                hour < 0 ||
+                hour > 23
+            ){
+
+                return;
+
+            }
+
+
+            const hourStart =
+                new Date(
+                    period.startTime
+                );
+
+
+            const hourEnd =
+                period.endTime
+                    ? new Date(period.endTime)
+                    : new Date(
+                        hourStart.getTime() +
+                        60 * 60 * 1000
+                    );
+
+
+            const waveHeight =
+                getWaveHeightForHour(
+                    waveValues,
+                    hourStart,
+                    hourEnd
+                );
+
+
+            const sustainedWind =
+                parseInt(
+                    period.windSpeed,
+                    10
+                ) || 0;
+
+
+            const forecastGust =
+                getWindGustForHour(
+                    gustValues,
+                    hourStart,
+                    hourEnd
+                );
+
+
+            hourlyForecast[hour] = {
+
+                wind:
+                    sustainedWind,
+
+                gust:
+                    forecastGust !== null
+                        ? Math.round(forecastGust)
+                        : sustainedWind,
+
+                waves:
+                    waveHeight,
+
+                precip:
+                    period
+                        .probabilityOfPrecipitation
+                        ?.value ?? 0,
+
+                windDirection:
+                    period.windDirection || "",
+
+                temperature:
+                    period.temperature ?? null,
+
+                shortForecast:
+                    period.shortForecast || "",
+
+                startTime:
+                    period.startTime,
+
+                endTime:
+                    period.endTime,
+
+                alerts: []
+
+            };
+
+        });
+
+
+        return hourlyForecast;
+
+    }
+    catch(error){
+
+        console.error(
+            `Forecast error for ${location}:`,
+            error
+        );
+
+        return null;
+
+    }
+
+}
+
+
+
 function degreesToCompass(degrees){
 
     if(
@@ -5992,76 +6136,16 @@ function easternHourToDate(
 }
 
 
-function getPrecipProbabilityForHour(
-    precipValues,
-    hourStart,
-    hourEnd
-){
-
-    const matchingValues = [];
-
-    precipValues.forEach(item => {
-
-        if(
-            item.value === null ||
-            item.value === undefined
-        ){
-            return;
-        }
-
-        const interval =
-            parseNOAAValidTime(
-                item.validTime
-            );
-
-        const overlaps =
-            interval.start < hourEnd &&
-            interval.end > hourStart;
-
-        if(overlaps){
-
-            matchingValues.push(
-                Number(item.value)
-            );
-
-        }
-
-    });
-
-
-    if(matchingValues.length === 0){
-        return null;
-    }
-
-
-    /*
-    Use the highest overlapping probability,
-    consistent with how waves and gusts are matched.
-    */
-    return Math.max(
-        ...matchingValues
-    );
-
-}
-
-
-async function getNOAAGridForecast(
+async function getNOAAWaveForecast(
     location,
     selectedDate
 ){
-
-    const emptyResult = () => ({
-        waves: new Array(24).fill(null),
-        wind: new Array(24).fill(null),
-        gust: new Array(24).fill(null),
-        precip: new Array(24).fill(null)
-    });
 
     const coords =
         locations[location];
 
     if(!coords){
-        return emptyResult();
+        return new Array(24).fill(null);
     }
 
     try {
@@ -6079,11 +6163,11 @@ async function getNOAAGridForecast(
         if(!pointResponse.ok){
 
             console.warn(
-                `NOAA grid lookup unavailable for ${location}: ` +
+                `NOAA wave grid lookup unavailable for ${location}: ` +
                 pointResponse.status
             );
 
-            return emptyResult();
+            return new Array(24).fill(null);
 
         }
 
@@ -6095,7 +6179,7 @@ async function getNOAAGridForecast(
                 ?.forecastGridData;
 
         if(!gridDataURL){
-            return emptyResult();
+            return new Array(24).fill(null);
         }
 
         const gridResponse =
@@ -6111,51 +6195,27 @@ async function getNOAAGridForecast(
         if(!gridResponse.ok){
 
             console.warn(
-                `NOAA grid data unavailable for ${location}: ` +
+                `NOAA wave grid data unavailable for ${location}: ` +
                 gridResponse.status
             );
 
-            return emptyResult();
+            return new Array(24).fill(null);
 
         }
 
         const gridData =
             await gridResponse.json();
 
-        /*
-        All four fields come from the single NOAA
-        gridpoint forecast response — the same official
-        forecast local NWS marine forecasters produce for
-        the Bay, its tributaries, and offshore waters.
-        */
-
         const waveValues =
             gridData.properties
                 ?.waveHeight
                 ?.values || [];
 
-        const windSpeedValues =
-            gridData.properties
-                ?.windSpeed
-                ?.values || [];
-
-        const windGustValues =
-            gridData.properties
-                ?.windGust
-                ?.values || [];
-
-        const precipValues =
-            gridData.properties
-                ?.probabilityOfPrecipitation
-                ?.values || [];
+        if(!waveValues.length){
+            return new Array(24).fill(null);
+        }
 
         const waves =
-            new Array(24).fill(null);
-        const wind =
-            new Array(24).fill(null);
-        const gust =
-            new Array(24).fill(null);
-        const precip =
             new Array(24).fill(null);
 
         for(
@@ -6198,41 +6258,20 @@ async function getNOAAGridForecast(
                     hourEnd
                 );
 
-            wind[hour] =
-                getWindGustForHour(
-                    windSpeedValues,
-                    hourStart,
-                    hourEnd
-                );
-
-            gust[hour] =
-                getWindGustForHour(
-                    windGustValues,
-                    hourStart,
-                    hourEnd
-                );
-
-            precip[hour] =
-                getPrecipProbabilityForHour(
-                    precipValues,
-                    hourStart,
-                    hourEnd
-                );
-
         }
 
-        return { waves, wind, gust, precip };
+        return waves;
 
     }
     catch(error){
 
         console.warn(
-            `NOAA grid data unavailable for ${location}; ` +
-            "Open-Meteo will be used instead.",
+            `NOAA wave data unavailable for ${location}; ` +
+            "Open-Meteo Marine will be used instead.",
             error
         );
 
-        return emptyResult();
+        return new Array(24).fill(null);
 
     }
 
@@ -6254,29 +6293,6 @@ async function getOpenMeteoHourlyWeather(
         );
 
     }
-
-    /*
-    "sea" cell_selection tells Open-Meteo to search for a
-    grid cell it classifies as open water — good for ocean
-    points, since it avoids snapping to a nearby coastal land
-    station. But many Bay/tributary coordinates don't have any
-    "sea"-classified cell nearby in Open-Meteo's land-sea mask
-    at all, so that search can come up empty and return no
-    data whatsoever (wind, waves, and precip all blank).
-    "land" reliably finds the nearest cell instead, which for
-    a narrow Bay or tributary is still right on/near the water
-    and far more likely to actually return data.
-    */
-    const waterBodyType =
-        classifyWaterBody(
-            coords.lat,
-            coords.lon
-        );
-
-    const openMeteoCellSelection =
-        waterBodyType === "OCEAN"
-            ? "sea"
-            : "land";
 
     const weatherParameters =
         new URLSearchParams({
@@ -6302,10 +6318,10 @@ async function getOpenMeteoHourlyWeather(
             temperature_unit:
                 "fahrenheit",
 
-            // Ocean points prefer an open-water cell; Bay/tributary
-            // points prefer the nearest cell (see comment above).
+            // Use offshore/open-water cells instead of the nearest land grid cell.
+            // This keeps wind, rain, and temperature tied to the selected water location.
             cell_selection:
-                openMeteoCellSelection,
+                "sea",
 
             timezone:
                 "America/New_York",
@@ -6332,10 +6348,10 @@ async function getOpenMeteoHourlyWeather(
                     "wave_period"
                 ].join(","),
 
-            // Ocean points prefer an open-water cell; Bay/tributary
-            // points prefer the nearest cell (see comment above).
+            // Use offshore/open-water cells instead of the nearest land grid cell.
+            // This provides a more appropriate marine forecast for reefs and offshore locations.
             cell_selection:
-                openMeteoCellSelection,
+                "sea",
 
             timezone:
                 "America/New_York",
@@ -6643,10 +6659,13 @@ async function getHourlyWeather(
     try {
 
         /*
-        Open-Meteo supplies the full baseline hourly
-        forecast for every location: wind, gusts,
-        wind direction, precipitation, wave height/
-        period, temperature, and weather condition.
+        Use Open-Meteo for the consistent hourly
+        weather fields at every location:
+        wind, gusts, wind direction, precipitation,
+        temperature, and weather condition.
+
+        getOpenMeteoHourlyWeather also supplies
+        Open-Meteo Marine wave height as the fallback.
         */
         const forecast =
             await getOpenMeteoHourlyWeather(
@@ -6656,30 +6675,19 @@ async function getHourlyWeather(
 
 
         /*
-        NOAA's local gridpoint forecast (the same
-        forecast issued by the Baltimore/Washington
-        and Wakefield NWS offices for the Bay,
-        tributaries, and offshore marine zones) is
-        preferred wherever it's available, since it's
-        purpose-built for this geography rather than a
-        global/regional model blend. Any hour NOAA
-        doesn't cover keeps its Open-Meteo value.
-
-        Wave period isn't part of the NOAA grid
-        response, so wave period always comes from
-        Open-Meteo Marine even on hours where NOAA
-        supplies the wave height.
+        Prefer NOAA/NWS grid wave height wherever
+        NOAA actually supplies it. Any hour without a
+        NOAA wave value keeps the Open-Meteo Marine
+        value already stored in the forecast.
         */
-        const noaaGrid =
-            await getNOAAGridForecast(
+        const noaaWaves =
+            await getNOAAWaveForecast(
                 location,
                 selectedDate
             );
 
 
         let noaaWaveHours = 0;
-        let noaaWindHours = 0;
-        let noaaPrecipHours = 0;
 
         forecast.forEach(
             (hourData, hourIndex) => {
@@ -6689,15 +6697,15 @@ async function getHourlyWeather(
                 }
 
                 const noaaWave =
-                    noaaGrid.waves[hourIndex];
-                const noaaWind =
-                    noaaGrid.wind[hourIndex];
-                const noaaGust =
-                    noaaGrid.gust[hourIndex];
-                const noaaPrecip =
-                    noaaGrid.precip[hourIndex];
+                    noaaWaves[hourIndex];
 
-                if(Number.isFinite(Number(noaaWave))){
+                if(
+                    noaaWave !== null &&
+                    noaaWave !== undefined &&
+                    Number.isFinite(
+                        Number(noaaWave)
+                    )
+                ){
 
                     hourData.waves =
                         Number(noaaWave);
@@ -6718,54 +6726,6 @@ async function getHourlyWeather(
 
                 }
 
-                if(Number.isFinite(Number(noaaWind))){
-
-                    hourData.wind =
-                        Math.round(Number(noaaWind));
-
-                    /*
-                    Prefer the NOAA gust when it's also
-                    available; otherwise keep the
-                    Open-Meteo gust already on this hour
-                    rather than falling back to the
-                    (typically lower) sustained wind.
-                    */
-                    hourData.gust =
-                        Number.isFinite(Number(noaaGust))
-                            ? Math.round(Number(noaaGust))
-                            : hourData.gust;
-
-                    hourData.windSource =
-                        "NOAA";
-
-                    noaaWindHours++;
-
-                }
-                else {
-
-                    hourData.windSource =
-                        "Open-Meteo";
-
-                }
-
-                if(Number.isFinite(Number(noaaPrecip))){
-
-                    hourData.precip =
-                        Math.round(Number(noaaPrecip));
-
-                    hourData.precipSource =
-                        "NOAA";
-
-                    noaaPrecipHours++;
-
-                }
-                else {
-
-                    hourData.precipSource =
-                        "Open-Meteo";
-
-                }
-
                 hourData.weatherSource =
                     "Open-Meteo";
 
@@ -6774,10 +6734,13 @@ async function getHourlyWeather(
 
 
         console.info(
-            `${location}: NOAA used for ` +
-            `${noaaWaveHours} wave, ${noaaWindHours} wind, ` +
-            `${noaaPrecipHours} precip hour(s); ` +
-            "Open-Meteo fills any remaining gaps."
+            `${location}: Open-Meteo weather; ` +
+            (
+                noaaWaveHours > 0
+                    ? `NOAA waves used for ${noaaWaveHours} hour(s), ` +
+                      "Open-Meteo Marine filling remaining wave gaps."
+                    : "NOAA waves unavailable, using Open-Meteo Marine waves."
+            )
         );
 
 
@@ -7096,7 +7059,6 @@ function timeToPercent(date){
 
 }
 
-
 function formatHour(hour){
 
     let suffix =
@@ -7138,3 +7100,4 @@ function overallClass(result){
     return "decision-result";
 
 }
+
