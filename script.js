@@ -31,6 +31,65 @@ const DEFAULT_MAP_BOUNDS = [
 ];
 
 
+/*
+Approximate ocean-facing shoreline for this app's coverage
+area (Chesapeake Bay + Delaware Bay to the west, Atlantic
+Ocean to the east), used to tell wind-driven Bay/tributary
+chop apart from ocean swell. Points run south to north along
+the barrier-island coastline, jumping across the mouth of
+Delaware Bay (Cape Henlopen to Cape May) so Delaware Bay is
+treated like Chesapeake Bay rather than open ocean.
+
+This is a coastline approximation, not a survey — it's meant
+to be right for the vast majority of taps, not perfect at
+every inlet.
+*/
+const OCEAN_BOUNDARY_POINTS = [
+    { lat: 37.85, lon: -75.55 },
+    { lat: 38.02, lon: -75.28 },
+    { lat: 38.35, lon: -75.10 },
+    { lat: 38.75, lon: -75.075 },
+    { lat: 38.80, lon: -75.095 },
+    { lat: 39.00, lon: -74.90 },
+    { lat: 39.35, lon: -74.55 },
+    { lat: 39.75, lon: -74.15 }
+];
+
+let selectedWaterBodyType = null;
+
+
+function classifyWaterBody(lat, lon){
+
+    const points = OCEAN_BOUNDARY_POINTS;
+
+    if(lat <= points[0].lat){
+        return lon > points[0].lon ? "OCEAN" : "BAY_TRIBUTARY";
+    }
+
+    const lastPoint = points[points.length - 1];
+
+    if(lat >= lastPoint.lat){
+        return lon > lastPoint.lon ? "OCEAN" : "BAY_TRIBUTARY";
+    }
+
+    for(let i = 0; i < points.length - 1; i++){
+
+        const a = points[i];
+        const b = points[i + 1];
+
+        if(lat >= a.lat && lat <= b.lat){
+
+            const t = (lat - a.lat) / (b.lat - a.lat);
+            const boundaryLon = a.lon + t * (b.lon - a.lon);
+
+            return lon > boundaryLon ? "OCEAN" : "BAY_TRIBUTARY";
+        }
+    }
+
+    return "BAY_TRIBUTARY";
+}
+
+
 const fishingSpots = [
     {
         name: 'Bob Mason Reef',
@@ -1548,6 +1607,13 @@ function setSelectedMapLocation(
         .openPopup();
 
 
+    selectedWaterBodyType =
+        classifyWaterBody(
+            numericLat,
+            numericLon
+        );
+
+
     const selectedLocationText =
         document.getElementById(
             "selectedMapLocation"
@@ -1565,6 +1631,29 @@ function setSelectedMapLocation(
             numericLat.toFixed(5) +
             ", " +
             numericLon.toFixed(5);
+
+    }
+
+
+    const waterBodyBadge =
+        document.getElementById(
+            "selectedWaterBodyBadge"
+        );
+
+    if(waterBodyBadge){
+
+        waterBodyBadge.textContent =
+            selectedWaterBodyType === "OCEAN"
+                ? "Atlantic Ocean"
+                : "Bay & Tributaries";
+
+        waterBodyBadge.className =
+            "water-body-badge " +
+            (
+                selectedWaterBodyType === "OCEAN"
+                    ? "water-body-ocean"
+                    : "water-body-bay"
+            );
 
     }
 
@@ -1625,6 +1714,7 @@ function clearMapSelection(){
 
 
     selectedMapLocationName = null;
+    selectedWaterBodyType = null;
 
 
     const selectedLocationText =
@@ -1637,6 +1727,19 @@ function clearMapSelection(){
 
         selectedLocationText.textContent =
             "No location selected";
+
+    }
+
+
+    const waterBodyBadge =
+        document.getElementById(
+            "selectedWaterBodyBadge"
+        );
+
+    if(waterBodyBadge){
+
+        waterBodyBadge.textContent = "";
+        waterBodyBadge.className = "water-body-badge";
 
     }
 
@@ -3683,7 +3786,8 @@ function getLocationReason(result){
 function getWaveCondition(
     waveHeight,
     wavePeriod,
-    boatSize
+    boatSize,
+    waterBodyType = selectedWaterBodyType
 ){
     const limits = getVesselLimits(boatSize);
     const height = Number(waveHeight);
@@ -3752,6 +3856,34 @@ function getWaveCondition(
     }
 
     const period = Number(wavePeriod);
+
+    /*
+    Bay and tributary chop is locally wind-generated and
+    fetch-limited, so short periods (1-3s) are simply normal
+    there — they aren't a sign of dangerous, closely-spaced
+    waves the way they are on the ocean. The period-to-height
+    steepness rule below was calibrated for ocean swell, so
+    skip it here and judge Bay/tributary conditions on wave
+    height alone, same as the "no period data" fallback.
+    */
+    if(waterBodyType === "BAY_TRIBUTARY"){
+
+        const bayStatus =
+            height >= limits.waveSporty
+                ? "SPORTY"
+                : "CALM";
+
+        return {
+            status: bayStatus,
+            heightStatus: bayStatus,
+            periodStatus: null,
+            steepnessIndex: null,
+            reason:
+                bayStatus === "SPORTY"
+                    ? "bay-height-sporty"
+                    : "bay-height-calm"
+        };
+    }
 
     if(
         wavePeriod === null ||

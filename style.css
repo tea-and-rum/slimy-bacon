@@ -1243,6 +1243,39 @@ body.dark-mode .decision-window-summary {
     color: #1e293b;
 }
 
+.water-body-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.water-body-badge:empty {
+    display: none;
+}
+
+.water-body-badge.water-body-bay {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.water-body-badge.water-body-ocean {
+    background: #cffafe;
+    color: #0e7490;
+}
+
+body.dark-mode .water-body-badge.water-body-bay {
+    background: #1e3a5f;
+    color: #93c5fd;
+}
+
+body.dark-mode .water-body-badge.water-body-ocean {
+    background: #164e4a;
+    color: #67e8f9;
+}
+
 body.dark-mode .map-instructions {
     color: #94a3b8;
 }
