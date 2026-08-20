@@ -1,5 +1,5 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.9.3
+// Version 1.10.0
 
 
 let windChart;
@@ -143,7 +143,7 @@ window.onload = function(){
 
 
 
-const CUSTOM_PROFILE_STORAGE_KEY = "driftCustomProfileV1";
+const CUSTOM_PROFILE_STORAGE_KEY = "driftCustomProfileV2";
 
 const DEFAULT_CUSTOM_PROFILE = {
     windSporty: 16,
@@ -152,9 +152,10 @@ const DEFAULT_CUSTOM_PROFILE = {
     waveSporty: 2,
     wavePoor: 4,
     flatWave: 0.3,
-    waveBypass: 1.5,
-    steepSporty: 0.05,
-    steepPoor: 0.09,
+    waveBypass: 2,
+    shortPeriodPoor: 5,
+    periodRatioCalm: 3,
+    periodRatioPoor: 2,
     usePrecip: true,
     precipSporty: 31,
     precipPoor: 61,
@@ -256,8 +257,9 @@ function populateCustomSettingsForm(profile){
         customWavePoor: profile.wavePoor,
         customFlatWave: profile.flatWave,
         customWaveBypass: profile.waveBypass,
-        customSteepSporty: profile.steepSporty,
-        customSteepPoor: profile.steepPoor,
+        customShortPeriodPoor: profile.shortPeriodPoor,
+        customPeriodRatioCalm: profile.periodRatioCalm,
+        customPeriodRatioPoor: profile.periodRatioPoor,
         customPrecipSporty: profile.precipSporty,
         customPrecipPoor: profile.precipPoor
     };
@@ -292,8 +294,9 @@ function readCustomSettingsForm(){
         wavePoor: number("customWavePoor"),
         flatWave: number("customFlatWave"),
         waveBypass: number("customWaveBypass"),
-        steepSporty: number("customSteepSporty"),
-        steepPoor: number("customSteepPoor"),
+        shortPeriodPoor: number("customShortPeriodPoor"),
+        periodRatioCalm: number("customPeriodRatioCalm"),
+        periodRatioPoor: number("customPeriodRatioPoor"),
         usePrecip: Boolean(document.getElementById("customUsePrecip")?.checked),
         precipSporty: number("customPrecipSporty"),
         precipPoor: number("customPrecipPoor"),
@@ -306,7 +309,8 @@ function validateCustomProfile(profile){
     const requiredNumbers = [
         profile.windSporty, profile.windPoor, profile.flatWind,
         profile.waveSporty, profile.wavePoor, profile.flatWave,
-        profile.waveBypass, profile.steepSporty, profile.steepPoor
+        profile.waveBypass, profile.shortPeriodPoor,
+        profile.periodRatioCalm, profile.periodRatioPoor
     ];
 
     if(requiredNumbers.some(value => !Number.isFinite(value) || value < 0)){
@@ -325,8 +329,8 @@ function validateCustomProfile(profile){
     if(profile.flatWave > profile.waveBypass){
         return "Flat wave height cannot be higher than the small-wave bypass height.";
     }
-    if(profile.steepPoor <= profile.steepSporty){
-        return "Poor wave steepness must be higher than the Sporty steepness threshold.";
+    if(profile.periodRatioCalm <= profile.periodRatioPoor){
+        return "The Calm ratio must be higher than the Poor ratio (period stays calmer as it gets larger relative to height).";
     }
 
     if(profile.usePrecip){
@@ -347,8 +351,8 @@ function getVesselLimits(boatSize){
     const presets = {
         small: { windSporty: 11, windPoor: 18, waveSporty: 1, wavePoor: 2 },
         medium: { windSporty: 16, windPoor: 23, waveSporty: 2, wavePoor: 4 },
-        large: { windSporty: 21, windPoor: 31, waveSporty: 4, wavePoor: 6 },
-        baller: { windSporty: 26, windPoor: 36, waveSporty: 6, wavePoor: 8 }
+        large: { windSporty: 21, windPoor: 31, waveSporty: 3, wavePoor: 5 },
+        baller: { windSporty: 26, windPoor: 36, waveSporty: 4, wavePoor: 7 }
     };
 
     if(boatSize === "custom"){
@@ -366,9 +370,10 @@ function getVesselLimits(boatSize){
         ...preset,
         flatWind: 5,
         flatWave: 0.3,
-        waveBypass: 1.5,
-        steepSporty: 0.05,
-        steepPoor: 0.09,
+        waveBypass: 2,
+        shortPeriodPoor: 5,
+        periodRatioCalm: 3,
+        periodRatioPoor: 2,
         usePrecip: true,
         precipSporty: 31,
         precipPoor: 61,
@@ -3698,7 +3703,7 @@ function getWaveCondition(
             status: null,
             heightStatus: null,
             periodStatus: null,
-            steepnessIndex: null,
+            periodRatio: null,
             reason: null
         };
     }
@@ -3708,7 +3713,7 @@ function getWaveCondition(
             status: "POOR",
             heightStatus: "POOR",
             periodStatus: null,
-            steepnessIndex: null,
+            periodRatio: null,
             reason: "height-unsafe"
         };
     }
@@ -3718,7 +3723,7 @@ function getWaveCondition(
             status: "FLAT",
             heightStatus: "FLAT",
             periodStatus: null,
-            steepnessIndex: null,
+            periodRatio: null,
             reason: "flat"
         };
     }
@@ -3743,7 +3748,7 @@ function getWaveCondition(
             status: bypassStatus,
             heightStatus: bypassStatus,
             periodStatus: null,
-            steepnessIndex: null,
+            periodRatio: null,
             reason:
                 bypassStatus === "SPORTY"
                     ? "small-chop-sporty"
@@ -3768,7 +3773,7 @@ function getWaveCondition(
             status: fallbackStatus,
             heightStatus: fallbackStatus,
             periodStatus: null,
-            steepnessIndex: null,
+            periodRatio: null,
             reason:
                 fallbackStatus === "SPORTY"
                     ? "height-sporty"
@@ -3776,13 +3781,23 @@ function getWaveCondition(
         };
     }
 
-    const steepnessIndex = height / (period * period);
+    if(period < limits.shortPeriodPoor){
+        return {
+            status: "POOR",
+            heightStatus: null,
+            periodStatus: "POOR",
+            periodRatio: period / height,
+            reason: "short-period-poor"
+        };
+    }
+
+    const periodRatio = period / height;
     let steepnessStatus;
 
-    if(steepnessIndex < limits.steepSporty){
+    if(periodRatio >= limits.periodRatioCalm){
         steepnessStatus = "CALM";
     }
-    else if(steepnessIndex < limits.steepPoor){
+    else if(periodRatio >= limits.periodRatioPoor){
         steepnessStatus = "SPORTY";
     }
     else{
@@ -3793,7 +3808,7 @@ function getWaveCondition(
         status: steepnessStatus,
         heightStatus: null,
         periodStatus: steepnessStatus,
-        steepnessIndex: steepnessIndex,
+        periodRatio: periodRatio,
         reason:
             steepnessStatus === "POOR"
                 ? "steepness-poor"

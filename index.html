@@ -321,11 +321,13 @@
           <label>Sporty starts at (ft)<input id="customWaveSporty" type="number" min="0" step="0.1" required></label>
           <label>Poor starts at (ft)<input id="customWavePoor" type="number" min="0" step="0.1" required></label>
           <label>Small-wave bypass through (ft)*<input id="customWaveBypass" type="number" min="0" step="0.1" required></label>
-          <label>Steepness: Sporty starts**<span class="custom-field-subtitle">(Default value: wave intervals are &lt; 3x wave height)</span><input id="customSteepSporty" type="number" min="0" step="0.01" required></label>
-          <label>Steepness: Poor starts**<span class="custom-field-subtitle">(Default value: wave intervals are &lt; 2x wave height)</span><input id="customSteepPoor" type="number" min="0" step="0.01" required></label>
+          <label>Poor if period under (sec)†<input id="customShortPeriodPoor" type="number" min="0" step="0.5" required></label>
+          <label>Calm starts at (period ÷ height)**<span class="custom-field-subtitle">(Default: period is 3x wave height or more)</span><input id="customPeriodRatioCalm" type="number" min="0" step="0.1" required></label>
+          <label>Poor starts at (period ÷ height)**<span class="custom-field-subtitle">(Default: period is under 2x wave height)</span><input id="customPeriodRatioPoor" type="number" min="0" step="0.1" required></label>
         </div>
-        <p class="custom-help">*Waves below this height will not be assessed for their intervals or steepness.</p>
-        <p class="custom-help">**Drift uses wave height ÷ wave period² to judge steepness.</p>
+        <p class="custom-help">*Waves below this height will not be assessed for their period or steepness.</p>
+        <p class="custom-help">**Drift compares the wave period to the wave height. Above the Calm ratio it's Calm, below the Poor ratio it's Poor, and in between it's Sporty.</p>
+        <p class="custom-help">†Regardless of the ratio, waves above the bypass height with a period shorter than this are always rated Poor.</p>
       </div>
 
       <div class="custom-settings-section">
@@ -381,7 +383,7 @@
 </button>
   <footer class="disclaimer">
     <strong>⚠️ Boating Safety Disclaimer</strong><br>
-    This tool is provided for informational purposes only and is intended to assist with trip planning. Forecasts, recommendations, and conditions may be inaccurate, incomplete, or delayed. Always review official NOAA marine forecasts, weather warnings, navigation information, and current conditions before leaving the dock. Use your own judgment based on your vessel, experience, crew, and local conditions. By using this website, you acknowledge that you are solely responsible for your boating decisions. The creator of this website assumes no liability for any accidents, injuries, damages, or losses resulting from the use of this information. Version 5.1.1634.
+    This tool is provided for informational purposes only and is intended to assist with trip planning. Forecasts, recommendations, and conditions may be inaccurate, incomplete, or delayed. Always review official NOAA marine forecasts, weather warnings, navigation information, and current conditions before leaving the dock. Use your own judgment based on your vessel, experience, crew, and local conditions. By using this website, you acknowledge that you are solely responsible for your boating decisions. The creator of this website assumes no liability for any accidents, injuries, damages, or losses resulting from the use of this information. Version 5.1.1730.
 </footer>
 </body>
 
