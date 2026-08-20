@@ -1,5 +1,5 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.10.0
+// Version 1.10.1
 
 
 let windChart;
@@ -406,6 +406,43 @@ function haversineMiles(lat1, lon1, lat2, lon2){
         );
 }
 
+/*
+Wraps fetch() with a single automatic retry on failure
+(non-OK response or network error), after a short delay.
+Used for calls that feed the Forecast Source and Forecast
+Confidence panels, which otherwise fail silently with no
+retry and leave those buttons unpopulated on any transient
+network hiccup.
+*/
+async function fetchWithRetry(url, options, retries = 1, delayMs = 800){
+    let lastError;
+
+    for(let attempt = 0; attempt <= retries; attempt++){
+        try{
+            const response = await fetch(url, options);
+
+            if(!response.ok){
+                throw new Error(
+                    `Request failed (${response.status}): ${url}`
+                );
+            }
+
+            return response;
+        }
+        catch(error){
+            lastError = error;
+
+            if(attempt < retries){
+                await new Promise(resolve =>
+                    setTimeout(resolve, delayMs)
+                );
+            }
+        }
+    }
+
+    throw lastError;
+}
+
 function clearForecastSourceMapOverlay(){
     if(locationMap && forecastSourceMarker){
         locationMap.removeLayer(forecastSourceMarker);
@@ -640,17 +677,10 @@ async function fetchConfidenceModel(endpoint, coords, selectedDate){
         });
 
     const response =
-        await fetch(
+        await fetchWithRetry(
             endpoint + "?" +
             parameters.toString()
         );
-
-    if(!response.ok){
-        throw new Error(
-            "Model request failed: " +
-            response.status
-        );
-    }
 
     return response.json();
 }
@@ -878,6 +908,16 @@ function renderForecastConfidence(confidence){
         );
 
     if(!panel || !stars || !label || !body){
+        return;
+    }
+
+    if(confidence === "unavailable"){
+        panel.classList.remove("hidden");
+        stars.textContent = "☆☆☆";
+        label.textContent = "Confidence unavailable";
+        body.innerHTML = `
+            <p>Drift couldn't reach the forecast comparison models right now. This doesn't affect the conditions check above — try again in a moment if you'd like a confidence rating.</p>
+        `;
         return;
     }
 
@@ -2107,6 +2147,15 @@ async function checkConditions(){
             "Unable to compare forecast models:",
             error
         );
+
+        if(
+            confidenceRequestId ===
+            forecastConfidenceRequestId
+        ){
+            renderForecastConfidence(
+                "unavailable"
+            );
+        }
     });
 
 
@@ -6384,7 +6433,7 @@ async function getOpenMeteoHourlyWeather(
         marineResponse
     ] = await Promise.all([
 
-        fetch(
+        fetchWithRetry(
             "https://api.open-meteo.com/v1/forecast?" +
             weatherParameters.toString()
         ),
@@ -6395,16 +6444,6 @@ async function getOpenMeteoHourlyWeather(
         )
 
     ]);
-
-
-    if(!weatherResponse.ok){
-
-        throw new Error(
-            `Open-Meteo weather request failed for ${location}: ` +
-            weatherResponse.status
-        );
-
-    }
 
 
     const weatherData =
