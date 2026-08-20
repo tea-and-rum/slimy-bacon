@@ -669,6 +669,9 @@ function getMaxModelDifference(valuesA, valuesB){
 }
 
 async function fetchConfidenceModel(endpoint, coords, selectedDate){
+    const waterBodyType =
+        classifyWaterBody(coords.lat, coords.lon);
+
     const parameters =
         new URLSearchParams({
             latitude:
@@ -683,8 +686,12 @@ async function fetchConfidenceModel(endpoint, coords, selectedDate){
                 ].join(","),
             wind_speed_unit:
                 "mph",
+            // Ocean points prefer an open-water cell; Bay/tributary
+            // points prefer the nearest cell, since many enclosed
+            // Bay coordinates have no "sea"-classified cell nearby
+            // and the search otherwise comes back empty.
             cell_selection:
-                "sea",
+                waterBodyType === "OCEAN" ? "sea" : "land",
             timezone:
                 "America/New_York",
             start_date:
@@ -6248,6 +6255,29 @@ async function getOpenMeteoHourlyWeather(
 
     }
 
+    /*
+    "sea" cell_selection tells Open-Meteo to search for a
+    grid cell it classifies as open water — good for ocean
+    points, since it avoids snapping to a nearby coastal land
+    station. But many Bay/tributary coordinates don't have any
+    "sea"-classified cell nearby in Open-Meteo's land-sea mask
+    at all, so that search can come up empty and return no
+    data whatsoever (wind, waves, and precip all blank).
+    "land" reliably finds the nearest cell instead, which for
+    a narrow Bay or tributary is still right on/near the water
+    and far more likely to actually return data.
+    */
+    const waterBodyType =
+        classifyWaterBody(
+            coords.lat,
+            coords.lon
+        );
+
+    const openMeteoCellSelection =
+        waterBodyType === "OCEAN"
+            ? "sea"
+            : "land";
+
     const weatherParameters =
         new URLSearchParams({
             latitude:
@@ -6272,10 +6302,10 @@ async function getOpenMeteoHourlyWeather(
             temperature_unit:
                 "fahrenheit",
 
-            // Use offshore/open-water cells instead of the nearest land grid cell.
-            // This keeps wind, rain, and temperature tied to the selected water location.
+            // Ocean points prefer an open-water cell; Bay/tributary
+            // points prefer the nearest cell (see comment above).
             cell_selection:
-                "sea",
+                openMeteoCellSelection,
 
             timezone:
                 "America/New_York",
@@ -6302,10 +6332,10 @@ async function getOpenMeteoHourlyWeather(
                     "wave_period"
                 ].join(","),
 
-            // Use offshore/open-water cells instead of the nearest land grid cell.
-            // This provides a more appropriate marine forecast for reefs and offshore locations.
+            // Ocean points prefer an open-water cell; Bay/tributary
+            // points prefer the nearest cell (see comment above).
             cell_selection:
-                "sea",
+                openMeteoCellSelection,
 
             timezone:
                 "America/New_York",
