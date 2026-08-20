@@ -1,5 +1,5 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.9.2
+// Version 1.9.3
 
 
 let windChart;
@@ -3680,90 +3680,6 @@ function getLocationReason(result){
 }
 
 
-function getAlertStatus(alerts){
-
-    if(
-        !Array.isArray(alerts) ||
-        alerts.length === 0
-    ){
-
-        return "CALM";
-
-    }
-
-
-    const noGoAlerts = [
-
-        "Special Marine Warning",
-        "Severe Thunderstorm Warning",
-        "Tornado Warning",
-
-        "Small Craft Advisory",
-
-        "Gale Warning",
-        "Storm Warning",
-
-        "Hurricane Warning",
-        "Tropical Storm Warning",
-
-        "Extreme Wind Warning",
-        "Snow Squall Warning"
-
-    ];
-
-
-    const sportyAlerts = [
-
-        "Severe Thunderstorm Watch",
-        "Tornado Watch",
-
-        "Gale Watch",
-        "Storm Watch",
-
-        "Hurricane Watch",
-        "Tropical Storm Watch",
-
-        "Marine Weather Statement",
-
-        "Dense Fog Advisory",
-        "Wind Advisory",
-        "Coastal Flood Advisory"
-
-    ];
-
-
-    if(
-        alerts.some(alert =>
-            noGoAlerts.includes(alert.event)
-        )
-    ){
-
-        return "POOR";
-
-    }
-
-
-    if(
-        alerts.some(alert =>
-            sportyAlerts.includes(alert.event)
-        )
-    ){
-
-        return "SPORTY";
-
-    }
-
-
-    /*
-    Any other active NWS alert receives
-    a cautious SPORTY classification.
-    */
-
-    return "SPORTY";
-
-}
-
-
 function getWaveCondition(
     waveHeight,
     wavePeriod,
@@ -3860,7 +3776,18 @@ function getWaveCondition(
         };
     }
 
-    const steepnessIndex = height / (period * period);
+    /*
+    True wave steepness = height / wavelength.
+    Wavelength isn't the same as period — under the
+    deep-water wave relationship, wavelength (ft) is
+    approximately 5.12 * period(seconds)^2.
+
+    Using height / period^2 directly (without the 5.12
+    wavelength conversion) overstates steepness by about
+    5x, which made this classification far too aggressive.
+    */
+    const wavelengthFeet = 5.12 * period * period;
+    const steepnessIndex = height / wavelengthFeet;
     let steepnessStatus;
 
     if(steepnessIndex < limits.steepSporty){
@@ -5466,37 +5393,6 @@ function getBestWindowDetails(results){
 }
 
 
-function findGoodWindow(results){
-
-    const windows = [];
-    let start = null;
-
-    results.forEach((value, index) => {
-        const isCalm =
-    value === "FLAT" ||
-    value === "CALM";
-
-        if(isCalm && start === null){
-            start = index;
-        }
-
-        if(!isCalm && start !== null){
-            windows.push(formatHour(start) + " - " + formatHour(index));
-            start = null;
-        }
-    });
-
-    if(start !== null){
-        windows.push(formatHour(start) + " - " + formatHour(24));
-    }
-
-    return windows.length > 0
-        ? windows.join("<br>")
-        : "No calm periods available.";
-
-}
-
-
 function createWhySection(results){
 
     const flatHours =
@@ -5775,304 +5671,6 @@ function getWindGustForHour(
 
 }
 
-async function getNOAAHourlyWeather(
-    location,
-    selectedDate
-){
-
-    try {
-
-        const coords =
-            locations[location];
-
-
-        if(!coords){
-
-            throw new Error(
-                `Coordinates are missing for ${location}`
-            );
-
-        }
-
-
-        /*
-        Find the NOAA forecast grid for
-        the selected latitude and longitude.
-        */
-
-        const pointResponse =
-            await fetch(
-                `https://api.weather.gov/points/${coords.lat},${coords.lon}`
-            );
-
-
-        if(!pointResponse.ok){
-
-            throw new Error(
-                `NOAA location lookup failed for ${location}: ` +
-                pointResponse.status
-            );
-
-        }
-
-
-        const pointData =
-            await pointResponse.json();
-
-
-        const hourlyURL =
-            pointData.properties?.forecastHourly;
-
-        const gridDataURL =
-            pointData.properties?.forecastGridData;
-
-
-        /*
-        Offshore locations may not provide the
-        standard hourly forecast endpoint.
-        */
-
-        if(!hourlyURL){
-
-            throw new Error(
-                `NOAA hourly forecast is unavailable for ${location}`
-            );
-
-        }
-
-
-        const hourlyResponse =
-            await fetch(hourlyURL);
-
-
-        if(!hourlyResponse.ok){
-
-            throw new Error(
-                `NOAA hourly forecast failed for ${location}: ` +
-                hourlyResponse.status
-            );
-
-        }
-
-
-        /*
-        Declare hourlyData exactly once.
-        */
-
-        const hourlyData =
-            await hourlyResponse.json();
-
-
-        let waveValues = [];
-        let gustValues = [];
-
-
-        /*
-        Grid data supplies waves and gusts.
-
-        Failure here should not prevent the
-        normal hourly forecast from loading.
-        */
-
-        if(gridDataURL){
-
-            try {
-
-                const gridResponse =
-                    await fetch(gridDataURL);
-
-
-                if(!gridResponse.ok){
-
-                    throw new Error(
-                        `NOAA grid forecast failed for ${location}: ` +
-                        gridResponse.status
-                    );
-
-                }
-
-
-                const gridData =
-                    await gridResponse.json();
-
-
-                waveValues =
-                    gridData
-                        .properties
-                        ?.waveHeight
-                        ?.values || [];
-
-
-                gustValues =
-                    gridData
-                        .properties
-                        ?.windGust
-                        ?.values || [];
-
-            }
-            catch(error){
-
-                console.warn(
-                    `Wave or gust data unavailable for ${location}:`,
-                    error
-                );
-
-                waveValues = [];
-                gustValues = [];
-
-            }
-
-        }
-
-
-        const hourlyForecast =
-            new Array(24).fill(null);
-
-
-        const periods =
-            hourlyData
-                .properties
-                ?.periods;
-
-
-        if(!Array.isArray(periods)){
-
-            throw new Error(
-                `NOAA returned no hourly periods for ${location}`
-            );
-
-        }
-
-
-        periods.forEach(period => {
-
-            const periodDate =
-                period.startTime?.slice(0, 10);
-
-
-            if(periodDate !== selectedDate){
-
-                return;
-
-            }
-
-
-            const hour =
-                Number(
-                    period.startTime.slice(
-                        11,
-                        13
-                    )
-                );
-
-
-            if(
-                !Number.isInteger(hour) ||
-                hour < 0 ||
-                hour > 23
-            ){
-
-                return;
-
-            }
-
-
-            const hourStart =
-                new Date(
-                    period.startTime
-                );
-
-
-            const hourEnd =
-                period.endTime
-                    ? new Date(period.endTime)
-                    : new Date(
-                        hourStart.getTime() +
-                        60 * 60 * 1000
-                    );
-
-
-            const waveHeight =
-                getWaveHeightForHour(
-                    waveValues,
-                    hourStart,
-                    hourEnd
-                );
-
-
-            const sustainedWind =
-                parseInt(
-                    period.windSpeed,
-                    10
-                ) || 0;
-
-
-            const forecastGust =
-                getWindGustForHour(
-                    gustValues,
-                    hourStart,
-                    hourEnd
-                );
-
-
-            hourlyForecast[hour] = {
-
-                wind:
-                    sustainedWind,
-
-                gust:
-                    forecastGust !== null
-                        ? Math.round(forecastGust)
-                        : sustainedWind,
-
-                waves:
-                    waveHeight,
-
-                precip:
-                    period
-                        .probabilityOfPrecipitation
-                        ?.value ?? 0,
-
-                windDirection:
-                    period.windDirection || "",
-
-                temperature:
-                    period.temperature ?? null,
-
-                shortForecast:
-                    period.shortForecast || "",
-
-                startTime:
-                    period.startTime,
-
-                endTime:
-                    period.endTime,
-
-                alerts: []
-
-            };
-
-        });
-
-
-        return hourlyForecast;
-
-    }
-    catch(error){
-
-        console.error(
-            `Forecast error for ${location}:`,
-            error
-        );
-
-        return null;
-
-    }
-
-}
-
-
-
 function degreesToCompass(degrees){
 
     if(
@@ -6251,16 +5849,76 @@ function easternHourToDate(
 }
 
 
-async function getNOAAWaveForecast(
+function getPrecipProbabilityForHour(
+    precipValues,
+    hourStart,
+    hourEnd
+){
+
+    const matchingValues = [];
+
+    precipValues.forEach(item => {
+
+        if(
+            item.value === null ||
+            item.value === undefined
+        ){
+            return;
+        }
+
+        const interval =
+            parseNOAAValidTime(
+                item.validTime
+            );
+
+        const overlaps =
+            interval.start < hourEnd &&
+            interval.end > hourStart;
+
+        if(overlaps){
+
+            matchingValues.push(
+                Number(item.value)
+            );
+
+        }
+
+    });
+
+
+    if(matchingValues.length === 0){
+        return null;
+    }
+
+
+    /*
+    Use the highest overlapping probability,
+    consistent with how waves and gusts are matched.
+    */
+    return Math.max(
+        ...matchingValues
+    );
+
+}
+
+
+async function getNOAAGridForecast(
     location,
     selectedDate
 ){
+
+    const emptyResult = () => ({
+        waves: new Array(24).fill(null),
+        wind: new Array(24).fill(null),
+        gust: new Array(24).fill(null),
+        precip: new Array(24).fill(null)
+    });
 
     const coords =
         locations[location];
 
     if(!coords){
-        return new Array(24).fill(null);
+        return emptyResult();
     }
 
     try {
@@ -6278,11 +5936,11 @@ async function getNOAAWaveForecast(
         if(!pointResponse.ok){
 
             console.warn(
-                `NOAA wave grid lookup unavailable for ${location}: ` +
+                `NOAA grid lookup unavailable for ${location}: ` +
                 pointResponse.status
             );
 
-            return new Array(24).fill(null);
+            return emptyResult();
 
         }
 
@@ -6294,7 +5952,7 @@ async function getNOAAWaveForecast(
                 ?.forecastGridData;
 
         if(!gridDataURL){
-            return new Array(24).fill(null);
+            return emptyResult();
         }
 
         const gridResponse =
@@ -6310,27 +5968,51 @@ async function getNOAAWaveForecast(
         if(!gridResponse.ok){
 
             console.warn(
-                `NOAA wave grid data unavailable for ${location}: ` +
+                `NOAA grid data unavailable for ${location}: ` +
                 gridResponse.status
             );
 
-            return new Array(24).fill(null);
+            return emptyResult();
 
         }
 
         const gridData =
             await gridResponse.json();
 
+        /*
+        All four fields come from the single NOAA
+        gridpoint forecast response — the same official
+        forecast local NWS marine forecasters produce for
+        the Bay, its tributaries, and offshore waters.
+        */
+
         const waveValues =
             gridData.properties
                 ?.waveHeight
                 ?.values || [];
 
-        if(!waveValues.length){
-            return new Array(24).fill(null);
-        }
+        const windSpeedValues =
+            gridData.properties
+                ?.windSpeed
+                ?.values || [];
+
+        const windGustValues =
+            gridData.properties
+                ?.windGust
+                ?.values || [];
+
+        const precipValues =
+            gridData.properties
+                ?.probabilityOfPrecipitation
+                ?.values || [];
 
         const waves =
+            new Array(24).fill(null);
+        const wind =
+            new Array(24).fill(null);
+        const gust =
+            new Array(24).fill(null);
+        const precip =
             new Array(24).fill(null);
 
         for(
@@ -6373,20 +6055,41 @@ async function getNOAAWaveForecast(
                     hourEnd
                 );
 
+            wind[hour] =
+                getWindGustForHour(
+                    windSpeedValues,
+                    hourStart,
+                    hourEnd
+                );
+
+            gust[hour] =
+                getWindGustForHour(
+                    windGustValues,
+                    hourStart,
+                    hourEnd
+                );
+
+            precip[hour] =
+                getPrecipProbabilityForHour(
+                    precipValues,
+                    hourStart,
+                    hourEnd
+                );
+
         }
 
-        return waves;
+        return { waves, wind, gust, precip };
 
     }
     catch(error){
 
         console.warn(
-            `NOAA wave data unavailable for ${location}; ` +
-            "Open-Meteo Marine will be used instead.",
+            `NOAA grid data unavailable for ${location}; ` +
+            "Open-Meteo will be used instead.",
             error
         );
 
-        return new Array(24).fill(null);
+        return emptyResult();
 
     }
 
@@ -6774,13 +6477,10 @@ async function getHourlyWeather(
     try {
 
         /*
-        Use Open-Meteo for the consistent hourly
-        weather fields at every location:
-        wind, gusts, wind direction, precipitation,
-        temperature, and weather condition.
-
-        getOpenMeteoHourlyWeather also supplies
-        Open-Meteo Marine wave height as the fallback.
+        Open-Meteo supplies the full baseline hourly
+        forecast for every location: wind, gusts,
+        wind direction, precipitation, wave height/
+        period, temperature, and weather condition.
         */
         const forecast =
             await getOpenMeteoHourlyWeather(
@@ -6790,19 +6490,30 @@ async function getHourlyWeather(
 
 
         /*
-        Prefer NOAA/NWS grid wave height wherever
-        NOAA actually supplies it. Any hour without a
-        NOAA wave value keeps the Open-Meteo Marine
-        value already stored in the forecast.
+        NOAA's local gridpoint forecast (the same
+        forecast issued by the Baltimore/Washington
+        and Wakefield NWS offices for the Bay,
+        tributaries, and offshore marine zones) is
+        preferred wherever it's available, since it's
+        purpose-built for this geography rather than a
+        global/regional model blend. Any hour NOAA
+        doesn't cover keeps its Open-Meteo value.
+
+        Wave period isn't part of the NOAA grid
+        response, so wave period always comes from
+        Open-Meteo Marine even on hours where NOAA
+        supplies the wave height.
         */
-        const noaaWaves =
-            await getNOAAWaveForecast(
+        const noaaGrid =
+            await getNOAAGridForecast(
                 location,
                 selectedDate
             );
 
 
         let noaaWaveHours = 0;
+        let noaaWindHours = 0;
+        let noaaPrecipHours = 0;
 
         forecast.forEach(
             (hourData, hourIndex) => {
@@ -6812,15 +6523,15 @@ async function getHourlyWeather(
                 }
 
                 const noaaWave =
-                    noaaWaves[hourIndex];
+                    noaaGrid.waves[hourIndex];
+                const noaaWind =
+                    noaaGrid.wind[hourIndex];
+                const noaaGust =
+                    noaaGrid.gust[hourIndex];
+                const noaaPrecip =
+                    noaaGrid.precip[hourIndex];
 
-                if(
-                    noaaWave !== null &&
-                    noaaWave !== undefined &&
-                    Number.isFinite(
-                        Number(noaaWave)
-                    )
-                ){
+                if(Number.isFinite(Number(noaaWave))){
 
                     hourData.waves =
                         Number(noaaWave);
@@ -6841,6 +6552,54 @@ async function getHourlyWeather(
 
                 }
 
+                if(Number.isFinite(Number(noaaWind))){
+
+                    hourData.wind =
+                        Math.round(Number(noaaWind));
+
+                    /*
+                    Prefer the NOAA gust when it's also
+                    available; otherwise keep the
+                    Open-Meteo gust already on this hour
+                    rather than falling back to the
+                    (typically lower) sustained wind.
+                    */
+                    hourData.gust =
+                        Number.isFinite(Number(noaaGust))
+                            ? Math.round(Number(noaaGust))
+                            : hourData.gust;
+
+                    hourData.windSource =
+                        "NOAA";
+
+                    noaaWindHours++;
+
+                }
+                else {
+
+                    hourData.windSource =
+                        "Open-Meteo";
+
+                }
+
+                if(Number.isFinite(Number(noaaPrecip))){
+
+                    hourData.precip =
+                        Math.round(Number(noaaPrecip));
+
+                    hourData.precipSource =
+                        "NOAA";
+
+                    noaaPrecipHours++;
+
+                }
+                else {
+
+                    hourData.precipSource =
+                        "Open-Meteo";
+
+                }
+
                 hourData.weatherSource =
                     "Open-Meteo";
 
@@ -6849,13 +6608,10 @@ async function getHourlyWeather(
 
 
         console.info(
-            `${location}: Open-Meteo weather; ` +
-            (
-                noaaWaveHours > 0
-                    ? `NOAA waves used for ${noaaWaveHours} hour(s), ` +
-                      "Open-Meteo Marine filling remaining wave gaps."
-                    : "NOAA waves unavailable, using Open-Meteo Marine waves."
-            )
+            `${location}: NOAA used for ` +
+            `${noaaWaveHours} wave, ${noaaWindHours} wind, ` +
+            `${noaaPrecipHours} precip hour(s); ` +
+            "Open-Meteo fills any remaining gaps."
         );
 
 
@@ -7175,630 +6931,6 @@ function timeToPercent(date){
 }
 
 
-function getDecisionExplanation(
-    result,
-    weatherData,
-    boatSize,
-    selectedDate,
-    timeline
-){
-
-    const limits =
-        getVesselLimits(boatSize);
-
-
-    if(!limits){
-
-        return (
-            "The selected vessel could not be evaluated."
-        );
-
-    }
-
-
-    const now =
-        new Date();
-
-
-    const todayString = [
-        now.getFullYear(),
-        String(
-            now.getMonth() + 1
-        ).padStart(2, "0"),
-        String(
-            now.getDate()
-        ).padStart(2, "0")
-    ].join("-");
-
-
-    const relevantHours = [];
-
-
-    weatherData.forEach(locationForecast => {
-
-        if(!Array.isArray(locationForecast)){
-            return;
-        }
-
-
-        locationForecast.forEach(
-            (hour, hourIndex) => {
-
-                if(!hour){
-                    return;
-                }
-
-
-                if(
-                    selectedDate === todayString &&
-                    hourIndex < now.getHours()
-                ){
-                    return;
-                }
-
-
-                relevantHours.push({
-                    ...hour,
-                    hourIndex: hourIndex
-                });
-
-            }
-        );
-
-    });
-
-
-    if(relevantHours.length === 0){
-
-        return (
-            "No remaining forecast information is available."
-        );
-
-    }
-
-
-    const windValues =
-        relevantHours.map(hour =>
-            Math.max(
-                Number(hour.wind) || 0,
-                Number(hour.gust) || 0
-            )
-        );
-
-
-    const waveValues =
-        relevantHours
-            .map(hour =>
-                Number(hour.waves)
-            )
-            .filter(value =>
-                Number.isFinite(value)
-            );
-
-
-    const precipValues =
-        relevantHours.map(hour =>
-            Number(hour.precip) || 0
-        );
-
-
-    const maxWind =
-        windValues.length
-            ? Math.max(...windValues)
-            : 0;
-
-
-    const maxWaves =
-        waveValues.length
-            ? Math.max(...waveValues)
-            : null;
-
-
-    const maxPrecip =
-        precipValues.length
-            ? Math.max(...precipValues)
-            : 0;
-
-
-    const alertNames =
-        [
-            ...new Set(
-                relevantHours
-                    .flatMap(hour =>
-                        Array.isArray(hour.alerts)
-                            ? hour.alerts
-                            : []
-                    )
-                    .map(alert =>
-                        alert.event
-                    )
-                    .filter(Boolean)
-            )
-        ];
-
-
-    const seriousAlertPriority = [
-
-        "Tornado Warning",
-        "Special Marine Warning",
-        "Severe Thunderstorm Warning",
-        "Hurricane Warning",
-        "Tropical Storm Warning",
-        "Storm Warning",
-        "Gale Warning",
-        "Small Craft Advisory",
-        "Extreme Wind Warning"
-
-    ];
-
-
-    const primaryAlert =
-        limits.useAlerts
-            ? seriousAlertPriority.find(alertName =>
-                alertNames.includes(alertName)
-            )
-            : undefined;
-
-
-    const windIsUnsafe =
-        maxWind >= limits.windPoor;
-
-
-    const windIsSporty =
-        maxWind >= limits.windSporty;
-
-
-    const wavesAreUnsafe =
-        maxWaves !== null &&
-        maxWaves >= limits.wavePoor;
-
-
-    const wavesAreSporty =
-        maxWaves !== null &&
-        maxWaves >= limits.waveSporty;
-
-
-    const waveConditionDetails =
-        relevantHours
-            .map(hour => {
-
-                const waveHeight =
-                    Number(hour.waves);
-
-                const wavePeriod =
-                    Number(hour.wavePeriod);
-
-
-                if(
-                    hour.waves === null ||
-                    hour.waves === undefined ||
-                    !Number.isFinite(waveHeight)
-                ){
-                    return null;
-                }
-
-
-                return {
-                    hour: hour,
-                    waveHeight: waveHeight,
-                    wavePeriod:
-                        (
-                            hour.wavePeriod !== null &&
-                            hour.wavePeriod !== undefined &&
-                            Number.isFinite(wavePeriod)
-                        )
-                            ? wavePeriod
-                            : null,
-                    condition:
-                        getWaveCondition(
-                            waveHeight,
-                            (
-                                hour.wavePeriod !== null &&
-                                hour.wavePeriod !== undefined &&
-                                Number.isFinite(wavePeriod)
-                            )
-                                ? wavePeriod
-                                : null,
-                            boatSize
-                        )
-                };
-
-            })
-            .filter(Boolean);
-
-
-    const hasPoorSteepWaves =
-        waveConditionDetails.some(item =>
-            item.condition.reason === "steepness-poor"
-        );
-
-
-    const hasSportySteepWaves =
-        waveConditionDetails.some(item =>
-            item.condition.reason === "steepness-sporty"
-        );
-
-
-    const waveConditionIsPoor =
-        waveConditionDetails.some(item =>
-            item.condition.status === "POOR"
-        );
-
-
-    const waveConditionIsSporty =
-        waveConditionDetails.some(item =>
-            item.condition.status === "SPORTY"
-        );
-
-
-    const heavyRain =
-        limits.usePrecip &&
-        maxPrecip >= Math.max(70, limits.precipPoor || 0);
-
-
-    const thunderstormForecast =
-        (!limits.isCustom || limits.useThunder) &&
-        relevantHours.some(hour =>
-            String(
-                hour.shortForecast || ""
-            )
-                .toLowerCase()
-                .includes("thunder")
-        );
-
-
-    const validStatuses =
-        Array.isArray(timeline)
-            ? timeline.filter(status =>
-                status === "FLAT" ||
-                status === "CALM" ||
-                status === "SPORTY" ||
-                status === "POOR"
-            )
-            : [];
-
-
-    const allFavorable =
-        validStatuses.length > 0 &&
-        validStatuses.every(status =>
-            status === "FLAT" ||
-            status === "CALM"
-        );
-
-
-    const mostlyFavorable =
-        validStatuses.filter(status =>
-            status === "FLAT" ||
-            status === "CALM"
-        ).length >
-        validStatuses.filter(status =>
-            status === "SPORTY" ||
-            status === "POOR"
-        ).length;
-
-
-    /*
-    GO
-    */
-
-    if(result === "GO"){
-
-        if(allFavorable){
-
-            return (
-                "Excellent boating conditions are expected throughout the remaining forecast period."
-            );
-
-        }
-
-
-        if(windIsSporty){
-
-            return (
-                "Good boating conditions are expected, with only brief periods of stronger winds."
-            );
-
-        }
-
-
-        if(
-            hasSportySteepWaves ||
-            hasPoorSteepWaves
-        ){
-
-            return (
-                "Good boating conditions are expected overall, but a few steeper waves may create brief choppy conditions."
-            );
-
-        }
-
-
-        if(
-            wavesAreSporty ||
-            waveConditionIsSporty
-        ){
-
-            return (
-                "Good boating conditions are expected, with only brief periods of choppier water."
-            );
-
-        }
-
-
-        return (
-            "Good boating conditions are expected for most of the remaining forecast period."
-        );
-
-    }
-
-
-    /*
-    MAYBE
-    */
-
-    if(result === "MAYBE"){
-
-        if(primaryAlert){
-
-            return (
-                `Use caution because a ${primaryAlert} is in effect.`
-            );
-
-        }
-
-
-        if(thunderstormForecast){
-
-            return (
-                "Thunderstorms may affect part of the remaining forecast period."
-            );
-
-        }
-
-
-        if(
-            windIsSporty &&
-            (
-                waveConditionIsSporty ||
-                waveConditionIsPoor
-            )
-        ){
-
-            return (
-                "Winds and waves may become uncomfortable during parts of the remaining forecast period."
-            );
-
-        }
-
-
-        if(windIsSporty){
-
-            return (
-                "Winds may become uncomfortable during parts of the remaining forecast period."
-            );
-
-        }
-
-
-        if(hasPoorSteepWaves){
-
-            return (
-                "Wave height and period may combine to create steep, uncomfortable seas during parts of the remaining forecast period."
-            );
-
-        }
-
-
-        if(hasSportySteepWaves){
-
-            return (
-                "Wave height and period may combine to create sporty, choppy conditions during parts of the remaining forecast period."
-            );
-
-        }
-
-
-        if(
-            wavesAreSporty ||
-            waveConditionIsSporty
-        ){
-
-            return (
-                "Waves may become choppy during parts of the remaining forecast period."
-            );
-
-        }
-
-
-        if(heavyRain){
-
-            return (
-                "Periods of rain may affect boating conditions."
-            );
-
-        }
-
-
-        return (
-            "Conditions vary during the remaining forecast period."
-        );
-
-    }
-
-
-    /*
-    LIMITED WINDOW
-    */
-
-    if(result === "LIMITED WINDOW"){
-
-        if(primaryAlert){
-
-            return (
-                `A short favorable window may exist, but a ${primaryAlert} affects much of the remaining forecast period.`
-            );
-
-        }
-
-
-        if(windIsUnsafe){
-
-            return (
-                "Good conditions are only expected during a short window before winds become unsafe."
-            );
-
-        }
-
-
-        if(hasPoorSteepWaves){
-
-            return (
-                "Good conditions are only expected during a short window before wave steepness becomes unsafe."
-            );
-
-        }
-
-
-        if(
-            wavesAreUnsafe ||
-            waveConditionIsPoor
-        ){
-
-            return (
-                "Good conditions are only expected during a short window before wave conditions become unsafe."
-            );
-
-        }
-
-
-        if(windIsSporty){
-
-            return (
-                "Good conditions are only expected during a short window before winds increase."
-            );
-
-        }
-
-
-        if(hasSportySteepWaves){
-
-            return (
-                "Good conditions are only expected during a short window before wave steepness makes the water choppy."
-            );
-
-        }
-
-
-        if(
-            wavesAreSporty ||
-            waveConditionIsSporty
-        ){
-
-            return (
-                "Good conditions are only expected during a short window before the water becomes choppy."
-            );
-
-        }
-
-
-        return (
-            "Good conditions are only expected during a short part of the remaining forecast period."
-        );
-
-    }
-
-
-    /*
-    DON'T GO
-    */
-
-    if(primaryAlert){
-
-        return (
-            `A ${primaryAlert} is in effect.`
-        );
-
-    }
-
-
-    if(thunderstormForecast){
-
-        return (
-            "Thunderstorms are expected during the remaining forecast period."
-        );
-
-    }
-
-
-    if(
-        windIsUnsafe &&
-        (
-            wavesAreUnsafe ||
-            waveConditionIsPoor
-        )
-    ){
-
-        return (
-            "Multiple hazardous conditions are expected, including unsafe winds and rough water."
-        );
-
-    }
-
-
-    if(windIsUnsafe){
-
-        return (
-            "Winds are expected to become unsafe for the selected boat."
-        );
-
-    }
-
-
-    if(hasPoorSteepWaves){
-
-        return (
-            "Wave height and period are expected to combine into steep, unsafe seas for the selected boat."
-        );
-
-    }
-
-
-    if(
-        wavesAreUnsafe ||
-        waveConditionIsPoor
-    ){
-
-        return (
-            "Wave conditions are expected to become unsafe for the selected boat."
-        );
-
-    }
-
-
-    if(heavyRain){
-
-        return (
-            "Heavy rain is expected during much of the remaining forecast period."
-        );
-
-    }
-
-
-    if(!mostlyFavorable){
-
-        return (
-            "Poor boating conditions are expected throughout most of the remaining forecast period."
-        );
-
-    }
-
-
-    return (
-        "There is no meaningful favorable boating window remaining."
-    );
-
-}
-
 function formatHour(hour){
 
     let suffix =
@@ -7838,18 +6970,5 @@ function emoji(result){
 function overallClass(result){
 
     return "decision-result";
-
-}
-
-
-function backgroundClass(result){
-
-    switch(result){
-        case "GO": return "goodBackground";
-        case "MAYBE": return "sportyBackground";
-        case "LIMITED WINDOW": return "limitedBackground";
-        case "DON'T GO": return "noGoBackground";
-        default: return "";
-    }
 
 }

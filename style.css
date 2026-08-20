@@ -75,18 +75,6 @@ h1 {
 
 }
 
-.page-subheader {
-    margin: 6px 0 24px;
-    font-size: 18px;
-    font-weight: 400;
-    color: #64748b;
-    text-align: center;
-}
-
-body.dark-mode .page-subheader {
-    color: #94a3b8;
-}
-
 .card {
 
     background: white;
@@ -121,83 +109,9 @@ body.dark-mode #message {
 
 /* Locations */
 
-.locations-grid{
-
-    display:grid;
-
-    grid-template-columns:1fr 1fr;
-
-    gap:30px;
-
-    margin-top:15px;
-
-}
-
-.location-group{
-
-    background:#f8f8f8;
-
-    border:1px solid #e5e7eb;
-
-    border-radius:10px;
-
-    padding:15px;
-
-}
-
-.location-group h3{
-
-    margin-top:0;
-
-    margin-bottom:12px;
-
-    text-align:left;
-
-}
 body.dark-mode .vessel-card.selected .vessel-check {
     background: #5e94d2;
 }
-
-body.dark-mode .location-group{
-
-    background:#1e293b;
-
-    border-color:#334155;
-
-}
-
-.location-item {
-
-    display: block;
-
-    margin-bottom: 12px;
-
-}
-
-
-
-.location-item label {
-
-    display: flex;
-
-    align-items: center;
-
-    cursor: pointer;
-
-}
-
-
-
-.location-item input {
-
-    margin-right: 10px;
-
-    width: 18px;
-
-    height: 18px;
-
-}
-
 
 input[type="date"] {
 
@@ -300,14 +214,6 @@ input[type="date"] {
 }
 
 
-.vessel-icon {
-
-    font-size: 38px;
-
-}
-
-
-
 .vessel-name {
 
     font-weight: bold;
@@ -362,13 +268,6 @@ button:hover {
 
 
 
-.secondaryButton {
-
-    background: #eeeeee;
-
-}
-
-
 .hidden {
 
     display: none;
@@ -412,14 +311,6 @@ button:hover {
 }
 
 
-.good {
-
-    color: green;
-
-}
-
-
-
 .sporty {
 
     color: #b88600;
@@ -436,14 +327,6 @@ button:hover {
 
 
 /* Why Section */
-
-
-.why-section {
-
-    margin-top: 25px;
-
-}
-
 
 
 #whyResults {
@@ -765,46 +648,6 @@ button:hover {
 }
 
 
-/* Location Cards */
-
-
-.locationCard {
-
-    padding: 15px;
-
-    margin: 10px 0;
-
-    border-radius: 8px;
-
-    line-height: 1.5;
-
-}
-
-
-
-.goodBackground {
-
-    background: #e9f7e9;
-
-}
-
-
-
-.sportyBackground {
-
-    background: #fff7d6;
-
-}
-
-
-
-.noGoBackground {
-
-    background: #fdeaea;
-
-}
-
-
 @media(max-width:700px){
 
 
@@ -1117,24 +960,6 @@ body.dark-mode .dark-mode-toggle {
 }
 
 
-/* Keep status cards recognizable */
-
-body.dark-mode .goodBackground {
-    background-color: #123d2a;
-    color: #dcfce7;
-}
-
-body.dark-mode .sportyBackground {
-    background-color: #493b0b;
-    color: #fef3c7;
-}
-
-body.dark-mode .noGoBackground {
-    background-color: #4c1d1d;
-    color: #fee2e2;
-}
-
-
 /* Active advisory */
 
 body.dark-mode .active-advisory {
@@ -1239,21 +1064,9 @@ body.dark-mode .disclaimer strong {
     color: #111827;
 }
 
-.limitedBackground {
-    background: #fff0d6;
-}
-
 body.dark-mode #decision.decision-result {
     color: #f8fafc;
 }
-
-body.dark-mode .limitedBackground {
-    background-color: #4a2d12;
-    color: #ffedd5;
-}
-
-
-
 
 /* Chronological sunrise, sunset, and tide-event list */
 
@@ -2642,17 +2455,6 @@ body.dark-mode #decisionCard {
     margin: 0;
 }
 
-/* Strong dividers between the major results sections. */
-.results-section-divider {
-    margin: 28px 0;
-    border: 0;
-    border-top: 1px solid #b8c2cc;
-}
-
-body.dark-mode .results-section-divider {
-    border-top-color: #475569;
-}
-
 /* Remove cards around the Wind / Waves / Precipitation charts. */
 .evidence-grid {
     gap: 0;
@@ -2733,11 +2535,6 @@ body.dark-mode .summary-divider {
 .results-breakdown-category .summary,
 .results-breakdown-category #whyResults {
     background: transparent;
-}
-
-/* Main-category divider lines are no longer used. */
-.results-section-divider {
-    display: none;
 }
 
 /* Keep the category containers distinct in dark mode. */
