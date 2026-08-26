@@ -1339,18 +1339,57 @@ function setupLocationMap(){
 
 
     /*
-    OpenSeaMap's seamark tiles are a transparent
-    overlay (buoys, markers, depth soundings, and
-    other navigation aids) meant to sit on top of a
-    base layer, not replace one.
+    OpenSeaMap's seamark tiles: icon-style symbols
+    (buoys, lights, marinas) — not chart data.
     */
-    const nauticalOverlay =
+    const nauticalMarkersOverlay =
         L.tileLayer(
             "https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png",
             {
                 maxZoom: 18,
                 attribution:
                     '&copy; <a href="https://www.openseamap.org/">OpenSeaMap</a> contributors'
+            }
+        );
+
+
+    /*
+    NOAA's own Chart Display Service, rendered from
+    official ENC (Electronic Navigational Chart)
+    data — this is the layer that actually carries
+    depth contours, soundings, and shoal patterns,
+    not just point icons. It's served as WMS rather
+    than plain XYZ tiles, so Leaflet's built-in WMS
+    tile layer handles the request format.
+
+    Layers requested: 1 (natural/man-made features),
+    2 (depths, currents), 3 (seabed/obstructions),
+    4 (traffic routes), 5 (special areas), 6 (buoys/
+    beacons/lights), 7 (small craft facilities).
+    Layers 8-12 are QC/overscale warning layers, not
+    chart content, so they're left out.
+
+    NOAA's own service description notes this is
+    "Not to be used for navigation" — it's an ENC
+    rendering for reference/GIS use, not a
+    certified chart carriage product.
+    */
+    const depthContourOverlay =
+        L.tileLayer.wms(
+            "https://gis.charttools.noaa.gov/arcgis/rest/services/MCS/NOAAChartDisplay/MapServer/exts/MaritimeChartService/WMSServer",
+            {
+                layers:
+                    "1,2,3,4,5,6,7",
+                format:
+                    "image/png",
+                transparent:
+                    true,
+                version:
+                    "1.3.0",
+                maxZoom:
+                    18,
+                attribution:
+                    "NOAA Chart Display Service (ENC data) &mdash; not for navigation"
             }
         );
 
@@ -1366,7 +1405,8 @@ function setupLocationMap(){
             "Satellite": satelliteLayer
         },
         {
-            "Nautical Markers": nauticalOverlay
+            "Depth Contours (NOAA Chart)": depthContourOverlay,
+            "Nautical Markers": nauticalMarkersOverlay
         },
         {
             position:
