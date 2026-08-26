@@ -1818,21 +1818,86 @@ async function fetchBuoyObservation(station){
         return buoyObservationCache[station.id];
     }
 
-    const response =
-        await fetch(
-            `https://www.ndbc.noaa.gov/data/realtime2/${station.id.toUpperCase()}.txt`
+    const directURL =
+        `https://www.ndbc.noaa.gov/data/realtime2/${station.id.toUpperCase()}.txt`;
+
+    /*
+    NDBC's data directory doesn't send the CORS
+    header browsers require for cross-origin JS
+    fetches, so a direct request from Drift's own
+    domain will typically be blocked before it even
+    reaches NDBC. Try direct first (in case that
+    ever changes, or Drift is later served from a
+    domain NDBC does allow), then fall back to a
+    public CORS proxy so buoy popups still work for
+    now.
+
+    This proxy fallback is a stopgap for testing,
+    not the long-term answer — it depends on a free
+    third-party service that can rate-limit or go
+    down without notice. The real fix is item #7:
+    Drift's own backend fetching NDBC data on a
+    schedule and serving it from Drift's domain,
+    which sidesteps CORS entirely since it's a
+    server-to-server request.
+    */
+
+    let text = null;
+
+    try {
+
+        const response =
+            await fetch(directURL);
+
+        if(response.ok){
+            text = await response.text();
+        }
+
+    }
+    catch(directError){
+
+        console.warn(
+            `Direct NDBC fetch blocked for ${station.name} ` +
+            "(expected — NDBC doesn't send CORS headers). " +
+            "Falling back to proxy.",
+            directError
         );
 
-    if(!response.ok){
+    }
+
+    if(!text){
+
+        try {
+
+            const proxyResponse =
+                await fetch(
+                    "https://api.allorigins.win/raw?url=" +
+                    encodeURIComponent(directURL)
+                );
+
+            if(proxyResponse.ok){
+                text = await proxyResponse.text();
+            }
+
+        }
+        catch(proxyError){
+
+            console.warn(
+                `Proxy fallback also failed for ${station.name}:`,
+                proxyError
+            );
+
+        }
+
+    }
+
+    if(!text){
 
         throw new Error(
             `NDBC data unavailable for ${station.name}`
         );
 
     }
-
-    const text =
-        await response.text();
 
     const observation =
         parseNDBCRealtime2(text);
