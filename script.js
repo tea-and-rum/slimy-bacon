@@ -6828,16 +6828,20 @@ async function getHourlyWeather(
 
 
         /*
-        NOAA answered. Any individual hour still
-        missing a wave height or wave period (some
-        grids don't populate marine elements for
-        every hour) gets filled in from Open-Meteo
-        Marine rather than left blank.
+        NOAA answered, but its hourly forecast only
+        extends about 7 days out from generation
+        time. Near that edge, part of a day can be
+        entirely missing (whole hours, not just wave
+        data) even though earlier/later days are
+        fully covered. Any hour missing outright, or
+        missing wave height/period on an otherwise
+        populated hour, gets filled in from
+        Open-Meteo instead of left blank.
         */
 
         const needsGapFill =
             noaaForecast.some(hourData =>
-                hourData &&
+                !hourData ||
                 (
                     hourData.waves === null ||
                     hourData.waves === undefined ||
@@ -6873,12 +6877,45 @@ async function getHourlyWeather(
 
         let noaaWaveHours = 0;
         let fillWaveHours = 0;
+        let fillHourCount = 0;
 
         noaaForecast.forEach(
             (hourData, hourIndex) => {
 
+                const fillHour =
+                    openMeteoForecast?.[hourIndex] || null;
+
+
                 if(!hourData){
+
+                    /*
+                    NOAA had nothing at all for this
+                    hour (beyond its forecast horizon).
+                    Use Open-Meteo's full hour if
+                    available rather than leaving a
+                    gap in the day.
+                    */
+
+                    if(fillHour){
+
+                        fillHour.weatherSource =
+                            "Open-Meteo";
+
+                        fillHour.waveSource =
+                            fillHour.waves !== null &&
+                            fillHour.waves !== undefined
+                                ? "Open-Meteo Marine"
+                                : null;
+
+                        noaaForecast[hourIndex] =
+                            fillHour;
+
+                        fillHourCount++;
+
+                    }
+
                     return;
+
                 }
 
                 hourData.weatherSource =
@@ -6890,9 +6927,6 @@ async function getHourlyWeather(
                     Number.isFinite(
                         Number(hourData.waves)
                     );
-
-                const fillHour =
-                    openMeteoForecast?.[hourIndex] || null;
 
                 if(hasWave){
 
@@ -6947,7 +6981,12 @@ async function getHourlyWeather(
             `waves from NOAA for ${noaaWaveHours} hour(s)` +
             (
                 fillWaveHours > 0
-                    ? `, Open-Meteo Marine filling ${fillWaveHours} gap hour(s).`
+                    ? `, Open-Meteo Marine filling ${fillWaveHours} wave gap hour(s)`
+                    : ""
+            ) +
+            (
+                fillHourCount > 0
+                    ? `, Open-Meteo filling ${fillHourCount} missing hour(s) beyond NOAA's forecast horizon.`
                     : "."
             )
         );
