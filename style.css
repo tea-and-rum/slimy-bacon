@@ -1710,6 +1710,24 @@ body.dark-mode .fishing-spot-coordinates {
     line-height: 1.35;
 }
 
+.use-buoy-location-button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 7px 9px;
+    border: 0;
+    border-radius: 6px;
+    background: #1479c9;
+    color: #ffffff;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.use-buoy-location-button:hover {
+    filter: brightness(0.94);
+}
+
 body.dark-mode .buoy-layer-control {
     background: rgba(30, 41, 59, 0.97);
 }

@@ -1316,12 +1316,63 @@ function setupLocationMap(){
         );
 
 
-    L.tileLayer(
-        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    const streetsLayer =
+        L.tileLayer(
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 18,
+                attribution:
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }
+        );
+
+
+    const satelliteLayer =
+        L.tileLayer(
+            "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            {
+                maxZoom: 19,
+                attribution:
+                    'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+            }
+        );
+
+
+    /*
+    OpenSeaMap's seamark tiles are a transparent
+    overlay (buoys, markers, depth soundings, and
+    other navigation aids) meant to sit on top of a
+    base layer, not replace one.
+    */
+    const nauticalOverlay =
+        L.tileLayer(
+            "https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png",
+            {
+                maxZoom: 18,
+                attribution:
+                    '&copy; <a href="https://www.openseamap.org/">OpenSeaMap</a> contributors'
+            }
+        );
+
+
+    streetsLayer.addTo(
+        locationMap
+    );
+
+
+    L.control.layers(
         {
-            maxZoom: 18,
-            attribution:
-                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            "Streets": streetsLayer,
+            "Satellite": satelliteLayer
+        },
+        {
+            "Nautical Markers": nauticalOverlay
+        },
+        {
+            position:
+                "topleft",
+            collapsed:
+                true
         }
     )
     .addTo(
@@ -1704,6 +1755,9 @@ function buildBuoyPopupHTML(station, observation, errorMessage){
             '</div>';
 
     const footer =
+            '<button type="button" class="use-buoy-location-button">' +
+                'Use this location for forecast' +
+            '</button>' +
             '<p class="buoy-popup-explainer">' +
                 'Real-time sensor data — for a forecast, tap anywhere on the map.' +
             '</p>' +
@@ -1973,7 +2027,41 @@ function setupBuoyLayer(){
 
             marker.on(
                 "popupopen",
-                async () => {
+                async event => {
+
+                    const popupElement =
+                        event.popup.getElement();
+
+                    /*
+                    Attach the "use this location" handler
+                    via delegation on the popup wrapper, since
+                    setPopupContent() below replaces the inner
+                    button element once the live reading loads
+                    (or fails) — delegation means the listener
+                    survives that content swap.
+                    */
+                    popupElement?.addEventListener(
+                        "click",
+                        clickEvent => {
+
+                            if(
+                                !clickEvent.target.closest(
+                                    ".use-buoy-location-button"
+                                )
+                            ){
+                                return;
+                            }
+
+                            setSelectedMapLocation(
+                                station.lat,
+                                station.lon,
+                                station.name
+                            );
+
+                            locationMap.closePopup();
+
+                        }
+                    );
 
                     try {
 
@@ -2019,6 +2107,15 @@ function setupBuoyLayer(){
     );
 
 
+    /*
+    Buoys are on by default — this is opt-out,
+    not opt-in.
+    */
+    buoyLayer.addTo(
+        locationMap
+    );
+
+
     const BuoyLayerControl =
         L.Control.extend({
 
@@ -2037,7 +2134,7 @@ function setupBuoyLayer(){
 
                 container.innerHTML =
                     '<label>' +
-                        '<input type="checkbox">' +
+                        '<input type="checkbox" checked>' +
                         '<span>Buoys</span>' +
                     '</label>';
 
