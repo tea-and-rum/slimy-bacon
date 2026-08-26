@@ -120,6 +120,69 @@ const fishingSpots = [
 
 let fishingSpotsLayer = null;
 
+const buoyStations = [
+    // New Jersey coast
+    { id: 'sdhn4', name: 'Sandy Hook, NJ', lat: 40.467, lon: -74.009, hasWave: false },
+    { id: '44091', name: 'Barnegat, NJ', lat: 39.772, lon: -73.769, hasWave: true },
+    { id: 'acyn4', name: 'Atlantic City, NJ', lat: 39.357, lon: -74.418, hasWave: false },
+    { id: 'cman4', name: 'Cape May, NJ', lat: 38.970, lon: -74.960, hasWave: false },
+
+    // Delaware Bay
+    { id: 'sjsn4', name: 'Ship John Shoal, NJ', lat: 39.305, lon: -75.377, hasWave: false },
+    { id: 'brnd1', name: 'Brandywine Shoal Light, DE', lat: 38.990, lon: -75.110, hasWave: false },
+    { id: 'lwsd1', name: 'Lewes, DE', lat: 38.780, lon: -75.120, hasWave: false },
+    { id: 'deld1', name: 'Delaware City, DE', lat: 39.580, lon: -75.590, hasWave: false },
+    { id: '44009', name: 'Delaware Bay Offshore (26 NM SE of Cape May)', lat: 38.460, lon: -74.692, hasWave: true },
+
+    // Delaware / Maryland Atlantic coast
+    { id: '44084', name: 'Bethany Beach, DE', lat: 38.537, lon: -75.044, hasWave: true },
+    { id: 'ocim2', name: 'Ocean City Inlet, MD', lat: 38.328, lon: -75.091, hasWave: false },
+
+    // Chesapeake Bay - Maryland
+    { id: '44063', name: 'Annapolis, MD', lat: 38.963, lon: -76.448, hasWave: false },
+    { id: '44062', name: 'Gooses Reef, MD', lat: 38.556, lon: -76.415, hasWave: false },
+    { id: 'tplm2', name: 'Thomas Point, MD', lat: 38.899, lon: -76.436, hasWave: false },
+    { id: 'tcbm2', name: 'Tolchester Beach, MD', lat: 39.213, lon: -76.244, hasWave: false },
+    { id: '44080', name: 'Baltimore, MD', lat: 39.223, lon: -76.528, hasWave: false },
+    { id: 'covm2', name: 'Cove Point, MD', lat: 38.402, lon: -76.385, hasWave: false },
+    { id: 'slim2', name: "Solomons Island, MD", lat: 38.320, lon: -76.450, hasWave: false },
+    { id: 'pptm2', name: 'Piney Point, MD', lat: 38.130, lon: -76.530, hasWave: false },
+    { id: 'camm2', name: 'Cambridge, MD', lat: 38.570, lon: -76.070, hasWave: false },
+    { id: 'bism2', name: 'Bishops Head, MD', lat: 38.220, lon: -76.040, hasWave: false },
+    { id: '44042', name: 'Potomac, MD', lat: 38.033, lon: -76.335, hasWave: false },
+    { id: 'fskm2', name: 'Francis Scott Key Bridge, MD', lat: 39.219, lon: -76.528, hasWave: false },
+    { id: 'bcfm2', name: 'Brewerton Channel, MD', lat: 39.205, lon: -76.524, hasWave: false },
+    { id: 'cxlm2', name: 'Cooperative Oxford Laboratory, MD', lat: 38.679, lon: -76.174, hasWave: false },
+    { id: 'ncdv2', name: 'Dahlgren, VA', lat: 38.320, lon: -77.037, hasWave: false },
+    { id: 'wasd2', name: 'Washington, DC', lat: 38.870, lon: -77.020, hasWave: false },
+
+    // Chesapeake Bay - Virginia / lower bay
+    { id: 'lwtv2', name: 'Lewisetta, VA', lat: 38.000, lon: -76.470, hasWave: false },
+    { id: '44058', name: 'Stingray Point, VA', lat: 37.567, lon: -76.257, hasWave: false },
+    { id: '44072', name: 'York Spit, VA', lat: 37.201, lon: -76.266, hasWave: false },
+    { id: 'rplv2', name: 'Rappahannock Light, VA', lat: 37.540, lon: -76.020, hasWave: false },
+    { id: 'chbv2', name: 'Chesapeake Bay Bridge Tunnel, VA', lat: 37.030, lon: -76.080, hasWave: false },
+    { id: '44099', name: 'Cape Henry, VA', lat: 36.915, lon: -75.722, hasWave: true },
+    { id: 'cryv2', name: 'South Craney Island, VA', lat: 36.890, lon: -76.340, hasWave: false },
+    { id: 'swpv2', name: 'Sewells Point, VA', lat: 36.943, lon: -76.329, hasWave: false },
+    { id: 'mnpv2', name: 'Money Point, VA', lat: 36.780, lon: -76.300, hasWave: false },
+    { id: 'yktv2', name: 'Yorktown, VA', lat: 37.230, lon: -76.480, hasWave: false },
+    { id: 'kptv2', name: 'Kiptopeke, VA', lat: 37.170, lon: -75.990, hasWave: false },
+    { id: 'domv2', name: 'Dominion Terminal, VA', lat: 36.962, lon: -76.424, hasWave: false },
+    { id: 'wdsv2', name: 'Willoughby, VA', lat: 36.977, lon: -76.315, hasWave: false },
+    { id: '44064', name: 'First Landing, VA', lat: 36.998, lon: -76.087, hasWave: false },
+    { id: '44087', name: 'Thimble Shoal, VA', lat: 37.043, lon: -76.129, hasWave: false },
+    { id: 'yrsv2', name: 'Taskinas Creek, VA', lat: 37.414, lon: -76.712, hasWave: false },
+
+    // Atlantic Virginia coast
+    { id: '44088', name: 'Virginia Beach Offshore, VA', lat: 36.612, lon: -74.839, hasWave: true },
+    { id: 'wahv2', name: 'Wachapreague, VA', lat: 37.610, lon: -75.690, hasWave: false },
+    { id: '44089', name: 'Wallops Island, VA', lat: 37.756, lon: -75.325, hasWave: false }
+];
+
+let buoyLayer = null;
+const buoyObservationCache = {};
+
 window.onload = function(){
 
     setToday();
@@ -1268,6 +1331,8 @@ function setupLocationMap(){
 
     setupFishingSpotsLayer();
 
+    setupBuoyLayer();
+
 
     locationMap.fitBounds(
         DEFAULT_MAP_BOUNDS
@@ -1488,6 +1553,472 @@ function setupFishingSpotsLayer(){
 
     locationMap.addControl(
         new FishingSpotsControl()
+    );
+
+}
+
+
+function metersPerSecondToMph(mps){
+
+    if(
+        mps === null ||
+        mps === undefined ||
+        Number.isNaN(Number(mps))
+    ){
+        return null;
+    }
+
+    return Number(mps) * 2.23694;
+
+}
+
+
+function parseNDBCRealtime2(text){
+
+    /*
+    NDBC's realtime2 standard meteorological
+    text file: a header line, a units line, then
+    the most recent observation first. Missing
+    values are written as "MM".
+    */
+
+    const lines =
+        text
+            .split("\n")
+            .map(line => line.trim())
+            .filter(Boolean);
+
+    if(lines.length < 3){
+        return null;
+    }
+
+    const dataLine =
+        lines[2];
+
+    const columns =
+        dataLine.split(/\s+/);
+
+    /*
+    Standard column order:
+    YY MM DD hh mm WDIR WSPD GST WVHT DPD APD MWD PRES ATMP WTMP DEWP VIS PTDY TIDE
+    */
+
+    const get = index =>
+        columns[index] !== undefined &&
+        columns[index] !== "MM"
+            ? Number(columns[index])
+            : null;
+
+    const year = get(0);
+    const month = get(1);
+    const day = get(2);
+    const hour = get(3);
+    const minute = get(4);
+
+    const windSpeedMps = get(6);
+    const gustMps = get(7);
+    const waveHeightMeters = get(8);
+    const dominantWavePeriod = get(9);
+    const airTempC = get(13);
+
+    let observedAt = null;
+
+    if(
+        year !== null &&
+        month !== null &&
+        day !== null &&
+        hour !== null &&
+        minute !== null
+    ){
+
+        observedAt =
+            new Date(
+                Date.UTC(
+                    2000 + year,
+                    month - 1,
+                    day,
+                    hour,
+                    minute
+                )
+            );
+
+    }
+
+    return {
+        observedAt,
+        windSpeedMph:
+            metersPerSecondToMph(windSpeedMps),
+        gustMph:
+            metersPerSecondToMph(gustMps),
+        waveHeightFt:
+            waveHeightMeters !== null
+                ? metersToFeet(waveHeightMeters)
+                : null,
+        wavePeriodSec:
+            dominantWavePeriod,
+        airTempF:
+            airTempC !== null
+                ? (airTempC * 9 / 5) + 32
+                : null
+    };
+
+}
+
+
+function timeAgoLabel(date){
+
+    if(!date){
+        return "time unknown";
+    }
+
+    const minutesAgo =
+        Math.round(
+            (Date.now() - date.getTime()) /
+            60000
+        );
+
+    if(minutesAgo < 1){
+        return "just now";
+    }
+
+    if(minutesAgo < 60){
+        return `${minutesAgo} min ago`;
+    }
+
+    const hoursAgo =
+        Math.round(minutesAgo / 60);
+
+    return `${hoursAgo} hr ago`;
+
+}
+
+
+function buildBuoyPopupHTML(station, observation, errorMessage){
+
+    const header =
+        '<div class="buoy-popup">' +
+            '<div class="buoy-popup-label">🛟 Live Buoy Reading</div>' +
+            '<strong>' + escapeHTML(station.name) + '</strong>' +
+            '<div class="buoy-popup-coordinates">' +
+                station.lat.toFixed(3) + ', ' + station.lon.toFixed(3) +
+            '</div>';
+
+    const footer =
+            '<p class="buoy-popup-explainer">' +
+                'Real-time sensor data — for a forecast, tap anywhere on the map.' +
+            '</p>' +
+        '</div>';
+
+    if(errorMessage){
+
+        return (
+            header +
+            '<div class="buoy-popup-error">' +
+                escapeHTML(errorMessage) +
+            '</div>' +
+            footer
+        );
+
+    }
+
+    if(!observation){
+
+        return (
+            header +
+            '<div class="buoy-popup-loading">Loading latest reading…</div>' +
+            footer
+        );
+
+    }
+
+    const rows = [];
+
+    if(
+        observation.windSpeedMph !== null ||
+        observation.gustMph !== null
+    ){
+
+        rows.push(
+            '<div class="buoy-popup-row">' +
+                '<span>Wind</span>' +
+                '<strong>' +
+                    (
+                        observation.windSpeedMph !== null
+                            ? Math.round(observation.windSpeedMph) + ' mph'
+                            : '—'
+                    ) +
+                    (
+                        observation.gustMph !== null
+                            ? ' (gust ' + Math.round(observation.gustMph) + ' mph)'
+                            : ''
+                    ) +
+                '</strong>' +
+            '</div>'
+        );
+
+    }
+
+    if(
+        station.hasWave &&
+        observation.waveHeightFt !== null
+    ){
+
+        rows.push(
+            '<div class="buoy-popup-row">' +
+                '<span>Waves</span>' +
+                '<strong>' +
+                    observation.waveHeightFt.toFixed(1) + ' ft' +
+                    (
+                        observation.wavePeriodSec !== null
+                            ? ' @ ' + observation.wavePeriodSec.toFixed(1) + ' sec'
+                            : ''
+                    ) +
+                '</strong>' +
+            '</div>'
+        );
+
+    }
+
+    if(observation.airTempF !== null){
+
+        rows.push(
+            '<div class="buoy-popup-row">' +
+                '<span>Air Temp</span>' +
+                '<strong>' + Math.round(observation.airTempF) + '°F</strong>' +
+            '</div>'
+        );
+
+    }
+
+    if(!rows.length){
+
+        rows.push(
+            '<div class="buoy-popup-row buoy-popup-no-data">' +
+                'No recent readings from this station.' +
+            '</div>'
+        );
+
+    }
+
+    return (
+        header +
+        '<div class="buoy-popup-updated">' +
+            'Updated ' + timeAgoLabel(observation.observedAt) +
+        '</div>' +
+        rows.join("") +
+        footer
+    );
+
+}
+
+
+async function fetchBuoyObservation(station){
+
+    if(buoyObservationCache[station.id]){
+        return buoyObservationCache[station.id];
+    }
+
+    const response =
+        await fetch(
+            `https://www.ndbc.noaa.gov/data/realtime2/${station.id.toUpperCase()}.txt`
+        );
+
+    if(!response.ok){
+
+        throw new Error(
+            `NDBC data unavailable for ${station.name}`
+        );
+
+    }
+
+    const text =
+        await response.text();
+
+    const observation =
+        parseNDBCRealtime2(text);
+
+    if(!observation){
+
+        throw new Error(
+            `No recent readings for ${station.name}`
+        );
+
+    }
+
+    buoyObservationCache[station.id] = observation;
+
+    return observation;
+
+}
+
+
+function setupBuoyLayer(){
+
+    if(!locationMap){
+        return;
+    }
+
+    buoyLayer =
+        L.layerGroup();
+
+    buoyStations.forEach(
+        station => {
+
+            const marker =
+                L.marker(
+                    [station.lat, station.lon],
+                    {
+                        icon:
+                            L.divIcon({
+                                className:
+                                    "buoy-marker-wrapper",
+                                html:
+                                    '<div class="buoy-marker" aria-hidden="true">🛟</div>',
+                                iconSize:
+                                    [24, 24],
+                                iconAnchor:
+                                    [12, 12],
+                                popupAnchor:
+                                    [0, -10]
+                            }),
+                        title:
+                            station.name
+                    }
+                );
+
+            marker.bindTooltip(
+                station.name,
+                {
+                    direction:
+                        "top",
+                    offset:
+                        [0, -10],
+                    opacity:
+                        0.95
+                }
+            );
+
+            marker.bindPopup(
+                buildBuoyPopupHTML(
+                    station,
+                    null,
+                    null
+                )
+            );
+
+            marker.on(
+                "popupopen",
+                async () => {
+
+                    try {
+
+                        const observation =
+                            await fetchBuoyObservation(
+                                station
+                            );
+
+                        marker.setPopupContent(
+                            buildBuoyPopupHTML(
+                                station,
+                                observation,
+                                null
+                            )
+                        );
+
+                    }
+                    catch(error){
+
+                        console.warn(
+                            `Buoy reading failed for ${station.name}:`,
+                            error
+                        );
+
+                        marker.setPopupContent(
+                            buildBuoyPopupHTML(
+                                station,
+                                null,
+                                "Live reading unavailable right now."
+                            )
+                        );
+
+                    }
+
+                }
+            );
+
+            marker.addTo(
+                buoyLayer
+            );
+
+        }
+    );
+
+
+    const BuoyLayerControl =
+        L.Control.extend({
+
+            options: {
+                position:
+                    "topright"
+            },
+
+            onAdd(){
+
+                const container =
+                    L.DomUtil.create(
+                        "div",
+                        "leaflet-control buoy-layer-control"
+                    );
+
+                container.innerHTML =
+                    '<label>' +
+                        '<input type="checkbox">' +
+                        '<span>Buoys</span>' +
+                    '</label>';
+
+                L.DomEvent.disableClickPropagation(
+                    container
+                );
+
+                L.DomEvent.disableScrollPropagation(
+                    container
+                );
+
+                const checkbox =
+                    container.querySelector(
+                        'input[type="checkbox"]'
+                    );
+
+                checkbox.addEventListener(
+                    "change",
+                    () => {
+
+                        if(checkbox.checked){
+
+                            buoyLayer.addTo(
+                                locationMap
+                            );
+
+                        }
+                        else {
+
+                            locationMap.removeLayer(
+                                buoyLayer
+                            );
+
+                        }
+
+                    }
+                );
+
+                return container;
+
+            }
+
+        });
+
+    locationMap.addControl(
+        new BuoyLayerControl()
     );
 
 }
