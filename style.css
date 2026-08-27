@@ -1544,23 +1544,6 @@ body.dark-mode .location-map .leaflet-control-attribution a {
     font-size: 12px;
 }
 
-.use-fishing-spot-button {
-    width: 100%;
-    margin-top: 9px;
-    padding: 7px 9px;
-    border: 0;
-    border-radius: 6px;
-    background: #1479c9;
-    color: #ffffff;
-    cursor: pointer;
-    font: inherit;
-    font-weight: 600;
-}
-
-.use-fishing-spot-button:hover {
-    filter: brightness(0.94);
-}
-
 body.dark-mode .fishing-spots-control {
     background: rgba(30, 41, 59, 0.97);
 }
@@ -1708,24 +1691,6 @@ body.dark-mode .fishing-spot-coordinates {
     font-size: 11px;
     color: #94a3b8;
     line-height: 1.35;
-}
-
-.use-buoy-location-button {
-    width: 100%;
-    margin-top: 8px;
-    padding: 7px 9px;
-    border: 0;
-    border-radius: 6px;
-    background: #1479c9;
-    color: #ffffff;
-    cursor: pointer;
-    font: inherit;
-    font-weight: 600;
-    font-size: 13px;
-}
-
-.use-buoy-location-button:hover {
-    filter: brightness(0.94);
 }
 
 body.dark-mode .buoy-layer-control {
@@ -2652,6 +2617,18 @@ body.dark-mode .forecast-source-label {
     display: block;
     font-weight: 700;
     margin-bottom: 3px;
+}
+
+.decision-searched-date {
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    color: #94a3b8;
+    margin: 0 0 4px;
+}
+
+body.dark-mode .decision-searched-date {
+    color: #64748b;
 }
 
 .human-summary-value {

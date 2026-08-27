@@ -1182,7 +1182,91 @@ function getHumanDecisionSummaryHTML(
                 ? 2
                 : 0;
 
+    /*
+    The per-hour timeline classification (used to
+    paint the actual Sporty/Poor bands) also checks
+    NOAA's text forecast for thunderstorm wording and
+    any active marine alerts — a thunderstorm mention
+    or a no-go alert sends that hour straight to Poor
+    regardless of the numeric wind/wave/rain values.
+    This summary needs to check the same things, or it
+    ends up blaming whichever of Wind/Waves/Rain merely
+    happened to cross a threshold, even when that's not
+    what's actually driving the Poor hours shown below.
+    */
+
+    const noGoAlertNames = [
+        "Special Marine Warning",
+        "Severe Thunderstorm Warning",
+        "Tornado Warning",
+        "Small Craft Advisory",
+        "Gale Warning",
+        "Storm Warning",
+        "Hurricane Warning",
+        "Tropical Storm Warning",
+        "Extreme Wind Warning"
+    ];
+
+    const sportyAlertNames = [
+        "Severe Thunderstorm Watch",
+        "Tornado Watch",
+        "Gale Watch",
+        "Storm Watch",
+        "Hurricane Watch",
+        "Tropical Storm Watch",
+        "Marine Weather Statement",
+        "Dense Fog Advisory",
+        "Wind Advisory",
+        "Coastal Flood Advisory"
+    ];
+
+    const hasThunderstormHour =
+        limits.useThunder &&
+        hours.some(hour =>
+            String(hour.shortForecast || "")
+                .toLowerCase()
+                .includes("thunder")
+        );
+
+    const hasNoGoAlertHour =
+        limits.useAlerts &&
+        hours.some(hour =>
+            Array.isArray(hour.alerts) &&
+            hour.alerts.some(alert =>
+                noGoAlertNames.includes(alert.event)
+            )
+        );
+
+    const hasSportyAlertHour =
+        limits.useAlerts &&
+        hours.some(hour =>
+            Array.isArray(hour.alerts) &&
+            hour.alerts.some(alert =>
+                sportyAlertNames.includes(alert.event)
+            )
+        );
+
+    const alertSeverity =
+        hasNoGoAlertHour
+            ? 3
+            : hasSportyAlertHour
+                ? 2
+                : 0;
+
+    const thunderstormSeverity =
+        hasThunderstormHour
+            ? 3
+            : 0;
+
     const concerns = [];
+
+    if(thunderstormSeverity > 0){
+        concerns.push("Thunderstorms");
+    }
+
+    if(alertSeverity > 0){
+        concerns.push("Marine Alerts");
+    }
 
     if(windSeverity > 0){
         concerns.push("Wind");
@@ -1208,6 +1292,30 @@ function getHumanDecisionSummaryHTML(
         hasUnfavorableTimeline && concerns.length
             ? concerns.join(" + ")
             : "None";
+
+    /*
+    The displayed "primary" can list several concerns
+    at once, but the recommendation sentence needs one
+    clear main factor. Pick whichever concern actually
+    has the highest severity, rather than pattern-matching
+    the joined display string (which broke as soon as a
+    concern the string-matching didn't know about, like
+    thunderstorms, became the real driver).
+    */
+    const topConcern =
+        [
+            { name: "Thunderstorms", severity: thunderstormSeverity },
+            { name: "Marine Alerts", severity: alertSeverity },
+            { name: "Wind", severity: windSeverity },
+            { name: "Waves", severity: waveSeverity },
+            { name: "Rain", severity: rainSeverity }
+        ]
+        .reduce(
+            (highest, concern) =>
+                concern.severity > highest.severity
+                    ? concern
+                    : highest
+        );
 
     const forecastText = `
         <div class="forecast-metrics-grid">
@@ -1241,25 +1349,35 @@ function getHumanDecisionSummaryHTML(
 
     let recommendation = "";
 
-    if(primary === "None"){
+    if(primary === "None" || topConcern.severity === 0){
         recommendation =
             "Conditions are within the selected vessel's comfort limits for the favorable periods shown below.";
     }
-    else if(primary === "Wind"){
+    else if(topConcern.name === "Thunderstorms"){
         recommendation =
-            windSeverity >= 3
+            "Thunderstorms in the forecast are the main factor pushing conditions into Poor territory.";
+    }
+    else if(topConcern.name === "Marine Alerts"){
+        recommendation =
+            topConcern.severity >= 3
+                ? "An active marine warning is the main factor pushing conditions into Poor territory."
+                : "An active marine watch/advisory is the main factor making conditions Sporty.";
+    }
+    else if(topConcern.name === "Wind"){
+        recommendation =
+            topConcern.severity >= 3
                 ? "Wind is the main factor pushing conditions into Poor territory."
                 : "Wind is the main factor making conditions Sporty.";
     }
-    else if(primary === "Waves"){
+    else if(topConcern.name === "Waves"){
         recommendation =
-            waveSeverity >= 3
+            topConcern.severity >= 3
                 ? "Wave conditions are the main factor pushing conditions into Poor territory."
                 : "Wave conditions are the main factor making conditions Sporty.";
     }
     else {
         recommendation =
-            rainSeverity >= 3
+            topConcern.severity >= 3
                 ? "Rain probability is the main factor pushing conditions into Poor territory."
                 : "Rain probability is the main factor making conditions Sporty.";
     }
@@ -1339,21 +1457,6 @@ function setupLocationMap(){
 
 
     /*
-    OpenSeaMap's seamark tiles: icon-style symbols
-    (buoys, lights, marinas) — not chart data.
-    */
-    const nauticalMarkersOverlay =
-        L.tileLayer(
-            "https://tiles.openseamap.org/seamark/{z}/{x}/{y}.png",
-            {
-                maxZoom: 18,
-                attribution:
-                    '&copy; <a href="https://www.openseamap.org/">OpenSeaMap</a> contributors'
-            }
-        );
-
-
-    /*
     NOAA's own Chart Display Service, rendered from
     official ENC (Electronic Navigational Chart)
     data — this is the layer that actually carries
@@ -1405,8 +1508,7 @@ function setupLocationMap(){
             "Satellite": satelliteLayer
         },
         {
-            "Depth Contours (NOAA Chart)": depthContourOverlay,
-            "Nautical Markers": nauticalMarkersOverlay
+            "Depth Contours (NOAA Chart)": depthContourOverlay
         },
         {
             position:
@@ -1512,48 +1614,27 @@ function setupFishingSpotsLayer(){
                             ', ' +
                             spot.lon.toFixed(5) +
                         '</div>' +
-                        '<button type="button" class="use-fishing-spot-button">' +
-                            'Use this location' +
-                        '</button>' +
                     '</div>'
                 )
             );
 
 
+            /*
+            Clicking the marker itself sets it as the
+            forecast location, the same way tapping any
+            point on the water does — no extra "use this
+            location" step needed. The popup still opens
+            (via Leaflet's default marker click behavior)
+            so the name/coordinates remain visible.
+            */
             marker.on(
-                "popupopen",
-                event => {
+                "click",
+                () => {
 
-                    const popupElement =
-                        event.popup.getElement();
-
-                    const button =
-                        popupElement?.querySelector(
-                            ".use-fishing-spot-button"
-                        );
-
-
-                    if(!button){
-                        return;
-                    }
-
-
-                    button.addEventListener(
-                        "click",
-                        () => {
-
-                            setSelectedMapLocation(
-                                spot.lat,
-                                spot.lon,
-                                spot.name
-                            );
-
-                            locationMap.closePopup();
-
-                        },
-                        {
-                            once: true
-                        }
+                    setSelectedMapLocation(
+                        spot.lat,
+                        spot.lon,
+                        spot.name
                     );
 
                 }
@@ -1795,11 +1876,8 @@ function buildBuoyPopupHTML(station, observation, errorMessage){
             '</div>';
 
     const footer =
-            '<button type="button" class="use-buoy-location-button">' +
-                'Use this location for forecast' +
-            '</button>' +
             '<p class="buoy-popup-explainer">' +
-                'Real-time sensor data — for a forecast, tap anywhere on the map.' +
+                'Real-time sensor data. This location has also been set as your forecast point.' +
             '</p>' +
         '</div>';
 
@@ -2065,43 +2143,29 @@ function setupBuoyLayer(){
                 )
             );
 
+            /*
+            Clicking the marker sets it as the forecast
+            location immediately — same behavior as any
+            other point on the map — while the popup still
+            opens (Leaflet's default marker click behavior)
+            to show the live reading.
+            */
+            marker.on(
+                "click",
+                () => {
+
+                    setSelectedMapLocation(
+                        station.lat,
+                        station.lon,
+                        station.name
+                    );
+
+                }
+            );
+
             marker.on(
                 "popupopen",
                 async event => {
-
-                    const popupElement =
-                        event.popup.getElement();
-
-                    /*
-                    Attach the "use this location" handler
-                    via delegation on the popup wrapper, since
-                    setPopupContent() below replaces the inner
-                    button element once the live reading loads
-                    (or fails) — delegation means the listener
-                    survives that content swap.
-                    */
-                    popupElement?.addEventListener(
-                        "click",
-                        clickEvent => {
-
-                            if(
-                                !clickEvent.target.closest(
-                                    ".use-buoy-location-button"
-                                )
-                            ){
-                                return;
-                            }
-
-                            setSelectedMapLocation(
-                                station.lat,
-                                station.lon,
-                                station.name
-                            );
-
-                            locationMap.closePopup();
-
-                        }
-                    );
 
                     try {
 
@@ -2800,6 +2864,53 @@ function setCheckConditionsLoading(isLoading){
 }
 
 
+function formatSearchedDateLabel(dateString){
+
+    /*
+    dateString is "YYYY-MM-DD" from the date input.
+    Parsed as year/month/day components directly
+    (rather than passed straight to `new Date()`)
+    so it isn't interpreted as UTC midnight and
+    shifted a day off in the browser's local zone.
+    */
+
+    const [year, month, day] =
+        dateString
+            .split("-")
+            .map(Number);
+
+    const parsedDate =
+        new Date(
+            year,
+            month - 1,
+            day
+        );
+
+    const weekday =
+        parsedDate
+            .toLocaleDateString(
+                "en-US",
+                { weekday: "short" }
+            )
+            .toUpperCase();
+
+    const paddedMonth =
+        String(month)
+            .padStart(2, "0");
+
+    const paddedDay =
+        String(day)
+            .padStart(2, "0");
+
+    return (
+        weekday + " " +
+        paddedMonth + "/" +
+        paddedDay
+    );
+
+}
+
+
 async function checkConditions(){
 
     const selectedLocations =
@@ -3047,6 +3158,12 @@ const validTimeline =
             selectedDate,
             sun
         );
+
+
+        document.getElementById("decisionSearchedDate").textContent =
+            formatSearchedDateLabel(
+                selectedDate
+            );
 
 
         document.getElementById("decision").innerHTML =
