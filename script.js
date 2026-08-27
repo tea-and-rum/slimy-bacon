@@ -1634,7 +1634,8 @@ function setupFishingSpotsLayer(){
                     setSelectedMapLocation(
                         spot.lat,
                         spot.lon,
-                        spot.name
+                        spot.name,
+                        false
                     );
 
                 }
@@ -2157,7 +2158,8 @@ function setupBuoyLayer(){
                     setSelectedMapLocation(
                         station.lat,
                         station.lon,
-                        station.name
+                        station.name,
+                        false
                     );
 
                 }
@@ -2293,7 +2295,8 @@ function setupBuoyLayer(){
 function setSelectedMapLocation(
     lat,
     lon,
-    locationName = null
+    locationName = null,
+    openOwnPopup = true
 ){
 
     if(
@@ -2378,16 +2381,28 @@ function setSelectedMapLocation(
     }
 
 
-    selectedMapMarker
-        .bindPopup(
-            (
-                "<strong>Selected location</strong><br>" +
-                numericLat.toFixed(5) +
-                ", " +
-                numericLon.toFixed(5)
-            )
+    /*
+    When called from a pre-plotted marker (a buoy or
+    reef) that has its own popup with more specific
+    info, skip opening this generic "Selected location"
+    popup — Leaflet closes any other open popup as soon
+    as one opens, so this would otherwise silently steal
+    focus from the buoy/reef popup right after it opens.
+    The circle marker still moves to the new spot either
+    way; only the popup is conditional.
+    */
+    selectedMapMarker.bindPopup(
+        (
+            "<strong>Selected location</strong><br>" +
+            numericLat.toFixed(5) +
+            ", " +
+            numericLon.toFixed(5)
         )
-        .openPopup();
+    );
+
+    if(openOwnPopup){
+        selectedMapMarker.openPopup();
+    }
 
 
     const selectedLocationText =
