@@ -4015,6 +4015,35 @@ function createWindChart(
     };
 
 
+    const selectedBoatSize =
+        document.getElementById("boatSize")?.value ||
+        "medium";
+
+
+    /*
+    Colors a single point or line segment by the wind
+    condition (FLAT/CALM/SPORTY/POOR) of its own value,
+    falling back to the dataset's base color when there's
+    no reading to classify.
+    */
+    const windConditionColor = (
+        rawValue,
+        fallbackColor
+    ) => {
+
+        const condition =
+            getWindCondition(
+                rawValue,
+                selectedBoatSize
+            );
+
+        return condition.status
+            ? getConditionColor(condition.status)
+            : fallbackColor;
+
+    };
+
+
     windChart =
         new Chart(
             document.getElementById(
@@ -4040,7 +4069,20 @@ function createWindChart(
                             data: sustainedData,
                             borderColor: "#2563eb",
                             backgroundColor: "#2563eb",
-                            pointBackgroundColor: "#2563eb",
+                            pointBackgroundColor(context){
+                                return windConditionColor(
+                                    context.raw,
+                                    "#2563eb"
+                                );
+                            },
+                            segment: {
+                                borderColor(ctx){
+                                    return windConditionColor(
+                                        ctx.p1.parsed.y,
+                                        "#2563eb"
+                                    );
+                                }
+                            },
                             tension: 0.3,
                             fill: false,
                             spanGaps: false
@@ -4051,7 +4093,20 @@ function createWindChart(
                             data: gustData,
                             borderColor: "#dc2626",
                             backgroundColor: "#dc2626",
-                            pointBackgroundColor: "#dc2626",
+                            pointBackgroundColor(context){
+                                return windConditionColor(
+                                    context.raw,
+                                    "#dc2626"
+                                );
+                            },
+                            segment: {
+                                borderColor(ctx){
+                                    return windConditionColor(
+                                        ctx.p1.parsed.y,
+                                        "#dc2626"
+                                    );
+                                }
+                            },
                             borderDash: [8, 5],
                             tension: 0.3,
                             fill: false,
@@ -5128,6 +5183,64 @@ function getWaveConditionBorderColor(status){
 
     }
 
+}
+
+
+/*
+Classifies a single wind reading (sustained or gust, mph)
+into the same FLAT/CALM/SPORTY/POOR scale used everywhere
+else, using the vessel's own wind thresholds - independent
+of waves, precipitation, or alerts, unlike the combined
+per-hour result from checkHour().
+*/
+function getWindCondition(
+    windSpeed,
+    boatSize
+){
+
+    const limits =
+        getVesselLimits(boatSize);
+
+    const speed =
+        Number(windSpeed);
+
+    if(
+        !limits ||
+        windSpeed === null ||
+        windSpeed === undefined ||
+        !Number.isFinite(speed)
+    ){
+        return { status: null };
+    }
+
+    if(speed >= limits.windPoor){
+        return { status: "POOR" };
+    }
+
+    if(speed >= limits.windSporty){
+        return { status: "SPORTY" };
+    }
+
+    if(speed <= limits.flatWind){
+        return { status: "FLAT" };
+    }
+
+    return { status: "CALM" };
+
+}
+
+
+/*
+Generic aliases for the shared status-color palette, used
+by both the wave and wind charts (the underlying mapping
+isn't actually wave-specific).
+*/
+function getConditionColor(status){
+    return getWaveConditionColor(status);
+}
+
+function getConditionBorderColor(status){
+    return getWaveConditionBorderColor(status);
 }
 
 
