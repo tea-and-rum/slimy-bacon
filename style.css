@@ -677,15 +677,15 @@ button:hover {
     display: grid;
     grid-template-columns: 1fr;
     grid-auto-rows: auto;
-    gap: 10px;
+    gap: 16px;
     margin-top: 20px;
 }
 
 .evidence-card {
-    background: #f8f8f8;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 15px;
+    background: #ffffff;
+    border: 0;
+    border-radius: 8px;
+    padding: 20px;
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -1838,6 +1838,7 @@ When/date first, then What/vessel cards.
     /* Keep some separation before the results without recreating gutters. */
     #results.card {
         margin-top: 12px;
+        background: #f5f5f5;
     }
 
     .disclaimer {
@@ -2761,45 +2762,36 @@ body.dark-mode .results-section-divider {
     border-top-color: #475569;
 }
 
-/* Remove cards around the Wind / Waves / Precipitation charts. */
-.evidence-grid {
-    gap: 0;
-}
-
-.evidence-card {
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-    padding: 18px 0;
-}
-
-.evidence-card:first-child {
-    padding-top: 0;
-}
-
-.evidence-card + .evidence-card {
-    border-top: 1px solid #dbe3ea;
-}
-
-body.dark-mode .evidence-card {
-    background: transparent;
-    border-color: transparent;
-}
-
-body.dark-mode .evidence-card + .evidence-card {
-    border-top-color: #334155;
-}
-
 /* ---------------------------------
    Results category containers
 ---------------------------------- */
 
 .results-category {
-    background: #f5f5f5;
+    background: #ffffff;
     border-radius: 8px;
     padding: 20px;
     margin-bottom: 20px;
     box-sizing: border-box;
+}
+
+/* The outer results container is light gray, distinct from the
+   white category boxes sitting inside it. Scoped to #results
+   specifically so the general (white) .card elsewhere - like the
+   main form - isn't affected. */
+#results.card {
+    background: #f5f5f5;
+}
+
+body.dark-mode #results.card {
+    background: #1e293b;
+}
+
+/* The 24-Hour Conditions heading sits outside a box now - each
+   chart/advisory card underneath is its own white box instead, so
+   this wrapper just needs the same bottom spacing a boxed category
+   would normally provide. */
+.results-conditions-category {
+    margin-bottom: 20px;
 }
 
 /* The summary category already contains the decision card, so avoid a second gray panel. */
