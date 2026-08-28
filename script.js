@@ -4067,19 +4067,25 @@ function createWindChart(
                         {
                             label: "Sustained",
                             data: sustainedData,
-                            borderColor: "#2563eb",
-                            backgroundColor: "#2563eb",
+                            borderColor: "#64748b",
+                            backgroundColor: "#64748b",
                             pointBackgroundColor(context){
                                 return windConditionColor(
                                     context.raw,
-                                    "#2563eb"
+                                    "#64748b"
+                                );
+                            },
+                            pointBorderColor(context){
+                                return windConditionColor(
+                                    context.raw,
+                                    "#64748b"
                                 );
                             },
                             segment: {
                                 borderColor(ctx){
                                     return windConditionColor(
                                         ctx.p1.parsed.y,
-                                        "#2563eb"
+                                        "#64748b"
                                     );
                                 }
                             },
@@ -4091,19 +4097,25 @@ function createWindChart(
                         {
                             label: "Gusts",
                             data: gustData,
-                            borderColor: "#dc2626",
-                            backgroundColor: "#dc2626",
+                            borderColor: "#64748b",
+                            backgroundColor: "#64748b",
                             pointBackgroundColor(context){
                                 return windConditionColor(
                                     context.raw,
-                                    "#dc2626"
+                                    "#64748b"
+                                );
+                            },
+                            pointBorderColor(context){
+                                return windConditionColor(
+                                    context.raw,
+                                    "#64748b"
                                 );
                             },
                             segment: {
                                 borderColor(ctx){
                                     return windConditionColor(
                                         ctx.p1.parsed.y,
-                                        "#dc2626"
+                                        "#64748b"
                                     );
                                 }
                             },
