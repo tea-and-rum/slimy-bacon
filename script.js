@@ -3729,14 +3729,6 @@ function getWindTravelDirection(direction){
         const directions =
             options?.directions;
 
-        if(
-            !Array.isArray(directions) ||
-            directions.length === 0
-        ){
-            return;
-        }
-
-
         const xScale =
             chart.scales.x;
 
@@ -3759,113 +3751,188 @@ function getWindTravelDirection(direction){
                 : "#475569";
 
         /*
-        Position the arrows along the bottom
-        of the chart, underneath the hour labels.
+        Both rows are drawn manually (rather than relying
+        on Chart.js's own x-axis tick labels, which are
+        hidden) so the wind-direction arrows can sit
+        directly under the line, with the hour-of-day row
+        below them - instead of the arrows sitting at the
+        very bottom, underneath the hour labels.
         */
+
+        const axisBottom =
+            chart.chartArea.bottom;
+
         const arrowY =
-            chart.height - 8;
+            axisBottom + 12;
+
+        const hourRowY =
+            axisBottom + 27;
 
 
         ctx.save();
 
-        ctx.strokeStyle =
-            arrowColor;
 
-        ctx.fillStyle =
-            arrowColor;
+        if(
+            Array.isArray(directions) &&
+            directions.length > 0
+        ){
 
-        ctx.lineWidth = 1.5;
+            ctx.strokeStyle =
+                arrowColor;
+
+            ctx.fillStyle =
+                arrowColor;
+
+            ctx.lineWidth = 1.5;
 
 
-        directions.forEach(
-            (direction, index) => {
+            directions.forEach(
+                (direction, index) => {
 
-                const degrees =
-                    getWindTravelDirection(
-                        direction
+                    const degrees =
+                        getWindTravelDirection(
+                            direction
+                        );
+
+                    if(degrees === null){
+                        return;
+                    }
+
+
+                    const x =
+                        xScale.getPixelForValue(
+                            index
+                        );
+
+
+                    /*
+                    Canvas zero degrees points right,
+                    while compass zero degrees points north.
+                    */
+                    const rotation =
+                        (
+                            degrees - 90
+                        ) *
+                        Math.PI / 180;
+
+
+                    ctx.save();
+
+                    ctx.translate(
+                        x,
+                        arrowY
                     );
 
-                if(degrees === null){
+                    ctx.rotate(
+                        rotation
+                    );
+
+
+                    /*
+                    Draw the arrow shaft.
+                    */
+                    ctx.beginPath();
+
+                    ctx.moveTo(
+                        -4,
+                        0
+                    );
+
+                    ctx.lineTo(
+                        4,
+                        0
+                    );
+
+                    ctx.stroke();
+
+
+                    /*
+                    Draw the arrowhead.
+                    */
+                    ctx.beginPath();
+
+                    ctx.moveTo(
+                        4,
+                        0
+                    );
+
+                    ctx.lineTo(
+                        1,
+                        -2.5
+                    );
+
+                    ctx.lineTo(
+                        1,
+                        2.5
+                    );
+
+                    ctx.closePath();
+
+                    ctx.fill();
+
+
+                    ctx.restore();
+
+                }
+            );
+
+        }
+
+
+        /*
+        A handful of evenly-spaced hour labels below the
+        arrow row - every 3rd hour, matching the main
+        24-hour timeline and the other charts.
+        */
+
+        const hourLabelsForChart =
+            options?.hourLabels;
+
+        const hourLabelIndices =
+            options?.hourLabelIndices;
+
+        if(
+            Array.isArray(hourLabelsForChart) &&
+            Array.isArray(hourLabelIndices)
+        ){
+
+            ctx.font =
+                "11px Arial";
+
+            ctx.textAlign =
+                "center";
+
+            ctx.textBaseline =
+                "middle";
+
+            ctx.fillStyle =
+                isDarkMode
+                    ? "#94a3b8"
+                    : "#666666";
+
+            hourLabelIndices.forEach(index => {
+
+                const label =
+                    hourLabelsForChart[index];
+
+                if(!label){
                     return;
                 }
-
 
                 const x =
                     xScale.getPixelForValue(
                         index
                     );
 
-
-                /*
-                Canvas zero degrees points right,
-                while compass zero degrees points north.
-                */
-                const rotation =
-                    (
-                        degrees - 90
-                    ) *
-                    Math.PI / 180;
-
-
-                ctx.save();
-
-                ctx.translate(
+                ctx.fillText(
+                    label,
                     x,
-                    arrowY
+                    hourRowY
                 );
 
-                ctx.rotate(
-                    rotation
-                );
+            });
 
-
-                /*
-                Draw the arrow shaft.
-                */
-                ctx.beginPath();
-
-                ctx.moveTo(
-                    -4,
-                    0
-                );
-
-                ctx.lineTo(
-                    4,
-                    0
-                );
-
-                ctx.stroke();
-
-
-                /*
-                Draw the arrowhead.
-                */
-                ctx.beginPath();
-
-                ctx.moveTo(
-                    4,
-                    0
-                );
-
-                ctx.lineTo(
-                    1,
-                    -2.5
-                );
-
-                ctx.lineTo(
-                    1,
-                    2.5
-                );
-
-                ctx.closePath();
-
-                ctx.fill();
-
-
-                ctx.restore();
-
-            }
-        );
+        }
 
 
         ctx.restore();
@@ -3898,6 +3965,25 @@ function createWindChart(
 
 
     /*
+    Hide Chart.js's own x-axis tick labels - the custom
+    plugin below draws the hour-of-day row manually so it
+    can sit underneath the wind-direction arrows instead
+    of the arrows sitting underneath it.
+    */
+    options.scales =
+        options.scales || {};
+
+    options.scales.x =
+        options.scales.x || {};
+
+    options.scales.x.ticks =
+        options.scales.x.ticks || {};
+
+    options.scales.x.ticks.display =
+        false;
+
+
+    /*
     Supply directions to the custom plugin.
 
     Passing null prevents arrows from appearing
@@ -3907,17 +3993,24 @@ function createWindChart(
         directions:
             Array.isArray(windDirections)
                 ? windDirections
-                : []
+                : [],
+        hourLabels:
+            hourLabels(),
+        hourLabelIndices:
+            pickEveryThirdHourIndices(
+                24,
+                1
+            )
     };
 
 
     /*
-    Reserve extra room underneath the graph
-    for the wind-direction arrows.
+    Reserve extra room underneath the graph for both the
+    wind-direction arrows and the hour labels below them.
     */
     options.layout = {
         padding: {
-            bottom: 22
+            bottom: 36
         }
     };
 
