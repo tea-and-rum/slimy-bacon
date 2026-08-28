@@ -3097,7 +3097,7 @@ const validTimeline =
 
 
         document.getElementById("decision").innerHTML =
-            emoji(overall) + " " + (overall === "MAYBE" ? "MAYBE GO" : overall);
+            (overall === "MAYBE" ? "MAYBE GO" : overall) + " " + emoji(overall);
 
 
         document.getElementById("decision").className =
