@@ -1344,6 +1344,24 @@ function getHumanDecisionSummaryHTML(
                 <span class="forecast-metric-value">${Math.round(maxPrecip)}%</span>
             </div>
         </div>
+        <div class="forecast-metrics-grid forecast-metrics-grid-secondary">
+            <div class="forecast-metric">
+                <span class="forecast-metric-label">Sunrise</span>
+                <span class="forecast-metric-value" id="sunriseMetric">--</span>
+            </div>
+            <div class="forecast-metric">
+                <span class="forecast-metric-label">Sunset</span>
+                <span class="forecast-metric-value" id="sunsetMetric">--</span>
+            </div>
+            <div class="forecast-metric">
+                <span class="forecast-metric-label">High Tides</span>
+                <span class="forecast-metric-value" id="highTideMetric">--</span>
+            </div>
+            <div class="forecast-metric">
+                <span class="forecast-metric-label">Low Tides</span>
+                <span class="forecast-metric-value" id="lowTideMetric">--</span>
+            </div>
+        </div>
         <div id="forecastToolsMount"></div>
     `;
 
@@ -3065,12 +3083,6 @@ const validTimeline =
     sun
 );
 
-        await renderTideOverlay(
-            selectedLocations,
-            selectedDate,
-            sun
-        );
-
 
         document.getElementById("decisionSearchedDate").textContent =
             formatSearchedDateLabel(
@@ -3151,8 +3163,13 @@ const validTimeline =
         }
 
 
-        document.getElementById("whyResults").innerHTML =
-            createWhySection(validTimeline);
+        await renderTideOverlay(
+            selectedLocations,
+            selectedDate,
+            sun
+        );
+
+
 createEvidenceCharts(allWeather);
 const alertsForSelectedTime =
     getAlertsFromForecast(allWeather);
@@ -5642,51 +5659,71 @@ function renderDailyEventTimes(
     sun
 ){
 
-    const container =
+    const sunriseElement =
         document.getElementById(
-            "dailyEventTimes"
+            "sunriseMetric"
+        );
+
+    const sunsetElement =
+        document.getElementById(
+            "sunsetMetric"
+        );
+
+    const highTideElement =
+        document.getElementById(
+            "highTideMetric"
+        );
+
+    const lowTideElement =
+        document.getElementById(
+            "lowTideMetric"
         );
 
 
-    if(!container){
+    if(
+        !sunriseElement ||
+        !sunsetElement ||
+        !highTideElement ||
+        !lowTideElement
+    ){
         return;
     }
 
 
-    const events = [];
+    const formatEventTime = date =>
+        date.toLocaleTimeString(
+            [],
+            {
+                hour: "numeric",
+                minute: "2-digit"
+            }
+        );
 
 
-    if(
-        sun?.sunriseDate instanceof Date &&
-        !Number.isNaN(
-            sun.sunriseDate.getTime()
+    sunriseElement.textContent =
+        (
+            sun?.sunriseDate instanceof Date &&
+            !Number.isNaN(
+                sun.sunriseDate.getTime()
+            )
         )
-    ){
-
-        events.push({
-            date: sun.sunriseDate,
-            icon: "🌅",
-            label: "Sunrise"
-        });
-
-    }
+            ? formatEventTime(sun.sunriseDate)
+            : "--";
 
 
-    if(
-        sun?.sunsetDate instanceof Date &&
-        !Number.isNaN(
-            sun.sunsetDate.getTime()
+    sunsetElement.textContent =
+        (
+            sun?.sunsetDate instanceof Date &&
+            !Number.isNaN(
+                sun.sunsetDate.getTime()
+            )
         )
-    ){
+            ? formatEventTime(sun.sunsetDate)
+            : "--";
 
-        events.push({
-            date: sun.sunsetDate,
-            icon: "🌇",
-            label: "Sunset"
-        });
 
-    }
-
+    const highTideTimes = [];
+    const lowTideTimes = [];
 
     if(Array.isArray(tideEvents)){
 
@@ -5707,64 +5744,29 @@ function renderDailyEventTimes(
                     .toUpperCase() === "H";
 
 
-            events.push({
-                date: event.date,
-                icon:
-                    isHigh
-                        ? "⬆"
-                        : "⬇",
-                label:
-                    isHigh
-                        ? "High tide"
-                        : "Low tide"
-            });
+            (
+                isHigh
+                    ? highTideTimes
+                    : lowTideTimes
+            ).push(
+                formatEventTime(event.date)
+            );
 
         });
 
     }
 
 
-    events.sort(
-        (a, b) =>
-            a.date.getTime() -
-            b.date.getTime()
-    );
+    highTideElement.textContent =
+        highTideTimes.length
+            ? highTideTimes.join(", ")
+            : "--";
 
 
-    container.innerHTML =
-        events
-            .map(event => {
-
-                const timeText =
-                    event.date.toLocaleTimeString(
-                        [],
-                        {
-                            hour: "numeric",
-                            minute: "2-digit"
-                        }
-                    );
-
-
-                return `
-                    <div class="daily-event-time">
-                        <span class="daily-event-icon">
-                            ${event.icon}
-                        </span>
-
-                        <span class="daily-event-label">
-                            ${event.label}:
-                        </span>
-
-                        <strong>
-                            ${escapeHTML(
-                                timeText
-                            )}
-                        </strong>
-                    </div>
-                `;
-
-            })
-            .join("");
+    lowTideElement.textContent =
+        lowTideTimes.length
+            ? lowTideTimes.join(", ")
+            : "--";
 
 }
 
@@ -6223,75 +6225,6 @@ function getBestWindowDetails(results){
 
 }
 
-
-function createWhySection(results){
-
-    const flatHours =
-        results.filter(
-            result => result === "FLAT"
-        ).length;
-
-    const calmHours =
-        results.filter(
-            result => result === "CALM"
-        ).length;
-
-    const sportyHours =
-        results.filter(
-            result => result === "SPORTY"
-        ).length;
-
-    const poorHours =
-        results.filter(
-            result => result === "POOR"
-        ).length;
-
-
-    let longestFavorableWindow = 0;
-    let currentFavorableWindow = 0;
-
-
-    results.forEach(result => {
-
-        if(
-            result === "FLAT" ||
-            result === "CALM"
-        ){
-            currentFavorableWindow++;
-
-            longestFavorableWindow =
-                Math.max(
-                    longestFavorableWindow,
-                    currentFavorableWindow
-                );
-        }
-        else{
-            currentFavorableWindow = 0;
-        }
-
-    });
-
-
-    const html = `
-        <div class="why-item">
-            🔵 Flat hours: <strong>${flatHours}</strong>
-        </div>
-
-        <div class="why-item">
-            🟢 Calm hours: <strong>${calmHours}</strong>
-        </div>
-
-        <div class="why-item">
-            🟡 Sporty hours: <strong>${sportyHours}</strong>
-        </div>
-
-        <div class="why-item">
-            🔴 Poor hours: <strong>${poorHours}</strong>
-        </div>
-    `;
-return html;
-
-}
 
 function parseISODuration(duration){
 
