@@ -2640,6 +2640,7 @@ body.dark-mode .decision-searched-date {
 
 .forecast-metric-value {
     color: #475569;
+    line-height: 1.5;
 }
 
 body.dark-mode .forecast-metric {

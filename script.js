@@ -6,6 +6,10 @@ let windChart;
 let waveChart;
 let precipChart;
 
+let lastWaveHeightsRaw = null;
+let lastWavePeriodsRaw = null;
+let waveChartResizeTimeout = null;
+
 let tideStationCache = null;
 let lastTidePoints = [];
 let lastTideEvents = [];
@@ -200,6 +204,8 @@ window.onload = function(){
     setupForecastSourceUI();
 
     setupForecastConfidenceUI();
+
+    setupWaveChartResizeHandling();
 
 };
 
@@ -4008,6 +4014,24 @@ const wavePeriodLabelPlugin = {
             );
 
 
+        /*
+        Both label rows are drawn manually (rather than
+        relying on Chart.js's own x-axis tick labels) so
+        the wave-period row can sit directly under the
+        bars, with the hour-of-day row below it - instead
+        of the two overlapping at the bottom of the canvas.
+        */
+
+        const axisBottom =
+            chart.chartArea.bottom;
+
+        const periodRowY =
+            axisBottom + 13;
+
+        const hourRowY =
+            axisBottom + 28;
+
+
         ctx.save();
 
         ctx.font =
@@ -4069,11 +4093,56 @@ const wavePeriodLabelPlugin = {
                 ctx.fillText(
                     `${period.toFixed(1).replace(/\\.0$/, "")}s`,
                     bar.x,
-                    chart.height - 7
+                    periodRowY
                 );
 
             }
         );
+
+
+        /*
+        A handful of evenly-spaced hour labels below the
+        period row - not one per bar, since that's what
+        caused the crowding this replaces.
+        */
+
+        const hourLabelsForChart =
+            options?.hourLabels;
+
+        const hourLabelIndices =
+            options?.hourLabelIndices;
+
+        if(
+            Array.isArray(hourLabelsForChart) &&
+            Array.isArray(hourLabelIndices)
+        ){
+
+            ctx.fillStyle =
+                isDarkMode
+                    ? "#94a3b8"
+                    : "#666666";
+
+            hourLabelIndices.forEach(index => {
+
+                const bar =
+                    meta.data[index];
+
+                const label =
+                    hourLabelsForChart[index];
+
+                if(!bar || !label){
+                    return;
+                }
+
+                ctx.fillText(
+                    label,
+                    bar.x,
+                    hourRowY
+                );
+
+            });
+
+        }
 
 
         ctx.restore();
@@ -4094,16 +4163,70 @@ function createWaveChart(
     }
 
 
+    /*
+    Cache the full, un-binned 24-hour arrays so a later
+    window resize can rebuild the chart (binned or not)
+    without needing to re-fetch or re-evaluate anything.
+    */
+    lastWaveHeightsRaw = data;
+    lastWavePeriodsRaw = wavePeriods;
+
+
+    const shouldBin =
+        isNarrowWaveChartLayout();
+
+    const binned =
+        shouldBin
+            ? binHourlyDataForNarrowScreens(
+                data,
+                wavePeriods
+            )
+            : null;
+
+    const chartHeights =
+        binned
+            ? binned.heights
+            : data;
+
+    const chartPeriods =
+        binned
+            ? binned.periods
+            : wavePeriods;
+
+    const chartLabels =
+        binned
+            ? binned.labels
+            : hourLabels();
+
+
     const options =
         simpleChartOptions();
 
 
+    /*
+    Reserve room below the bars for two manually-drawn
+    label rows (wave period in seconds, then hour of
+    day) instead of Chart.js's own single row of x-axis
+    tick labels, which is hidden below.
+    */
     options.layout =
         {
             padding: {
-                bottom: 20
+                bottom: 36
             }
         };
+
+    options.scales =
+        options.scales || {};
+
+    options.scales.x =
+        options.scales.x || {};
+
+    options.scales.x.ticks =
+        options.scales.x.ticks || {};
+
+    options.scales.x.ticks.display =
+        false;
 
 
     options.plugins =
@@ -4118,9 +4241,16 @@ function createWaveChart(
     options.plugins.wavePeriodLabels =
         {
             periods:
-                wavePeriods,
+                chartPeriods,
             boatSize:
-                selectedBoatSize
+                selectedBoatSize,
+            hourLabels:
+                chartLabels,
+            hourLabelIndices:
+                pickEvenlySpacedIndices(
+                    chartLabels.length,
+                    5
+                )
         };
 
 
@@ -4151,7 +4281,7 @@ function createWaveChart(
 
                     const period =
                         Number(
-                            wavePeriods[
+                            chartPeriods[
                                 context.dataIndex
                             ]
                         );
@@ -4212,13 +4342,13 @@ function createWaveChart(
                 data: {
 
                     labels:
-                        hourLabels(),
+                        chartLabels,
 
                     datasets: [
                         {
 
                             data:
-                                data,
+                                chartHeights,
 
                             backgroundColor(context){
 
@@ -4231,7 +4361,7 @@ function createWaveChart(
                                     );
 
                                 const rawPeriod =
-                                    wavePeriods[
+                                    chartPeriods[
                                         context.dataIndex
                                     ];
 
@@ -4281,7 +4411,7 @@ function createWaveChart(
                                     );
 
                                 const rawPeriod =
-                                    wavePeriods[
+                                    chartPeriods[
                                         context.dataIndex
                                     ];
 
@@ -4448,6 +4578,163 @@ function hourLabels(){
     "6p","7p","8p","9p","10p","11p"
 
     ];
+
+}
+
+
+/*
+Below this width, 24 wave-period labels (one per hour)
+don't have enough room to avoid overlapping each other,
+so the wave chart is rebuilt with 12 bars instead - each
+one averaging a pair of hours - to double the space per
+label.
+*/
+function isNarrowWaveChartLayout(){
+
+    return window.innerWidth <= 500;
+
+}
+
+
+function averageIgnoringNulls(values){
+
+    const available =
+        values.filter(value =>
+            value !== null &&
+            value !== undefined &&
+            Number.isFinite(Number(value))
+        );
+
+    if(!available.length){
+        return null;
+    }
+
+    const total =
+        available.reduce(
+            (sum, value) =>
+                sum + Number(value),
+            0
+        );
+
+    return total / available.length;
+
+}
+
+
+function binHourlyDataForNarrowScreens(
+    heights,
+    periods
+){
+
+    const labels =
+        hourLabels();
+
+    const binnedHeights = [];
+    const binnedPeriods = [];
+    const binnedLabels = [];
+
+    for(let hour = 0; hour < heights.length; hour += 2){
+
+        binnedHeights.push(
+            averageIgnoringNulls([
+                heights[hour],
+                heights[hour + 1]
+            ])
+        );
+
+        binnedPeriods.push(
+            averageIgnoringNulls([
+                periods[hour],
+                periods[hour + 1]
+            ])
+        );
+
+        binnedLabels.push(
+            labels[hour]
+        );
+
+    }
+
+    return {
+        heights: binnedHeights,
+        periods: binnedPeriods,
+        labels: binnedLabels
+    };
+
+}
+
+
+/*
+Picks "count" indices spread evenly across a list of the
+given length (always including the first and last), used
+to choose which bars get an hour-of-day label drawn under
+them - rather than labelling every single bar.
+*/
+function pickEvenlySpacedIndices(
+    length,
+    count
+){
+
+    if(length <= 0){
+        return [];
+    }
+
+    if(length <= count){
+        return Array.from(
+            { length },
+            (_, index) => index
+        );
+    }
+
+    const indices =
+        Array.from(
+            { length: count },
+            (_, position) =>
+                Math.round(
+                    position * (length - 1) /
+                    (count - 1)
+                )
+        );
+
+    return [...new Set(indices)];
+
+}
+
+
+function setupWaveChartResizeHandling(){
+
+    window.addEventListener(
+        "resize",
+        () => {
+
+            if(waveChartResizeTimeout){
+                clearTimeout(
+                    waveChartResizeTimeout
+                );
+            }
+
+            waveChartResizeTimeout =
+                setTimeout(
+                    () => {
+
+                        if(
+                            lastWaveHeightsRaw &&
+                            lastWavePeriodsRaw
+                        ){
+
+                            createWaveChart(
+                                lastWaveHeightsRaw,
+                                lastWavePeriodsRaw
+                            );
+
+                        }
+
+                    },
+                    200
+                );
+
+        }
+    );
 
 }
 
@@ -5757,15 +6044,19 @@ function renderDailyEventTimes(
     }
 
 
-    highTideElement.textContent =
+    highTideElement.innerHTML =
         highTideTimes.length
-            ? highTideTimes.join(", ")
+            ? highTideTimes
+                .map(time => escapeHTML(time))
+                .join("<br>")
             : "--";
 
 
-    lowTideElement.textContent =
+    lowTideElement.innerHTML =
         lowTideTimes.length
-            ? lowTideTimes.join(", ")
+            ? lowTideTimes
+                .map(time => escapeHTML(time))
+                .join("<br>")
             : "--";
 
 }
