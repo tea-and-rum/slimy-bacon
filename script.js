@@ -5163,16 +5163,16 @@ function getWaveConditionColor(status){
     switch(status){
 
         case "FLAT":
-            return "#2196f3";
+            return "#7fdfe4";
 
         case "CALM":
-            return "#4caf50";
+            return "#c2f081";
 
         case "SPORTY":
-            return "#f0b429";
+            return "#f1c17a";
 
         case "POOR":
-            return "#dc2626";
+            return "#f17c7a";
 
         default:
             return "#2563eb";
@@ -5187,16 +5187,16 @@ function getWaveConditionBorderColor(status){
     switch(status){
 
         case "FLAT":
-            return "#1976d2";
+            return "#7fdfe4";
 
         case "CALM":
-            return "#388e3c";
+            return "#c2f081";
 
         case "SPORTY":
-            return "#c58b00";
+            return "#f1c17a";
 
         case "POOR":
-            return "#b91c1c";
+            return "#f17c7a";
 
         default:
             return "#1d4ed8";

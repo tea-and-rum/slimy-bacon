@@ -561,19 +561,19 @@ button:hover {
 }
 
 .timeline-flat {
-    background: #2196f3;
+    background: #7fdfe4;
 }
 
 .timeline-go {
-    background: #4caf50;
+    background: #c2f081;
 }
 
 .timeline-sporty {
-    background: #e6b800;
+    background: #f1c17a;
 }
 
 .timeline-no-go {
-    background: #d9534f;
+    background: #f17c7a;
 }
 
 
@@ -621,17 +621,17 @@ button:hover {
 
 .legend-go {
 
-    background: #4caf50;
+    background: #c2f081;
 
 }
 
 .legend-flat {
-    background: #2196f3;
+    background: #7fdfe4;
 }
 
 .legend-sporty {
 
-    background: #e6b800;
+    background: #f1c17a;
 
 }
 
@@ -639,7 +639,7 @@ button:hover {
 
 .legend-no-go {
 
-    background: #d9534f;
+    background: #f17c7a;
 
 }
 
@@ -2281,19 +2281,19 @@ body.dark-mode .timeline-heading-row {
 }
 
 .next-day-hour.timeline-flat {
-    background: #2196f3;
+    background: #7fdfe4;
 }
 
 .next-day-hour.timeline-go {
-    background: #4caf50;
+    background: #c2f081;
 }
 
 .next-day-hour.timeline-sporty {
-    background: #e6b800;
+    background: #f1c17a;
 }
 
 .next-day-hour.timeline-no-go {
-    background: #d9534f;
+    background: #f17c7a;
 }
 
 .next-day-unavailable {
