@@ -1401,6 +1401,28 @@ function getHumanDecisionSummaryHTML(
 }
 
 
+/*
+Touch devices (phones/tablets) don't have real hover, but
+tapping a marker can still fire a synthesized "mouseover"
+right before the "click" event. That opens the hover-only
+tooltip (name only) at the same time the tap's click handler
+opens the full details popup, and since there's no mouseout
+on tap, the tooltip is left stuck open behind the popup. The
+fix is to simply never bind the hover tooltip on touch
+devices - the click/tap popup already shows the name plus
+full details, so nothing is lost.
+*/
+function isTouchDevice(){
+
+    return (
+        ("ontouchstart" in window) ||
+        (navigator.maxTouchPoints > 0) ||
+        (navigator.msMaxTouchPoints > 0)
+    );
+
+}
+
+
 function setupLocationMap(){
 
     const mapElement =
@@ -1502,12 +1524,26 @@ function setupLocationMap(){
     );
 
 
+    /*
+    Build the reef and buoy layer groups first so they exist
+    before the layers control is created - that lets both be
+    listed (and pre-checked, since they're already on the map)
+    as ordinary overlay checkboxes in the same control, above
+    Depth Contours, instead of as separate floating checkboxes.
+    */
+    setupFishingSpotsLayer();
+
+    setupBuoyLayer();
+
+
     L.control.layers(
         {
             "Streets": streetsLayer,
             "Satellite": satelliteLayer
         },
         {
+            "Offshore Reefs": fishingSpotsLayer,
+            "Buoys": buoyLayer,
             "Depth Contours (NOAA Chart)": depthContourOverlay
         },
         {
@@ -1520,11 +1556,6 @@ function setupLocationMap(){
     .addTo(
         locationMap
     );
-
-
-    setupFishingSpotsLayer();
-
-    setupBuoyLayer();
 
 
     locationMap.fitBounds(
@@ -1587,17 +1618,21 @@ function setupFishingSpotsLayer(){
                 );
 
 
-            marker.bindTooltip(
-                spot.name,
-                {
-                    direction:
-                        "top",
-                    offset:
-                        [0, -12],
-                    opacity:
-                        0.95
-                }
-            );
+            if(!isTouchDevice()){
+
+                marker.bindTooltip(
+                    spot.name,
+                    {
+                        direction:
+                            "top",
+                        offset:
+                            [0, -12],
+                        opacity:
+                            0.95
+                    }
+                );
+
+            }
 
 
             marker.bindPopup(
@@ -1652,80 +1687,6 @@ function setupFishingSpotsLayer(){
 
     fishingSpotsLayer.addTo(
         locationMap
-    );
-
-
-    const FishingSpotsControl =
-        L.Control.extend({
-
-            options: {
-                position:
-                    "topright"
-            },
-
-            onAdd(){
-
-                const container =
-                    L.DomUtil.create(
-                        "div",
-                        "leaflet-control fishing-spots-control"
-                    );
-
-
-                container.innerHTML =
-                    '<label>' +
-                        '<input type="checkbox" checked>' +
-                        '<span>Offshore Reefs</span>' +
-                    '</label>';
-
-
-                L.DomEvent.disableClickPropagation(
-                    container
-                );
-
-                L.DomEvent.disableScrollPropagation(
-                    container
-                );
-
-
-                const checkbox =
-                    container.querySelector(
-                        'input[type="checkbox"]'
-                    );
-
-
-                checkbox.addEventListener(
-                    "change",
-                    () => {
-
-                        if(checkbox.checked){
-
-                            fishingSpotsLayer.addTo(
-                                locationMap
-                            );
-
-                        }
-                        else {
-
-                            locationMap.removeLayer(
-                                fishingSpotsLayer
-                            );
-
-                        }
-
-                    }
-                );
-
-
-                return container;
-
-            }
-
-        });
-
-
-    locationMap.addControl(
-        new FishingSpotsControl()
     );
 
 }
@@ -2124,17 +2085,21 @@ function setupBuoyLayer(){
                     }
                 );
 
-            marker.bindTooltip(
-                station.name,
-                {
-                    direction:
-                        "top",
-                    offset:
-                        [0, -10],
-                    opacity:
-                        0.95
-                }
-            );
+            if(!isTouchDevice()){
+
+                marker.bindTooltip(
+                    station.name,
+                    {
+                        direction:
+                            "top",
+                        offset:
+                            [0, -10],
+                        opacity:
+                            0.95
+                    }
+                );
+
+            }
 
             marker.bindPopup(
                 buildBuoyPopupHTML(
@@ -2219,74 +2184,6 @@ function setupBuoyLayer(){
     */
     buoyLayer.addTo(
         locationMap
-    );
-
-
-    const BuoyLayerControl =
-        L.Control.extend({
-
-            options: {
-                position:
-                    "topright"
-            },
-
-            onAdd(){
-
-                const container =
-                    L.DomUtil.create(
-                        "div",
-                        "leaflet-control buoy-layer-control"
-                    );
-
-                container.innerHTML =
-                    '<label>' +
-                        '<input type="checkbox" checked>' +
-                        '<span>Buoys</span>' +
-                    '</label>';
-
-                L.DomEvent.disableClickPropagation(
-                    container
-                );
-
-                L.DomEvent.disableScrollPropagation(
-                    container
-                );
-
-                const checkbox =
-                    container.querySelector(
-                        'input[type="checkbox"]'
-                    );
-
-                checkbox.addEventListener(
-                    "change",
-                    () => {
-
-                        if(checkbox.checked){
-
-                            buoyLayer.addTo(
-                                locationMap
-                            );
-
-                        }
-                        else {
-
-                            locationMap.removeLayer(
-                                buoyLayer
-                            );
-
-                        }
-
-                    }
-                );
-
-                return container;
-
-            }
-
-        });
-
-    locationMap.addControl(
-        new BuoyLayerControl()
     );
 
 }
@@ -3182,7 +3079,7 @@ const validTimeline =
 
 
         document.getElementById("decision").innerHTML =
-            emoji(overall) + " " + overall;
+            emoji(overall) + " " + (overall === "MAYBE" ? "MAYBE GO" : overall);
 
 
         document.getElementById("decision").className =

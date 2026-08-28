@@ -381,7 +381,7 @@ button:hover {
 
 #decisionCard {
 
-    text-align: center;
+    text-align: left;
 
     padding: 20px;
 
@@ -2261,6 +2261,8 @@ h2 {
 
 .timeline-heading-row h2 {
     margin: 0;
+    font-size: 18px;
+    font-weight: 700;
 }
 
 /* Avoid stacking additional margins beneath 24-Hour Conditions. */
@@ -2622,7 +2624,7 @@ body.dark-mode .forecast-source-label {
 .decision-searched-date {
     font-size: 18px;
     font-weight: 700;
-    text-align: center;
+    text-align: left;
     color: #94a3b8;
     margin: 0 0 4px;
 }
