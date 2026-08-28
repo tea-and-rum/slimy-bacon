@@ -4071,20 +4071,24 @@ function createWindChart(
                             backgroundColor: "#64748b",
                             pointBackgroundColor(context){
                                 return windConditionColor(
-                                    context.raw,
+                                    context?.raw,
                                     "#64748b"
                                 );
                             },
                             pointBorderColor(context){
                                 return windConditionColor(
-                                    context.raw,
+                                    context?.raw,
                                     "#64748b"
                                 );
                             },
                             segment: {
                                 borderColor(ctx){
+                                    const value =
+                                        ctx?.p1?.parsed?.y ??
+                                        ctx?.p0?.parsed?.y;
+
                                     return windConditionColor(
-                                        ctx.p1.parsed.y,
+                                        value,
                                         "#64748b"
                                     );
                                 }
@@ -4101,20 +4105,24 @@ function createWindChart(
                             backgroundColor: "#64748b",
                             pointBackgroundColor(context){
                                 return windConditionColor(
-                                    context.raw,
+                                    context?.raw,
                                     "#64748b"
                                 );
                             },
                             pointBorderColor(context){
                                 return windConditionColor(
-                                    context.raw,
+                                    context?.raw,
                                     "#64748b"
                                 );
                             },
                             segment: {
                                 borderColor(ctx){
+                                    const value =
+                                        ctx?.p1?.parsed?.y ??
+                                        ctx?.p0?.parsed?.y;
+
                                     return windConditionColor(
-                                        ctx.p1.parsed.y,
+                                        value,
                                         "#64748b"
                                     );
                                 }
