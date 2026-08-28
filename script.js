@@ -1543,7 +1543,7 @@ function setupLocationMap(){
         },
         {
             "Offshore Reefs": fishingSpotsLayer,
-            "Buoys": buoyLayer,
+            "Weather Buoys": buoyLayer,
             "Depth Contours (NOAA Chart)": depthContourOverlay
         },
         {
