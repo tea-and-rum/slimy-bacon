@@ -1,6 +1,6 @@
 body {
     font-family: 'Roboto', sans-serif;
-    background: #eef6fb;
+    background: #f5f5f5;
     margin: 0;
     padding: 20px;
 }
@@ -89,15 +89,13 @@ body.dark-mode .page-subheader {
 
 .card {
 
-    background: white;
+    background: #f5f5f5;
 
     padding: 25px;
 
     margin-bottom: 20px;
 
-    border-radius: 12px;
-
-    box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    border-radius: 20px;
 
 }
 
@@ -387,7 +385,7 @@ button:hover {
 
     border-radius: 12px;
 
-    background: #f5f5f5;
+    background: #ffffff;
 
 }
 
@@ -682,7 +680,7 @@ button:hover {
 }
 
 .evidence-card {
-    background: #f8f8f8;
+    background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     padding: 15px;
@@ -2796,7 +2794,7 @@ body.dark-mode .evidence-card + .evidence-card {
 
 .results-category {
     background: #f5f5f5;
-    border-radius: 8px;
+    border-radius: 10px;
     padding: 20px;
     margin-bottom: 20px;
     box-sizing: border-box;
