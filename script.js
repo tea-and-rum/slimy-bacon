@@ -4238,6 +4238,11 @@ function createWaveChart(
         "medium";
 
 
+    const hoursPerBar =
+        binned
+            ? 3
+            : 1;
+
     options.plugins.wavePeriodLabels =
         {
             periods:
@@ -4247,9 +4252,9 @@ function createWaveChart(
             hourLabels:
                 chartLabels,
             hourLabelIndices:
-                pickEvenlySpacedIndices(
+                pickEveryThirdHourIndices(
                     chartLabels.length,
-                    5
+                    hoursPerBar
                 )
         };
 
@@ -4504,9 +4509,8 @@ function createPrecipChart(data){
             scales:{
 
                 x:{
-                    ticks:{
-                        maxTicksLimit:5
-                    }
+                    ticks:
+                        everyThirdHourTickOptions()
                 },
 
                 y:{
@@ -4527,6 +4531,34 @@ function createPrecipChart(data){
         }
 
     });
+
+}
+
+
+/*
+Shows an x-axis tick label only every 3rd hour (12a, 3a,
+6a, 9a, ...), matching the spacing used by the main
+24-hour timeline above the charts, instead of letting
+Chart.js pick its own evenly-spaced subset.
+*/
+function everyThirdHourTickOptions(){
+
+    return {
+
+        autoSkip:
+            false,
+
+        callback(value, index){
+
+            return (
+                index % 3 === 0
+            )
+                ? this.getLabelForValue(value)
+                : "";
+
+        }
+
+    };
 
 }
 
@@ -4552,11 +4584,8 @@ function simpleChartOptions(){
 
             x:{
 
-                ticks:{
-
-                    maxTicksLimit:5
-
-                }
+                ticks:
+                    everyThirdHourTickOptions()
 
             }
 
@@ -4585,9 +4614,12 @@ function hourLabels(){
 /*
 Below this width, 24 wave-period labels (one per hour)
 don't have enough room to avoid overlapping each other,
-so the wave chart is rebuilt with 12 bars instead - each
-one averaging a pair of hours - to double the space per
-label.
+so the wave chart is rebuilt with 8 bars instead - each
+one averaging 3 hours - to more than double the space
+per label. That 3-hour grouping also lines up exactly
+with the every-3rd-hour labels (12a, 3a, 6a, ...) used
+on the wind and precipitation charts and the main
+24-hour timeline.
 */
 function isNarrowWaveChartLayout(){
 
@@ -4629,24 +4661,38 @@ function binHourlyDataForNarrowScreens(
     const labels =
         hourLabels();
 
+    const hoursPerBin = 3;
+
     const binnedHeights = [];
     const binnedPeriods = [];
     const binnedLabels = [];
 
-    for(let hour = 0; hour < heights.length; hour += 2){
+    for(
+        let hour = 0;
+        hour < heights.length;
+        hour += hoursPerBin
+    ){
+
+        const hoursInBin =
+            Array.from(
+                { length: hoursPerBin },
+                (_, offset) => hour + offset
+            );
 
         binnedHeights.push(
-            averageIgnoringNulls([
-                heights[hour],
-                heights[hour + 1]
-            ])
+            averageIgnoringNulls(
+                hoursInBin.map(
+                    hourIndex => heights[hourIndex]
+                )
+            )
         );
 
         binnedPeriods.push(
-            averageIgnoringNulls([
-                periods[hour],
-                periods[hour + 1]
-            ])
+            averageIgnoringNulls(
+                hoursInBin.map(
+                    hourIndex => periods[hourIndex]
+                )
+            )
         );
 
         binnedLabels.push(
@@ -4665,38 +4711,30 @@ function binHourlyDataForNarrowScreens(
 
 
 /*
-Picks "count" indices spread evenly across a list of the
-given length (always including the first and last), used
-to choose which bars get an hour-of-day label drawn under
-them - rather than labelling every single bar.
+Picks the indices whose bar represents an hour that is a
+multiple of 3 (12a, 3a, 6a, ...) - matching the every-3rd-
+hour spacing used elsewhere - so those are the only bars
+that get an hour-of-day label drawn under them. hoursPerBar
+is 1 for the normal 24-bar chart and 3 for the narrow-
+screen binned chart (whose bars already start on exactly
+those hours, so all of them qualify).
 */
-function pickEvenlySpacedIndices(
+function pickEveryThirdHourIndices(
     length,
-    count
+    hoursPerBar
 ){
 
-    if(length <= 0){
-        return [];
+    const indices = [];
+
+    for(let index = 0; index < length; index++){
+
+        if((index * hoursPerBar) % 3 === 0){
+            indices.push(index);
+        }
+
     }
 
-    if(length <= count){
-        return Array.from(
-            { length },
-            (_, index) => index
-        );
-    }
-
-    const indices =
-        Array.from(
-            { length: count },
-            (_, position) =>
-                Math.round(
-                    position * (length - 1) /
-                    (count - 1)
-                )
-        );
-
-    return [...new Set(indices)];
+    return indices;
 
 }
 
