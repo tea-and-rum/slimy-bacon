@@ -97,7 +97,6 @@ body.dark-mode .page-subheader {
 
     border-radius: 12px;
 
-
 }
 
 
@@ -1798,7 +1797,7 @@ body.dark-mode .buoy-popup-explainer {
 @media (max-width: 700px) {
 
     body {
-        background: #ffffff;
+        background: #f5f5f5;
         padding: 64px 0 0;
     }
 
@@ -1816,7 +1815,6 @@ body.dark-mode .buoy-popup-explainer {
         padding: 18px;
         border-radius: 0;
         box-shadow: none;
-        background: #ffffff;
     }
 
     /* Keep some separation before the results without recreating gutters. */
@@ -1827,6 +1825,7 @@ body.dark-mode .buoy-popup-explainer {
 
     .disclaimer {
         margin: 24px 18px 18px;
+        background: #f5f5f5;
     }
 
     /* Preserve the same edge-to-edge treatment in dark mode. */
@@ -1835,6 +1834,10 @@ body.dark-mode .buoy-popup-explainer {
     }
 
     body.dark-mode .card {
+        background: #1e293b;
+    }
+
+    body.dark-mode .disclaimer {
         background: #1e293b;
     }
 }
