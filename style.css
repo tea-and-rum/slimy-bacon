@@ -720,11 +720,11 @@ button:hover {
 .evidence-card h3 {
     margin-top: 0;
     margin-bottom: 10px;
-    text-align: center;
+    text-align: left;
 }
 
 .evidence-summary {
-    text-align: center;
+    text-align: right;
     font-weight: bold;
     margin-bottom: 10px;
 }
