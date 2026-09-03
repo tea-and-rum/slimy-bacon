@@ -34,3 +34,4 @@ jobs:
         with:
           commit_message: "Update NDBC buoy data"
           file_pattern: data/buoys.json
+          
