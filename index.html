@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Drift</title>
+<link rel="icon" type="image/svg+xml" href="images/Drift-D-Seafoam.svg">
+<link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+>
+<script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+></script>
+
+    <!-- Google Fonts: Roboto + Roboto Slab -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&family=Roboto+Slab:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+    
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/suncalc@1.9.0/suncalc.js"></script>
+</head>
+
+
+<body>
+  <header class="top-banner">
+    <div class="top-banner-inner">
+        <a href="https://tea-and-rum.github.io/slimy-bacon/"><img
+    src="images/Drift-Logo-White.svg"
+    alt="Logo"
+    class="top-banner-logo-img"
+></a>
+        <button id="customSettingsButton" class="custom-settings-button" type="button" aria-label="Custom vessel settings" title="Custom vessel settings">
+            <span aria-hidden="true">⚙</span>
+        </button>
+    </div>
+</header>
+
+
+<div class="container">
+
+
+<div class="card">
+
+
+<h2>Where Are You Going?</h2>
+
+
+<div id="message"></div>
+
+<div class="location-map-section">
+
+    <p class="map-instructions">
+        Tap the water where you will be boating or choose a pre-plotted location.
+    </p>
+
+    <div
+        id="locationMap"
+        class="location-map"
+        aria-label="Interactive boating location map"
+    ></div>
+
+    <div class="map-selection-status">
+        <span>Selected location:</span>
+        <strong id="selectedMapLocation">
+            No location selected
+        </strong>
+    </div>
+
+</div>
+
+
+<h2>When &amp; What Size Vessel?</h2>
+
+<div class="vessel-selector">
+
+    <div class="date-card">
+        <input type="date" id="date">
+    </div>
+
+<div class="vessel-card" data-size="small">
+<div class="vessel-name">Small</div>
+<div class="vessel-size">Under 16 ft</div>
+</div>
+
+<div class="vessel-card" data-size="medium">
+<div class="vessel-name">Medium</div>
+<div class="vessel-size">16-26 ft</div>
+</div>
+
+<div class="vessel-card" data-size="large">
+<div class="vessel-name">Large</div>
+<div class="vessel-size">27-39 ft</div>
+</div>
+
+<div class="vessel-card" data-size="baller">
+<div class="vessel-name">Baller</div>
+<div class="vessel-size">40+ ft</div>
+</div>
+
+<div class="vessel-card vessel-card-custom" data-size="custom">
+<div class="vessel-name">Custom</div>
+<div class="vessel-size">Your profile</div>
+</div>
+
+</div>
+
+<input type="hidden" id="boatSize" value="">
+
+
+<div class="action-buttons">
+
+    <button
+        type="button"
+        class="check-button"
+        onclick="checkConditions()"
+        aria-busy="false"
+    >
+        <span class="check-button-text">CHECK CONDITIONS</span>
+        <span class="check-button-spinner" aria-hidden="true"></span>
+    </button>
+
+    <button
+        type="button"
+        class="reset-button"
+        onclick="clearSelections()"
+    >
+        RESET
+    </button>
+
+</div>
+
+<div class="forecast-checked">
+    Forecast checked:
+    <span id="checked">--</span>
+</div>
+
+
+
+</div>
+
+
+<div id="results" class="card hidden">
+
+<h2>Summary</h2>
+<section class="results-category results-summary-category">
+    <div id="decisionCard">
+        <p id="decisionSearchedDate" class="decision-searched-date"></p>
+        <h1 id="decision"></h1>
+        <p id="decisionSummary"></p>
+        <p id="decisionWindowSummary" class="decision-window-summary"></p>
+    </div>
+
+    <div class="forecast-tools-row">
+        <div id="forecastSourcePanel" class="forecast-source-panel hidden">
+            <button id="forecastSourceToggle" class="forecast-source-toggle" type="button" aria-expanded="false">
+                ⓘ Forecast Source
+            </button>
+            <div id="forecastSourceDetails" class="forecast-source-details hidden" aria-live="polite"></div>
+        </div>
+        <div id="forecastConfidencePanel" class="forecast-confidence-panel hidden">
+            <button id="forecastConfidenceButton" class="forecast-confidence-button" type="button" aria-label="View forecast confidence details">
+                <span id="forecastConfidenceStars" class="forecast-confidence-stars">★★★</span>
+                <span>Forecast Confidence</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="timeline-heading-row">
+        <h2>24-Hour Timeline</h2>
+
+        <label class="tide-toggle" for="tideToggle">
+            <span>Tides</span>
+            <input id="tideToggle" type="checkbox" checked>
+        </label>
+    </div>
+
+    <div class="timeline-container">
+        <div class="timeline-wrapper">
+            <div id="timelineBar"></div>
+
+            <svg
+                id="tideOverlay"
+                class="tide-overlay hidden"
+                viewBox="0 0 1000 100"
+                preserveAspectRatio="none"
+                role="img"
+                aria-label="Predicted tide movement across the selected day"
+            >
+                <path id="tidePathOutline" class="tide-path-outline"></path>
+                <path id="tidePath" class="tide-path"></path>
+            </svg>
+
+            <div id="sunriseMarker" class="sun-marker">☀</div>
+            <div id="sunsetMarker" class="sun-marker">🌙</div>
+        </div>
+
+        <div class="timeline-labels">
+            <span>12a</span>
+            <span>3a</span>
+            <span>6a</span>
+            <span>9a</span>
+            <span>12p</span>
+            <span>3p</span>
+            <span>6p</span>
+            <span>9p</span>
+            <span>12a</span>
+        </div>
+
+        <div class="timeline-legend">
+            <div><span class="legend-color legend-flat"></span>Flat</div>
+            <div><span class="legend-color legend-go"></span>Calm</div>
+            <div><span class="legend-color legend-sporty"></span>Sporty</div>
+            <div><span class="legend-color legend-no-go"></span>Poor</div>
+        </div>
+    </div>
+</section>
+
+<h2>24-Hour Conditions</h2>
+<section class="results-conditions-category">
+    <div class="conditions-charts">
+        <div class="evidence-grid">
+            <div class="evidence-card">
+                <div class="evidence-header">
+                    <h3>Wind</h3>
+                    <div class="evidence-summary" id="windSummary">Max: -- mph</div>
+                </div>
+                <canvas id="windChart"></canvas>
+            </div>
+
+            <div class="evidence-card">
+                <div class="evidence-header">
+                    <h3>Waves</h3>
+                    <div class="evidence-summary" id="waveSummary">Max: -- ft</div>
+                </div>
+                <canvas id="waveChart"></canvas>
+            </div>
+
+            <div class="evidence-card">
+                <div class="evidence-header">
+                    <h3>Precipitation</h3>
+                    <div class="evidence-summary" id="precipSummary">Peak: --%</div>
+                </div>
+                <canvas id="precipChart"></canvas>
+            </div>
+
+            <div class="evidence-card advisory-breakdown">
+                <h3>⚠️ Advisories</h3>
+                <div id="advisoryText">✓ No active advisories</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<h2>The Next 6 Days</h2>
+<section class="results-category results-next-days-category">
+    <div id="nextSixDaysGrid" class="next-six-days-grid" aria-live="polite"></div>
+</section>
+
+</div>
+
+</div>
+
+<div id="customSettingsModal" class="custom-modal hidden" role="dialog" aria-modal="true" aria-labelledby="customSettingsTitle">
+  <div class="custom-modal-backdrop" data-custom-close="true"></div>
+  <div class="custom-modal-panel">
+    <div class="custom-modal-header">
+      <div>
+        <h2 id="customSettingsTitle">Custom Profile</h2>
+        <p>Choose the limits Drift should use when <strong>Custom</strong> is selected.</p>
+      </div>
+      <button id="customSettingsClose" class="custom-modal-close" type="button" aria-label="Close custom settings">×</button>
+    </div>
+
+    <form id="customSettingsForm">
+      <div class="custom-settings-section">
+        <h3>Wind</h3>
+        <p>Drift uses the higher of sustained wind or gust speed.</p>
+        <div class="custom-field-grid">
+          <label>Flat max wind (mph)<input id="customFlatWind" type="number" min="0" step="1" required></label>
+          <label>Sporty starts at (mph)<input id="customWindSporty" type="number" min="0" step="1" required></label>
+          <label>Poor starts at (mph)<input id="customWindPoor" type="number" min="0" step="1" required></label>
+        </div>
+      </div>
+
+      <div class="custom-settings-section">
+        <h3>Waves</h3>
+        <div class="custom-field-grid">
+          <label>Flat below (ft)<input id="customFlatWave" type="number" min="0" step="0.1" required></label>
+          <label>Sporty starts at (ft)<input id="customWaveSporty" type="number" min="0" step="0.1" required></label>
+          <label>Poor starts at (ft)<input id="customWavePoor" type="number" min="0" step="0.1" required></label>
+          <label>Small-wave bypass through (ft)*<input id="customWaveBypass" type="number" min="0" step="0.1" required></label>
+          <label>Poor if period under (sec)†<input id="customShortPeriodPoor" type="number" min="0" step="0.5" required></label>
+          <label>Calm starts at (period ÷ height)**<span class="custom-field-subtitle">(Default: period is 3x wave height or more)</span><input id="customPeriodRatioCalm" type="number" min="0" step="0.1" required></label>
+          <label>Poor starts at (period ÷ height)**<span class="custom-field-subtitle">(Default: period is under 2x wave height)</span><input id="customPeriodRatioPoor" type="number" min="0" step="0.1" required></label>
+        </div>
+        <p class="custom-help">*Waves below this height will not be assessed for their period or steepness.</p>
+        <p class="custom-help">**Drift compares the wave period to the wave height. Above the Calm ratio it's Calm, below the Poor ratio it's Poor, and in between it's Sporty.</p>
+        <p class="custom-help">†Regardless of the ratio, waves above the bypass height with a period shorter than this are always rated Poor.</p>
+      </div>
+
+      <div class="custom-settings-section">
+        <h3>Rain / precipitation</h3>
+        <label class="custom-switch-row"><input id="customUsePrecip" type="checkbox"><span>Let precipitation probability affect the rating</span></label>
+        <div id="customPrecipFields" class="custom-field-grid">
+          <label>Sporty starts at (%)<input id="customPrecipSporty" type="number" min="0" max="100" step="1" required></label>
+          <label>Poor starts at (%)<input id="customPrecipPoor" type="number" min="0" max="100" step="1" required></label>
+        </div>
+      </div>
+
+      <div class="custom-settings-section">
+        <h3>Weather alerts</h3>
+        <label class="custom-switch-row"><input id="customUseAlerts" type="checkbox"><span>Let active marine/weather alerts affect the rating</span></label>
+        <label class="custom-switch-row"><input id="customUseThunder" type="checkbox"><span>Treat a thunderstorm forecast as Poor</span></label>
+      </div>
+
+      <div id="customSettingsError" class="custom-settings-error" role="alert"></div>
+      <div class="custom-modal-actions">
+        <button id="customRestoreDefaults" class="custom-secondary-button" type="button">RESTORE DEFAULTS</button>
+        <button class="custom-save-button" type="submit">SAVE CUSTOM PROFILE</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<div id="forecastConfidenceModal" class="confidence-modal hidden" role="dialog" aria-modal="true" aria-labelledby="forecastConfidenceTitle">
+    <div class="confidence-modal-backdrop" data-confidence-close="true"></div>
+    <div class="confidence-modal-panel">
+        <div class="confidence-modal-header">
+            <div>
+                <h2 id="forecastConfidenceTitle">Forecast Confidence</h2>
+                <p id="forecastConfidenceLabel">Comparing forecast models…</p>
+            </div>
+            <button id="forecastConfidenceClose" class="confidence-modal-close" type="button" aria-label="Close forecast confidence">×</button>
+        </div>
+        <div id="forecastConfidenceBody" class="confidence-modal-body"></div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+
+<button
+    id="darkModeToggle"
+    class="dark-mode-toggle"
+    type="button"
+    aria-label="Switch to dark mode"
+    aria-pressed="false"
+>
+    <span id="darkModeIcon">🌙</span>
+    <span id="darkModeText">Dark mode</span>
+</button>
+  <footer class="disclaimer">
+    <strong>⚠️ Boating Safety Disclaimer</strong><br>
+    This tool is provided for informational purposes only and is intended to assist with trip planning. Forecasts, recommendations, and conditions may be inaccurate, incomplete, or delayed. Always review official NOAA marine forecasts, weather warnings, navigation information, and current conditions before leaving the dock. Use your own judgment based on your vessel, experience, crew, and local conditions. By using this website, you acknowledge that you are solely responsible for your boating decisions. The creator of this website assumes no liability for any accidents, injuries, damages, or losses resulting from the use of this information. Version 7.1.
+</footer>
+</body>
+
+
+</html>

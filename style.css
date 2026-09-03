@@ -1,0 +1,2788 @@
+body {
+    font-family: 'Roboto', sans-serif;
+    background: #f5f5f5;
+    margin: 0;
+    padding: 20px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 500;
+}
+
+.container {
+    max-width: 750px;
+    margin: auto;
+
+
+    padding: 24px 32px 32px;
+}
+
+
+/* Fixed top banner */
+
+.top-banner-logo-img {
+    height: 42px;
+    width: auto;
+    display: block;
+}
+
+.top-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: #7fdfe4;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+}
+
+.top-banner-inner {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+}
+
+
+
+
+/* Make room for the fixed banner */
+
+body {
+    padding-top: 75px;
+}
+
+
+/* Dark mode */
+
+body.dark-mode .top-banner {
+    background: #2c4d8c;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 25px;
+
+}
+
+.page-subheader {
+    margin: 6px 0 24px;
+    font-size: 18px;
+    font-weight: 400;
+    color: #64748b;
+    text-align: center;
+}
+
+body.dark-mode .page-subheader {
+    color: #94a3b8;
+}
+
+.card {
+
+    background: #f5f5f5;
+
+    padding: 25px;
+
+    margin-bottom: 20px;
+
+    border-radius: 12px;
+
+}
+
+
+
+h2 {
+
+    margin:0px;
+
+}
+
+#message {
+    color: #d32f2f;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+body.dark-mode #message {
+    color: #f87171;
+}
+
+/* Locations */
+
+.locations-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:30px;
+
+    margin-top:15px;
+
+}
+
+.location-group{
+
+    background:#f8f8f8;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:10px;
+
+    padding:15px;
+
+}
+
+.location-group h3{
+
+    margin-top:0;
+
+    margin-bottom:12px;
+
+    text-align:left;
+
+}
+body.dark-mode .vessel-card.selected .vessel-check {
+    background: #5e94d2;
+}
+
+body.dark-mode .location-group{
+
+    background:#1e293b;
+
+    border-color:#334155;
+
+}
+
+.location-item {
+
+    display: block;
+
+    margin-bottom: 12px;
+
+}
+
+
+
+.location-item label {
+
+    display: flex;
+
+    align-items: center;
+
+    cursor: pointer;
+
+}
+
+
+
+.location-item input {
+
+    margin-right: 10px;
+
+    width: 18px;
+
+    height: 18px;
+
+}
+
+
+input[type="date"] {
+
+    width: 100%;
+
+    padding: 12px;
+
+    font-size: 16px;
+
+    border-radius: 12px;
+
+    border: 2px solid #ddd;
+
+    box-sizing: border-box;
+
+}
+
+
+/* Vessel Selector */
+
+
+.vessel-selector {
+
+    display: flex;
+
+    gap: 12px;
+
+    margin-top: 15px;
+
+    background: #ffffff;
+
+    border-radius: 8px;
+
+    padding: 20px;
+
+    box-sizing: border-box;
+
+}
+
+body.dark-mode .vessel-selector {
+
+    background: #1e293b;
+
+}
+
+
+.vessel-card {
+
+    flex: 1;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    border: 1px solid #ddd;
+
+    border-radius: 6px;
+
+    padding: 15px 8px;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    background: white;
+
+    transition: .2s;
+
+    position: relative;
+
+}
+
+
+/*
+The date card sits alongside the vessel-size cards in the
+same row and matches their sizing, but it isn't a
+selectable choice like they are - no hover lift, pointer
+cursor, or selected state.
+*/
+.date-card {
+
+    flex: 1;
+
+    display: flex;
+
+    align-items: center;
+
+    min-width: 0;
+
+    border: 1px solid #ddd;
+
+    border-radius: 6px;
+
+    padding: 15px 8px;
+
+    background: white;
+
+    box-sizing: border-box;
+
+}
+
+body.dark-mode .date-card {
+
+    background-color: #1e293b;
+
+    border-color: #475569;
+
+}
+
+.date-card input[type="date"] {
+
+    width: 100%;
+
+    border: none;
+
+    background: transparent;
+
+    font-size: 15px;
+
+    padding: 0;
+
+    box-sizing: border-box;
+
+    cursor: pointer;
+
+}
+
+.date-card input[type="date"]::-webkit-calendar-picker-indicator {
+
+    margin-right: -4px;
+
+    padding: 0;
+
+    cursor: pointer;
+
+}
+
+
+.vessel-card:hover {
+
+    transform: translateY(-3px);
+
+}
+
+
+.vessel-card.selected {
+
+    border: 3px solid #2c4c8b;
+
+    background: #e7f1ff;
+
+    box-shadow: 0 4px 12px rgba(25,118,210,.35);
+
+    transform: translateY(-4px);
+
+}
+
+
+.vessel-card.selected::after {
+
+    content: "✓";
+
+    position: absolute;
+
+    top: 6px;
+
+    right: 8px;
+
+    background: #2c4c8b;
+
+    color: white;
+
+    width: 22px;
+
+    height: 22px;
+
+    border-radius: 50%;
+
+    font-weight: bold;
+
+    line-height: 22px;
+
+}
+
+
+.vessel-icon {
+
+    font-size: 38px;
+
+}
+
+
+
+.vessel-name {
+
+    font-weight: bold;
+
+    margin-top: 8px;
+
+}
+
+
+
+.vessel-size {
+
+    font-size: 12px;
+
+    color: #666;
+
+    margin-top: 5px;
+
+}
+
+
+/* Buttons */
+
+
+button {
+
+    width: 100%;
+
+    margin-top: 20px;
+
+    padding: 15px;
+
+    font-size: 18px;
+
+    font-weight: bold;
+
+    border-radius: 8px;
+
+    border: none;
+
+    cursor: pointer;
+
+}
+
+
+
+button:hover {
+
+    opacity: .9;
+
+}
+
+
+
+.secondaryButton {
+
+    background: #eeeeee;
+
+}
+
+
+.hidden {
+
+    display: none;
+
+}
+
+
+/* Decision */
+
+
+#decisionCard {
+
+    text-align: left;
+
+    padding: 20px;
+
+    border-radius: 12px;
+
+    background: #f5f5f5;
+
+}
+
+
+
+#decision {
+
+    font-size: 42px;
+
+    margin: 0;
+    text-align:left;
+
+}
+
+
+
+#decisionSummary {
+
+    font-size: 18px;
+
+    margin-top: 10px;
+
+}
+
+
+.good {
+
+    color: green;
+
+}
+
+
+
+.sporty {
+
+    color: #b88600;
+
+}
+
+
+
+.no-go {
+
+    color: red;
+
+}
+
+
+
+
+
+/* Timeline */
+
+
+.timeline-container {
+
+    margin-top: 35px;
+
+}
+
+
+
+/* Timeline heading and tide control */
+
+.timeline-heading-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 25px;
+}
+
+.timeline-heading-row h2 {
+    margin: 0;
+}
+
+.tide-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.tide-toggle input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: #1479c9;
+    cursor: pointer;
+}
+
+.timeline-wrapper {
+
+    position: relative;
+
+    /*height: 55px;
+
+    margin-top: 35px;*/
+
+}
+
+
+#timelineBar {
+
+    display: flex;
+
+    height: 28px;
+
+    width: 100%;
+
+    overflow: hidden;
+
+    border-radius: 14px;
+
+    position: absolute;
+
+    bottom: 0;
+
+}
+
+/* Tide curve layered directly over the timeline bar */
+
+.tide-overlay {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 28px;
+    border-radius: 14px;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.tide-path,
+.tide-path-outline {
+    fill: none;
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.tide-path-outline {
+    stroke: rgba(0, 0, 0, 0.72);
+    stroke-width: 5px;
+}
+
+.tide-path {
+    stroke: #ffffff;
+    stroke-width: 2.5px;
+}
+
+
+.timeline-hour {
+
+    flex: 1;
+
+}
+
+.timeline-hour.timeline-past {
+    background: repeating-linear-gradient(
+        45deg,
+        #cbd5e1,
+        #cbd5e1 5px,
+        #e2e8f0 5px,
+        #e2e8f0 10px
+    ) !important;
+}
+
+.timeline-flat {
+    background: #7fdfe4;
+}
+
+.timeline-go {
+    background: #c2f081;
+}
+
+.timeline-sporty {
+    background: #f1c17a;
+}
+
+.timeline-no-go {
+    background: #f17c7a;
+}
+
+
+.timeline-labels {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    font-size: 13px;
+
+    color: #555;
+
+    margin-top: 10px;
+
+}
+
+
+.timeline-legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+
+
+.legend-color {
+
+    display: inline-block;
+
+    width: 14px;
+
+    height: 14px;
+
+    border-radius: 50%;
+
+    margin-right: 5px;
+
+}
+
+
+
+.legend-go {
+
+    background: #c2f081;
+
+}
+
+.legend-flat {
+    background: #7fdfe4;
+}
+
+.legend-sporty {
+
+    background: #f1c17a;
+
+}
+
+
+
+.legend-no-go {
+
+    background: #f17c7a;
+
+}
+
+
+.sun-marker {
+
+    position: absolute;
+
+    top: -26px;
+
+    transform: translateX(-50%);
+
+    text-align: center;
+
+}
+
+
+
+.sun-marker span {
+
+    display: block;
+
+    font-size: 11px;
+
+}
+
+
+/* Full-width 24-hour condition charts */
+
+.conditions-charts {
+    margin-top: 28px;
+}
+
+.evidence-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.evidence-card {
+    background: #ffffff;
+    border: 0;
+    border-radius: 8px;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.evidence-card h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    text-align: left;
+}
+
+.evidence-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.evidence-header h3 {
+    margin: 0;
+}
+
+.evidence-summary {
+    text-align: right;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.evidence-header .evidence-summary {
+    margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+    .evidence-header {
+        gap: 8px;
+    }
+
+    .evidence-header h3 {
+        font-size: 15px;
+    }
+
+    .evidence-header .evidence-summary {
+        font-size: 13px;
+    }
+}
+
+.evidence-card canvas {
+    display: block;
+    width: 100% !important;
+    height: 130px !important;
+}
+
+#advisoryText {
+    max-height: 205px;
+    overflow-y: auto;
+    padding-top: 10px;
+    text-align: left;
+    line-height: 1.5;
+}
+
+
+/* Location Cards */
+
+
+.locationCard {
+
+    padding: 15px;
+
+    margin: 10px 0;
+
+    border-radius: 8px;
+
+    line-height: 1.5;
+
+}
+
+
+
+.goodBackground {
+
+    background: #e9f7e9;
+
+}
+
+
+
+.sportyBackground {
+
+    background: #fff7d6;
+
+}
+
+
+
+.noGoBackground {
+
+    background: #fdeaea;
+
+}
+
+
+@media(max-width:700px){
+
+
+    body {
+
+        padding: 75px 10px 10px;
+
+    }
+
+
+
+    .card {
+
+        padding: 18px;
+
+    }
+
+
+
+    .vessel-selector {
+
+        flex-wrap: wrap;
+
+    }
+
+
+
+    .date-card,
+    .vessel-card {
+
+        flex-basis: 45%;
+
+    }
+
+
+}
+
+
+@media(max-width:500px){
+
+    .timeline-heading-row {
+        align-items: flex-start;
+    }
+
+    .tide-toggle {
+        margin-top: 4px;
+    }
+
+
+
+    .evidence-grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+}
+
+
+@media(max-width:400px){
+
+
+    .date-card,
+    .vessel-card {
+
+        flex-basis: 100%;
+
+    }
+
+
+}
+
+/* Main action buttons */
+
+.action-buttons {
+    display: flex;
+    width: 100%;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.action-buttons button {
+    min-height: 52px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+}
+
+
+/* Check Conditions takes more space */
+
+.check-button {
+    background: #7fdfe4;
+    color: #ffffff;
+}
+
+.check-button:hover {
+    background: #7fdfe4;
+}
+
+.check-button,
+.reset-button {
+    flex: 1;
+}
+/* Reset button */
+
+.reset-button {
+    background: #e7ebef;
+    color: #263746;
+}
+
+.reset-button:hover {
+    background: #d9dfe5;
+}
+
+
+/* Forecast timestamp under buttons */
+
+.forecast-checked {
+    width: 100%;
+    margin-top: 10px;
+    text-align: center;
+    color: #687783;
+    font-size: 13px;
+}
+
+.forecast-checked span {
+    font-weight: 600;
+    color: #42515d;
+}
+#results {
+    scroll-margin-top: 20px;
+}
+
+
+/* ---------------------------------
+   Dark-mode toggle
+---------------------------------- */
+
+.dark-mode-toggle {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1000;
+ width: auto;          /* ADD */
+    margin: 0;            /* ADD */
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 10px 14px;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+
+    background: #ffffff;
+    color: #1e293b;
+
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.12);
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.dark-mode-toggle:hover {
+    transform: translateY(-2px);
+}
+
+.dark-mode-toggle:focus-visible {
+    outline: 3px solid #7fdfe4;
+    outline-offset: 3px;
+}
+
+
+/* ---------------------------------
+   Dark-mode page colors
+---------------------------------- */
+
+body.dark-mode {
+    background-color: #0f172a;
+    color: #e2e8f0;
+}
+
+
+/*
+Adjust these selectors to match the names
+of the major containers in your page.
+*/
+
+body.dark-mode header,
+body.dark-mode main,
+body.dark-mode section,
+body.dark-mode .card,
+body.dark-mode .locationCard,
+body.dark-mode .summary-card,
+body.dark-mode .evidence-card,
+body.dark-mode .timeline-container,
+body.dark-mode .results-container {
+    color: #e2e8f0;
+}
+
+
+/* General light-colored panels */
+
+body.dark-mode .card,
+body.dark-mode .locationCard,
+body.dark-mode .summary-card,
+body.dark-mode .evidence-card,
+body.dark-mode .timeline-container,
+body.dark-mode .results-container,
+body.dark-mode .form-section,
+body.dark-mode .selection-section {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+
+
+
+/* Inputs and dropdowns */
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+    background-color: #0f172a;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+    color: #94a3b8;
+}
+
+/* Make the date picker icon visible in dark mode */
+body.dark-mode input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(2);
+    cursor: pointer;
+}
+
+
+/* Vessel and location selection cards */
+
+body.dark-mode .vessel-card,
+body.dark-mode .location-card,
+body.dark-mode .location-option {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border-color: #475569;
+}
+
+body.dark-mode .vessel-card:hover,
+body.dark-mode .location-card:hover,
+body.dark-mode .location-option:hover {
+    background-color: #334155;
+}
+
+
+/* Preserve visible selected styling */
+
+body.dark-mode .vessel-card.selected {
+    background-color: #0c4a6e;
+    border-color: #7fdfe4;
+}
+
+
+/* Text colors */
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode h3,
+body.dark-mode h4,
+body.dark-mode strong,
+body.dark-mode label {
+    color: #f8fafc;
+}
+
+body.dark-mode p,
+body.dark-mode small,
+body.dark-mode .subtitle,
+body.dark-mode .secondary-text {
+    color: #cbd5e1;
+}
+
+
+/* Dividers */
+
+body.dark-mode hr {
+    border-color: #334155;
+}
+
+
+/* Dark-mode button appearance */
+
+body.dark-mode .dark-mode-toggle {
+    background-color: #1e293b;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+
+/* Keep status cards recognizable */
+
+body.dark-mode .goodBackground {
+    background-color: #123d2a;
+    color: #dcfce7;
+}
+
+body.dark-mode .sportyBackground {
+    background-color: #493b0b;
+    color: #fef3c7;
+}
+
+body.dark-mode .noGoBackground {
+    background-color: #4c1d1d;
+    color: #fee2e2;
+}
+
+
+/* Active advisory */
+
+body.dark-mode .active-advisory {
+    background-color: #422006;
+    color: #fef3c7;
+    border-color: #92400e;
+}
+
+.active-advisory {
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.advisory-title {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.advisory-location {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.advisory-time {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+body.dark-mode .advisory-location,
+body.dark-mode .advisory-time {
+    color: #94a3b8;
+}
+/* Mobile placement */
+
+@media (max-width: 600px) {
+
+    .dark-mode-toggle {
+        right: 12px;
+        bottom: 12px;
+
+        padding: 9px 12px;
+    }
+
+}
+/* Fix remaining result panels in dark mode */
+
+body.dark-mode #decisionCard {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+}
+body.dark-mode #decisionSummary {
+    color: #cbd5e1;
+}
+body.dark-mode .evidence-card {
+    background-color: #182235;
+    border-color: #334155;
+}
+
+/* ===========================
+   Disclaimer
+=========================== */
+
+.disclaimer {
+    margin: 40px auto 20px;
+    max-width: 1100px;
+    padding: 16px 20px;
+
+    font-size: 13px;
+    line-height: 1.6;
+
+    color: #64748b;
+    text-align: left;
+
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.disclaimer strong {
+    color: #334155;
+}
+
+body.dark-mode .disclaimer {
+    background: #182235;
+    border-color: #334155;
+    color: #94a3b8;
+}
+
+body.dark-mode .disclaimer strong {
+    color: #e2e8f0;
+}
+
+/* Recommendation and condition-language update */
+#decision.decision-result {
+    color: #111827;
+}
+
+.limitedBackground {
+    background: #fff0d6;
+}
+
+body.dark-mode #decision.decision-result {
+    color: #f8fafc;
+}
+
+body.dark-mode .limitedBackground {
+    background-color: #4a2d12;
+    color: #ffedd5;
+}
+
+
+
+
+/* Advisories, now a card in the 24-Hour Conditions grid */
+
+.advisory-breakdown {
+    margin-top: 0;
+}
+
+.advisory-breakdown h3 {
+    margin: 0 0 12px;
+    text-align: left;
+}
+
+.advisory-breakdown #advisoryText {
+    max-height: none;
+    overflow: visible;
+    padding-top: 0;
+    text-align: left;
+}
+
+.advisory-breakdown .active-advisory {
+    padding: 12px;
+    margin-bottom: 10px;
+    border: 1px solid #f0c36d;
+    border-radius: 8px;
+    background: #fff8e6;
+}
+
+.advisory-breakdown .active-advisory:last-child {
+    margin-bottom: 0;
+}
+
+body.dark-mode .advisory-breakdown .active-advisory {
+    background-color: #422006;
+    border-color: #92400e;
+}
+
+
+/* Best boating window beneath the main recommendation */
+
+.decision-window-summary {
+    margin: 6px auto 0;
+    max-width: 620px;
+    color: #64748b;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+body.dark-mode .decision-window-summary {
+    color: #94a3b8;
+}
+
+
+/* Loading state inside CHECK CONDITIONS button */
+
+.check-button {
+    position: relative;
+}
+
+.check-button:disabled {
+    cursor: wait;
+    opacity: 0.85;
+}
+
+.check-button-spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    margin: 0 auto;
+    border: 3px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: checkButtonSpin 0.8s linear infinite;
+    box-sizing: border-box;
+}
+
+.check-button.is-loading .check-button-text {
+    display: none;
+}
+
+.check-button.is-loading .check-button-spinner {
+    display: block;
+}
+
+@keyframes checkButtonSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .check-button-spinner {
+        animation-duration: 1.6s;
+    }
+}
+
+@media (max-width:700px){
+
+    .locations-grid{
+
+        grid-template-columns:1fr;
+
+    }
+
+}
+
+
+/* Interactive boating-location map */
+
+.location-map-section {
+    margin-top: 14px;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+body.dark-mode .location-map-section {
+    background: #1e293b;
+}
+
+.map-instructions {
+    margin: 0 0 12px;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.location-map {
+    width: 100%;
+    height: 500px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.map-selection-status {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid #dbe3ea;
+    border-radius: 8px;
+    background: #f8fafc;
+    font-size: 14px;
+}
+
+.map-selection-status span {
+    color: #64748b;
+}
+
+.map-selection-status strong {
+    color: #1e293b;
+}
+
+body.dark-mode .map-instructions {
+    color: #94a3b8;
+}
+
+body.dark-mode .location-map {
+    border-color: #475569;
+}
+
+body.dark-mode .map-selection-status {
+    background: #182235;
+    border-color: #334155;
+}
+
+body.dark-mode .map-selection-status span {
+    color: #94a3b8;
+}
+
+body.dark-mode .map-selection-status strong {
+    color: #f8fafc;
+}
+
+/*
+Slightly dim the basemap in dark mode without
+changing the map's geographic information.
+*/
+body.dark-mode .location-map .leaflet-tile-pane {
+    filter: brightness(0.78) saturate(0.82);
+}
+
+body.dark-mode .location-map .leaflet-control-zoom a {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+body.dark-mode .location-map .leaflet-control-attribution {
+    background: rgba(15, 23, 42, 0.86);
+    color: #cbd5e1;
+}
+
+body.dark-mode .location-map .leaflet-control-attribution a {
+    color: #7dd3fc;
+}
+
+@media (max-width: 600px) {
+
+    .location-map {
+        height: 330px;
+    }
+
+}
+
+
+/* Offshore fishing spot layer */
+
+.fishing-spots-control {
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 6px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+    padding: 8px 10px;
+}
+
+.fishing-spots-control label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    cursor: pointer;
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.fishing-spots-control input {
+    margin: 0;
+}
+
+.fishing-spot-marker-wrapper {
+    background: transparent;
+    border: 0;
+}
+
+.fishing-spot-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background: #0f5f8f;
+    font-size: 16px;
+    line-height: 1;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+}
+
+.fishing-spot-popup {
+    min-width: 175px;
+    color: #1e293b;
+    line-height: 1.4;
+}
+
+.fishing-spot-popup strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.fishing-spot-coordinates {
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+body.dark-mode .fishing-spots-control {
+    background: rgba(30, 41, 59, 0.97);
+}
+
+body.dark-mode .fishing-spots-control label {
+    color: #f8fafc;
+}
+
+body.dark-mode .leaflet-tooltip {
+    background: #1e293b;
+    border-color: #475569;
+    color: #f8fafc;
+}
+
+body.dark-mode .leaflet-popup-content-wrapper,
+body.dark-mode .leaflet-popup-tip {
+    background: #1e293b;
+    color: #f8fafc;
+}
+
+body.dark-mode .fishing-spot-popup {
+    color: #f8fafc;
+}
+
+body.dark-mode .fishing-spot-coordinates {
+    color: #94a3b8;
+}
+
+
+/* Buoy observation layer */
+
+.buoy-layer-control {
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 6px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+    padding: 8px 10px;
+    margin-top: 8px;
+}
+
+.buoy-layer-control label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    cursor: pointer;
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.buoy-layer-control input {
+    margin: 0;
+}
+
+.buoy-marker-wrapper {
+    background: transparent;
+    border: 0;
+}
+
+.buoy-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background: #64748b;
+    font-size: 12px;
+    line-height: 1;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.buoy-popup {
+    min-width: 190px;
+    color: #1e293b;
+    line-height: 1.4;
+}
+
+.buoy-popup-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #64748b;
+    margin-bottom: 3px;
+}
+
+.buoy-popup strong {
+    display: block;
+}
+
+.buoy-popup-coordinates {
+    margin-top: 2px;
+    margin-bottom: 6px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.buoy-popup-updated {
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.buoy-popup-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 3px 0;
+    border-top: 1px solid #e2e8f0;
+    font-size: 13px;
+}
+
+.buoy-popup-row:first-of-type {
+    border-top: 0;
+}
+
+.buoy-popup-row span {
+    color: #64748b;
+}
+
+.buoy-popup-no-data {
+    color: #64748b;
+    font-style: italic;
+}
+
+.buoy-popup-loading {
+    color: #64748b;
+    font-size: 13px;
+    padding: 4px 0;
+}
+
+.buoy-popup-error {
+    color: #b91c1c;
+    font-size: 13px;
+    padding: 4px 0;
+}
+
+.buoy-popup-explainer {
+    margin: 8px 0 0;
+    padding-top: 6px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.35;
+}
+
+body.dark-mode .buoy-layer-control {
+    background: rgba(30, 41, 59, 0.97);
+}
+
+body.dark-mode .buoy-layer-control label {
+    color: #f8fafc;
+}
+
+body.dark-mode .buoy-popup {
+    color: #f8fafc;
+}
+
+body.dark-mode .buoy-popup-coordinates,
+body.dark-mode .buoy-popup-updated,
+body.dark-mode .buoy-popup-row span,
+body.dark-mode .buoy-popup-no-data,
+body.dark-mode .buoy-popup-loading {
+    color: #94a3b8;
+}
+
+body.dark-mode .buoy-popup-row,
+body.dark-mode .buoy-popup-explainer {
+    border-top-color: #334155;
+}
+
+body.dark-mode .buoy-popup-explainer {
+    color: #64748b;
+}
+
+
+/* =========================================
+   WHEN + WHAT: single row of 6 equal cards
+   ========================================= */
+
+@media (max-width: 700px) {
+
+    .vessel-selector,
+    .location-map-section {
+        padding: 16px;
+    }
+
+}
+
+
+
+/* Keep the first section heading aligned evenly inside the main card */
+.container > h2:first-child {
+    margin-top: 0;
+}
+
+
+
+/* =========================================
+   MOBILE / NARROW VIEW: FULL-WIDTH CONTENT
+   =========================================
+   Remove the "card floating on blue background" treatment to maximize
+   usable space on phones and very narrow browser windows.
+*/
+@media (max-width: 700px) {
+
+    body {
+        background: #f5f5f5;
+        padding: 64px 0 0;
+    }
+
+    .container {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .card {
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 18px;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    /* Keep some separation before the results without recreating gutters. */
+    #results.card {
+        margin-top: 12px;
+        background: #f5f5f5;
+    }
+
+    .disclaimer {
+        margin: 24px 18px 18px;
+        background: #f5f5f5;
+    }
+
+    /* Preserve the same edge-to-edge treatment in dark mode. */
+    body.dark-mode {
+        background: #1e293b;
+    }
+
+    body.dark-mode .card {
+        background: #1e293b;
+    }
+
+    body.dark-mode .disclaimer {
+        background: #1e293b;
+    }
+}
+
+
+
+/* =========================================
+   LIGHT / DARK MODE ACTION COLOR OVERRIDES
+   ========================================= */
+
+/* Light mode */
+.check-button,
+.check-button:hover {
+    background: #7fdfe4;
+}
+
+.vessel-card.selected::after {
+    background: #2c4c8b;
+}
+
+/* Dark mode */
+body.dark-mode .check-button,
+body.dark-mode .check-button:hover {
+    background: #2c4c8b;
+}
+
+body.dark-mode .vessel-card.selected::after {
+    background: #7fdfe4;
+}
+/* ===========================
+   Custom vessel profile
+   =========================== */
+.top-banner-inner {
+    justify-content: space-between;
+}
+
+.custom-settings-button {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    margin: 0 0 0 auto;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #ffffff;
+    font-size: 28px;
+    line-height: 1;
+    box-shadow: none;
+}
+
+.custom-settings-button:hover {
+    background: rgba(255,255,255,.14);
+    opacity: 1;
+}
+
+.custom-settings-button:focus-visible {
+    outline: 3px solid rgba(255,255,255,.8);
+    outline-offset: 2px;
+}
+
+.vessel-selector {
+    align-items: stretch;
+}
+
+.vessel-card {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.vessel-card-custom .vessel-size {
+    white-space: nowrap;
+}
+
+body.custom-modal-open {
+    overflow: hidden;
+}
+
+.custom-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.custom-modal.hidden {
+    display: none;
+}
+
+.custom-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, .62);
+    backdrop-filter: blur(3px);
+}
+
+.custom-modal-panel {
+    position: relative;
+    z-index: 1;
+    width: min(760px, 100%);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    background: #ffffff;
+    color: #1e293b;
+    border-radius: 16px;
+    box-shadow: 0 24px 70px rgba(0,0,0,.28);
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.custom-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.custom-modal-header h2 {
+    margin: 0 0 6px;
+}
+
+.custom-modal-header p,
+.custom-settings-section p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.45;
+}
+
+.custom-modal-close {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    background: #eef2f6;
+    color: #334155;
+    font-size: 26px;
+    line-height: 1;
+}
+
+.custom-settings-section {
+    padding: 18px 0;
+    border-top: 1px solid #e2e8f0;
+}
+
+.custom-settings-section h3 {
+    margin: 0 0 8px;
+    text-align: left;
+}
+
+.custom-field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.custom-field-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.custom-field-subtitle {
+    display: block;
+    margin-top: -3px;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.35;
+    color: #64748b;
+}
+
+.custom-field-grid input[type="number"] {
+    width: 100%;
+    margin: 0;
+    padding: 10px 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-sizing: border-box;
+    font: inherit;
+}
+
+.custom-switch-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.custom-switch-row input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    flex: 0 0 auto;
+    accent-color: #1479c9;
+}
+
+.custom-help {
+    margin-top: 10px !important;
+    font-size: 12px;
+}
+
+.custom-fields-disabled {
+    opacity: .45;
+}
+
+.custom-settings-error {
+    min-height: 20px;
+    color: #b91c1c;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.custom-modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.custom-modal-actions button {
+    width: auto;
+    flex: 1;
+    margin: 0;
+    font-size: 14px;
+}
+
+.custom-secondary-button {
+    background: #e7ebef;
+    color: #263746;
+}
+
+.custom-save-button {
+    background: #7fdfe4;
+    color: #ffffff;
+}
+
+body.dark-mode .custom-modal-panel {
+    background: #1e293b;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+}
+
+body.dark-mode .custom-modal-header p,
+body.dark-mode .custom-settings-section p {
+    color: #94a3b8;
+}
+
+body.dark-mode .custom-settings-section {
+    border-color: #334155;
+}
+
+body.dark-mode .custom-modal-close,
+body.dark-mode .custom-secondary-button {
+    background: #334155;
+    color: #f8fafc;
+}
+
+body.dark-mode .custom-field-subtitle {
+    color: #94a3b8;
+}
+
+body.dark-mode .custom-field-grid label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .custom-settings-error {
+    color: #f87171;
+}
+
+@media (max-width: 700px) {
+    .vessel-card {
+        flex: 1 1 calc(50% - 12px);
+        min-width: 0;
+    }
+
+    .custom-field-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 430px) {
+    .vessel-card {
+        flex-basis: 100%;
+    }
+
+    .custom-modal {
+        padding: 10px;
+    }
+
+    .custom-modal-panel {
+        max-height: calc(100vh - 20px);
+        padding: 18px;
+    }
+
+    .custom-modal-actions {
+        flex-direction: column;
+    }
+}
+
+
+
+input[type="date"] {
+    border-radius: 6px;
+    border-width: 1px;
+}
+
+.vessel-card.selected {
+    border-color: #1976d2;
+}
+
+.vessel-card.selected::after {
+    background: #1976d2;
+}
+
+/* =========================================
+   Consistent section-heading spacing
+   ========================================= */
+
+/*
+Give section headings clear separation from the content above,
+while keeping them visually connected to the content below.
+*/
+h2 {
+    margin-top: 28px;
+    margin-bottom: 10px;
+}
+
+/* The first heading inside the main card does not need extra top space. */
+.card > h2:first-child {
+    margin-top: 0;
+}
+
+/* The timeline heading shares a row with the Tides control. */
+.timeline-heading-row {
+    margin-top: 28px;
+    margin-bottom: 10px;
+    padding-top: 12px;
+    border-top: 1px solid #dbe3ea;
+}
+
+body.dark-mode .timeline-heading-row {
+    border-top-color: #334155;
+}
+
+.timeline-heading-row h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* Avoid stacking additional margins beneath 24-Hour Conditions. */
+.conditions-charts,
+.evidence-grid {
+    margin-top: 0;
+}
+
+/* =========================================
+   Next 6 Days mini forecast timelines
+   ========================================= */
+
+.next-six-days-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.next-day-card {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.next-day-label {
+    margin-bottom: 9px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+    color: #334155;
+}
+
+.next-day-timeline {
+    display: flex;
+    width: 100%;
+    height: 18px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e2e8f0;
+}
+
+.next-day-hour {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.next-day-hour.timeline-flat {
+    background: #7fdfe4;
+}
+
+.next-day-hour.timeline-go {
+    background: #c2f081;
+}
+
+.next-day-hour.timeline-sporty {
+    background: #f1c17a;
+}
+
+.next-day-hour.timeline-no-go {
+    background: #f17c7a;
+}
+
+.next-day-unavailable {
+    height: 18px;
+    border-radius: 999px;
+    background: repeating-linear-gradient(
+        45deg,
+        #cbd5e1,
+        #cbd5e1 5px,
+        #e2e8f0 5px,
+        #e2e8f0 10px
+    );
+}
+
+body.dark-mode .next-day-card {
+    background: #182235;
+    border-color: #334155;
+}
+
+body.dark-mode .next-day-label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .next-day-timeline {
+    background: #334155;
+}
+
+body.dark-mode .next-day-unavailable {
+    background: repeating-linear-gradient(
+        45deg,
+        #334155,
+        #334155 5px,
+        #475569 5px,
+        #475569 10px
+    );
+}
+
+@media (max-width: 700px) {
+    .next-six-days-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 430px) {
+    .next-six-days-grid {
+        grid-template-columns: 1fr;
+    }
+}
+/* Clickable Next 6 Days cards */
+.next-day-clickable {
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.next-day-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,.12);
+}
+
+/* ===========================
+   Forecast source verification
+   =========================== */
+.forecast-source-panel {
+    margin: 14px 0 4px;
+}
+
+.forecast-source-toggle {
+    width: auto;
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+}
+
+.forecast-source-details {
+    margin-top: 10px;
+    padding: 12px 14px;
+    border: 1px solid #dbe3ea;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.forecast-source-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 16px;
+}
+
+.forecast-source-label {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    margin-bottom: 2px;
+}
+
+.forecast-source-value {
+    font-weight: 700;
+}
+
+body.dark-mode .forecast-source-toggle {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+body.dark-mode .forecast-source-details {
+    background: #182235;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+
+body.dark-mode .forecast-source-label {
+    color: #94a3b8;
+}
+
+@media (max-width: 600px) {
+    .forecast-source-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ===========================
+   Forecast confidence
+   =========================== */
+.forecast-tools-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    margin: 14px 0 4px;
+}
+
+.forecast-tools-row .forecast-source-panel,
+.forecast-confidence-panel {
+    margin: 0;
+}
+
+.forecast-confidence-button {
+    width: auto;
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+}
+
+.forecast-confidence-stars {
+    letter-spacing: 1px;
+    margin-right: 5px;
+    color: #d69e00;
+}
+
+.confidence-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.confidence-modal.hidden {
+    display: none;
+}
+
+.confidence-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.58);
+}
+
+.confidence-modal-panel {
+    position: relative;
+    z-index: 1;
+    width: min(560px, 100%);
+    max-height: min(720px, calc(100vh - 40px));
+    overflow-y: auto;
+    padding: 22px;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #1e293b;
+    box-shadow: 0 18px 50px rgba(0,0,0,.25);
+}
+
+.confidence-modal-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.confidence-modal-header h2 {
+    margin: 0 0 5px;
+}
+
+.confidence-modal-header p {
+    margin: 0;
+    color: #64748b;
+}
+
+.confidence-modal-close {
+    width: 38px;
+    height: 38px;
+    margin: 0;
+    padding: 0;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #eef2f7;
+    color: #334155;
+    font-size: 24px;
+    line-height: 1;
+}
+
+.confidence-modal-body {
+    line-height: 1.55;
+}
+
+.confidence-reason {
+    padding: 10px 0;
+    border-top: 1px solid #e2e8f0;
+}
+
+.confidence-reason:first-child {
+    border-top: 0;
+}
+
+.confidence-model-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.confidence-model-card {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.confidence-model-card strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+#decisionSummary.human-decision-summary {
+    text-align: left;
+    white-space: normal;
+    margin: 14px auto 0;
+    max-width: 660px;
+}
+
+.human-summary-block {
+    padding: 12px 0;
+    border-top: 1px solid #dbe3ea;
+}
+
+.human-summary-block:first-child {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.human-summary-label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 3px;
+}
+
+.decision-searched-date {
+    font-size: 18px;
+    font-weight: 700;
+    text-align: left;
+    color: #94a3b8;
+    margin: 0 0 4px;
+}
+
+body.dark-mode .decision-searched-date {
+    color: #64748b;
+}
+
+.human-summary-value {
+    margin-top: 2px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.human-summary-detail {
+    margin-top: 2px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.forecast-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-top: 6px;
+}
+
+.forecast-metrics-grid-secondary {
+    margin-top: 16px;
+}
+
+.forecast-metric {
+    text-align: left;
+    padding: 0 10px;
+    border: 0;
+}
+
+.forecast-metric:first-child {
+    padding-left: 0;
+}
+
+.forecast-metric:last-child {
+    border-right: 0;
+    padding-right: 0;
+}
+
+.forecast-metric-label,
+.forecast-metric-value {
+    display: block;
+}
+
+.forecast-metric-label {
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 4px;
+    white-space: nowrap;
+}
+
+.forecast-metric-value {
+    color: #475569;
+    line-height: 1.5;
+}
+
+body.dark-mode .forecast-metric {
+    border-color: #334155;
+}
+
+body.dark-mode .forecast-metric-label {
+    color: #e2e8f0;
+}
+
+body.dark-mode .forecast-metric-value {
+    color: #94a3b8;
+}
+
+@media (max-width: 600px) {
+    .forecast-metrics-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .forecast-metric {
+        padding: 0 6px;
+    }
+
+    .forecast-metric-label {
+        white-space: normal;
+        font-size: 12px;
+    }
+
+    .forecast-metric-value {
+        font-size: 13px;
+    }
+}
+
+body.dark-mode .forecast-confidence-button {
+    background: #1e293b;
+    color: #f8fafc;
+    border-color: #475569;
+}
+
+body.dark-mode .confidence-modal-panel {
+    background: #1e293b;
+    color: #e2e8f0;
+}
+
+body.dark-mode .confidence-modal-header p,
+body.dark-mode .human-summary-detail,
+body.dark-mode .human-summary-value {
+    color: #94a3b8;
+}
+
+body.dark-mode .confidence-modal-close,
+body.dark-mode .confidence-model-card {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+
+body.dark-mode .confidence-reason,
+body.dark-mode .human-summary-block {
+    border-color: #334155;
+}
+
+@media (max-width: 600px) {
+    .forecast-tools-row {
+        align-items: stretch;
+    }
+
+    .forecast-tools-row .forecast-source-panel,
+    .forecast-confidence-panel {
+        flex: 1 1 100%;
+    }
+
+    .forecast-source-toggle,
+    .forecast-confidence-button {
+        width: 100%;
+    }
+
+    .confidence-model-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =========================================
+   RESULTS VISUAL REFINEMENTS
+   ========================================= */
+
+/* Remove the gray panel behind the main boating summary. */
+#decisionCard {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+body.dark-mode #decisionCard {
+    background: transparent;
+    border: 0;
+}
+
+/* Place Forecast Source + Forecast Confidence directly under forecast metrics. */
+#forecastToolsMount {
+    margin-top: 12px;
+}
+
+#forecastToolsMount .forecast-tools-row {
+    margin: 0;
+}
+
+/* Strong dividers between the major results sections. */
+.results-section-divider {
+    margin: 28px 0;
+    border: 0;
+    border-top: 1px solid #b8c2cc;
+}
+
+body.dark-mode .results-section-divider {
+    border-top-color: #475569;
+}
+
+/* ---------------------------------
+   Results category containers
+---------------------------------- */
+
+.results-category {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-sizing: border-box;
+}
+
+/* The outer results container is light gray, distinct from the
+   white category boxes sitting inside it. Scoped to #results
+   specifically so the general (white) .card elsewhere - like the
+   main form - isn't affected. */
+#results.card {
+    background: #f5f5f5;
+}
+
+body.dark-mode #results.card {
+    background: #1e293b;
+}
+
+/* The 24-Hour Conditions heading sits outside a box now - each
+   chart/advisory card underneath is its own white box instead, so
+   this wrapper just needs the same bottom spacing a boxed category
+   would normally provide. */
+.results-conditions-category {
+    margin-bottom: 20px;
+}
+
+/* The summary category already contains the decision card, so avoid a second gray panel. */
+.results-summary-category #decisionCard {
+    background: transparent;
+}
+
+/* Main-category divider lines are no longer used. */
+.results-section-divider {
+    display: none;
+}
+
+/* Keep the category containers distinct in dark mode. */
+body.dark-mode .results-category {
+    background: #1e293b;
+}
+
+body.dark-mode .results-summary-category #decisionCard {
+    background: transparent;
+}
+
+
+@media (max-width: 700px) {
+    .results-category {
+        padding: 16px;
+    }
+}
