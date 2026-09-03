@@ -1,5 +1,5 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.10.2
+// Version 1.10.3
 
 
 let windChart;
@@ -1716,111 +1716,19 @@ function setupFishingSpotsLayer(){
 }
 
 
-function metersPerSecondToMph(mps){
+/*
+Buoy readings used to be parsed here in the browser from NDBC's raw
+realtime2 text files. That required a client-side fetch straight to
+ndbc.noaa.gov (blocked — no CORS header) with a public CORS-proxy
+fallback (unreliable, rate-limited, could disappear any time).
 
-    if(
-        mps === null ||
-        mps === undefined ||
-        Number.isNaN(Number(mps))
-    ){
-        return null;
-    }
-
-    return Number(mps) * 2.23694;
-
-}
-
-
-function parseNDBCRealtime2(text){
-
-    /*
-    NDBC's realtime2 standard meteorological
-    text file: a header line, a units line, then
-    the most recent observation first. Missing
-    values are written as "MM".
-    */
-
-    const lines =
-        text
-            .split("\n")
-            .map(line => line.trim())
-            .filter(Boolean);
-
-    if(lines.length < 3){
-        return null;
-    }
-
-    const dataLine =
-        lines[2];
-
-    const columns =
-        dataLine.split(/\s+/);
-
-    /*
-    Standard column order:
-    YY MM DD hh mm WDIR WSPD GST WVHT DPD APD MWD PRES ATMP WTMP DEWP VIS PTDY TIDE
-    */
-
-    const get = index =>
-        columns[index] !== undefined &&
-        columns[index] !== "MM"
-            ? Number(columns[index])
-            : null;
-
-    const year = get(0);
-    const month = get(1);
-    const day = get(2);
-    const hour = get(3);
-    const minute = get(4);
-
-    const windSpeedMps = get(6);
-    const gustMps = get(7);
-    const waveHeightMeters = get(8);
-    const dominantWavePeriod = get(9);
-    const airTempC = get(13);
-
-    let observedAt = null;
-
-    if(
-        year !== null &&
-        month !== null &&
-        day !== null &&
-        hour !== null &&
-        minute !== null
-    ){
-
-        observedAt =
-            new Date(
-                Date.UTC(
-                    2000 + year,
-                    month - 1,
-                    day,
-                    hour,
-                    minute
-                )
-            );
-
-    }
-
-    return {
-        observedAt,
-        windSpeedMph:
-            metersPerSecondToMph(windSpeedMps),
-        gustMph:
-            metersPerSecondToMph(gustMps),
-        waveHeightFt:
-            waveHeightMeters !== null
-                ? metersToFeet(waveHeightMeters)
-                : null,
-        wavePeriodSec:
-            dominantWavePeriod,
-        airTempF:
-            airTempC !== null
-                ? (airTempC * 9 / 5) + 32
-                : null
-    };
-
-}
+That parsing now happens server-side, once every 30 minutes, in a
+GitHub Action (see .github/workflows/fetch-buoys.yml and
+scripts/fetch-buoys.js in the repo). The Action writes the results to
+data/buoys.json, which is just a static file served from Drift's own
+domain — so loadBuoyData() below is a same-origin fetch with no CORS
+issue at all.
+*/
 
 
 function timeAgoLabel(date){
@@ -1970,86 +1878,63 @@ function buildBuoyPopupHTML(station, observation, errorMessage){
 }
 
 
+let buoyDataPromise = null;
+
+function loadBuoyData(){
+
+    /*
+    Fetches data/buoys.json once (subsequent calls reuse the same
+    in-flight/completed promise) and caches it for the rest of the
+    page's life. The GitHub Action refreshes this file every 30
+    minutes, so a fresh page load is all that's needed to pick up new
+    readings — no polling required.
+    */
+
+    if(!buoyDataPromise){
+
+        buoyDataPromise =
+            fetch("data/buoys.json")
+                .then(response => {
+
+                    if(!response.ok){
+                        throw new Error(
+                            `Buoy data file returned ${response.status}`
+                        );
+                    }
+
+                    return response.json();
+
+                })
+                .catch(error => {
+
+                    // Allow a later call to retry instead of being
+                    // stuck with a rejected promise forever.
+                    buoyDataPromise = null;
+
+                    throw error;
+
+                });
+
+    }
+
+    return buoyDataPromise;
+
+}
+
+
 async function fetchBuoyObservation(station){
 
     if(buoyObservationCache[station.id]){
         return buoyObservationCache[station.id];
     }
 
-    const directURL =
-        `https://www.ndbc.noaa.gov/data/realtime2/${station.id.toUpperCase()}.txt`;
+    const allBuoyData =
+        await loadBuoyData();
 
-    /*
-    NDBC's data directory doesn't send the CORS
-    header browsers require for cross-origin JS
-    fetches, so a direct request from Drift's own
-    domain will typically be blocked before it even
-    reaches NDBC. Try direct first (in case that
-    ever changes, or Drift is later served from a
-    domain NDBC does allow), then fall back to a
-    public CORS proxy so buoy popups still work for
-    now.
+    const raw =
+        allBuoyData[station.id];
 
-    This proxy fallback is a stopgap for testing,
-    not the long-term answer — it depends on a free
-    third-party service that can rate-limit or go
-    down without notice. The real fix is item #7:
-    Drift's own backend fetching NDBC data on a
-    schedule and serving it from Drift's domain,
-    which sidesteps CORS entirely since it's a
-    server-to-server request.
-    */
-
-    let text = null;
-
-    try {
-
-        const response =
-            await fetch(directURL);
-
-        if(response.ok){
-            text = await response.text();
-        }
-
-    }
-    catch(directError){
-
-        console.warn(
-            `Direct NDBC fetch blocked for ${station.name} ` +
-            "(expected — NDBC doesn't send CORS headers). " +
-            "Falling back to proxy.",
-            directError
-        );
-
-    }
-
-    if(!text){
-
-        try {
-
-            const proxyResponse =
-                await fetch(
-                    "https://api.allorigins.win/raw?url=" +
-                    encodeURIComponent(directURL)
-                );
-
-            if(proxyResponse.ok){
-                text = await proxyResponse.text();
-            }
-
-        }
-        catch(proxyError){
-
-            console.warn(
-                `Proxy fallback also failed for ${station.name}:`,
-                proxyError
-            );
-
-        }
-
-    }
-
-    if(!text){
+    if(!raw){
 
         throw new Error(
             `NDBC data unavailable for ${station.name}`
@@ -2057,16 +1942,17 @@ async function fetchBuoyObservation(station){
 
     }
 
-    const observation =
-        parseNDBCRealtime2(text);
-
-    if(!observation){
-
-        throw new Error(
-            `No recent readings for ${station.name}`
-        );
-
-    }
+    const observation = {
+        observedAt:
+            raw.observedAt
+                ? new Date(raw.observedAt)
+                : null,
+        windSpeedMph: raw.windSpeedMph,
+        gustMph: raw.gustMph,
+        waveHeightFt: raw.waveHeightFt,
+        wavePeriodSec: raw.wavePeriodSec,
+        airTempF: raw.airTempF
+    };
 
     buoyObservationCache[station.id] = observation;
 
