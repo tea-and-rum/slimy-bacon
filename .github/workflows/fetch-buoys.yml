@@ -1,0 +1,31 @@
+name: Fetch NDBC buoy data
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-buoys:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Fetch latest buoy readings
+        run: node scripts/fetch-buoys.js
+
+      - name: Commit and push data/buoys.json if it changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update NDBC buoy data"
+          file_pattern: data/buoys.json
