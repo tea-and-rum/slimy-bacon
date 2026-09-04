@@ -577,21 +577,6 @@ button:hover {
 }
 
 
-.timeline-night-shade {
-
-    position: absolute;
-
-    top: 0;
-
-    bottom: 0;
-
-    background: rgba(0, 0, 0, 0.4);
-
-    pointer-events: none;
-
-}
-
-
 .timeline-hour {
 
     flex: 1;
@@ -729,6 +714,60 @@ button:hover {
     transform: translateX(-50%);
 
     background: rgb(230, 30, 30);
+
+    color: #ffffff;
+
+    font-size: 10px;
+
+    font-weight: 600;
+
+    line-height: 14px;
+
+    padding: 0 6px;
+
+    border-radius: 3px;
+
+    white-space: nowrap;
+
+}
+
+
+.sun-time-marker {
+
+    position: absolute;
+
+    /*
+    Same span as .current-time-marker: room above the
+    14px timeline bar for the flag, then a line running
+    down through the full height of the bar.
+    */
+    top: -28px;
+
+    bottom: 0;
+
+    width: 2px;
+
+    transform: translateX(-50%);
+
+    background: #000000;
+
+    pointer-events: none;
+
+    z-index: 6;
+
+}
+
+.sun-time-flag {
+
+    position: absolute;
+
+    top: 0;
+
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    background: #000000;
 
     color: #ffffff;
 

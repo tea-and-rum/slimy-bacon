@@ -1,5 +1,5 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.13.0
+// Version 1.13.1
 
 
 let windChart;
@@ -6900,51 +6900,49 @@ else{
 
 
     /*
-    Shade the portions of the bar before sunrise and
-    after sunset. Appending these as children of the bar
-    itself (rather than the wrapper) means they inherit
-    its rounded-pill clipping for free.
+    Position the sunrise/sunset markers, same treatment
+    as the current-time marker but black, and only shown
+    when a valid time is available.
     */
-    if(
-        sun &&
-        Number.isFinite(sun.sunrisePercent)
-    ){
+    const sunriseMarker =
+        document.getElementById("sunriseMarker");
 
-        const beforeSunrise =
-            document.createElement("div");
+    if(sunriseMarker){
 
-        beforeSunrise.classList.add(
-            "timeline-night-shade"
-        );
+        if(sun && Number.isFinite(sun.sunrisePercent)){
 
-        beforeSunrise.style.left = "0%";
+            sunriseMarker.classList.remove("hidden");
 
-        beforeSunrise.style.width =
-            sun.sunrisePercent + "%";
+            sunriseMarker.style.left =
+                sun.sunrisePercent + "%";
 
-        bar.appendChild(beforeSunrise);
+        }
+        else{
+
+            sunriseMarker.classList.add("hidden");
+
+        }
 
     }
 
-    if(
-        sun &&
-        Number.isFinite(sun.sunsetPercent)
-    ){
+    const sunsetMarker =
+        document.getElementById("sunsetMarker");
 
-        const afterSunset =
-            document.createElement("div");
+    if(sunsetMarker){
 
-        afterSunset.classList.add(
-            "timeline-night-shade"
-        );
+        if(sun && Number.isFinite(sun.sunsetPercent)){
 
-        afterSunset.style.left =
-            sun.sunsetPercent + "%";
+            sunsetMarker.classList.remove("hidden");
 
-        afterSunset.style.width =
-            (100 - sun.sunsetPercent) + "%";
+            sunsetMarker.style.left =
+                sun.sunsetPercent + "%";
 
-        bar.appendChild(afterSunset);
+        }
+        else{
+
+            sunsetMarker.classList.add("hidden");
+
+        }
 
     }
 
