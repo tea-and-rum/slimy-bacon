@@ -1,18 +1,17 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.11.0
+// Version 1.12.0
 
 
 let windChart;
 let waveChart;
 let precipChart;
+let tideChart;
 
 let lastWaveHeightsRaw = null;
 let lastWavePeriodsRaw = null;
 let waveChartResizeTimeout = null;
 
 let tideStationCache = null;
-let lastTidePoints = [];
-let lastTideEvents = [];
 let lastSunData = null;
 let lastCurrentTimeHour = null;
 let nextSixDaysRequestId = 0;
@@ -197,8 +196,6 @@ window.onload = function(){
     setupVesselCards();
 
     setupDarkMode();
-
-    setupTideToggle();
 
     setupLocationMap();
 
@@ -2465,7 +2462,8 @@ function updateChartAppearance(isDarkMode){
     [
         windChart,
         waveChart,
-        precipChart
+        precipChart,
+        tideChart
     ].forEach(chart => {
 
         if(!chart){
@@ -2640,10 +2638,6 @@ function clearSelections(){
         results.classList.add("hidden");
     }
 
-    clearTideOverlay();
-
-    lastTidePoints = [];
-    lastTideEvents = [];
     lastSunData = null;
     lastCurrentTimeHour = null;
 
@@ -4101,6 +4095,186 @@ const currentTimeLinePlugin = {
 };
 
 
+/*
+Draws a small marker + time label at each high/low tide
+event on the tide chart. Events are given as decimal
+hours-of-day so they can land at their exact time rather
+than snapping to the nearest hourly gridline.
+*/
+const tideMarkersPlugin = {
+
+    id: "tideMarkers",
+
+    afterDatasetsDraw(chart, args, options){
+
+        const events =
+            options?.events;
+
+        if(!Array.isArray(events) || !events.length){
+            return;
+        }
+
+
+        const xScale =
+            chart.scales.x;
+
+        const yScale =
+            chart.scales.y;
+
+        const chartArea =
+            chart.chartArea;
+
+        if(!xScale || !yScale || !chartArea){
+            return;
+        }
+
+
+        const lastIndex =
+            (chart.data.labels || []).length - 1;
+
+        if(lastIndex < 0){
+            return;
+        }
+
+
+        const isDarkMode =
+            document.body.classList.contains(
+                "dark-mode"
+            );
+
+        const ctx =
+            chart.ctx;
+
+        ctx.save();
+
+
+        events.forEach(event => {
+
+            if(!Number.isFinite(event.value)){
+                return;
+            }
+
+
+            const index =
+                Math.max(
+                    0,
+                    Math.min(
+                        event.hour,
+                        lastIndex
+                    )
+                );
+
+            const lowerIndex =
+                Math.floor(index);
+
+            const upperIndex =
+                Math.min(
+                    lowerIndex + 1,
+                    lastIndex
+                );
+
+            const lowerPixel =
+                xScale.getPixelForValue(lowerIndex);
+
+            const upperPixel =
+                xScale.getPixelForValue(upperIndex);
+
+            const x =
+                lowerIndex === upperIndex
+                    ? lowerPixel
+                    : lowerPixel +
+                      (upperPixel - lowerPixel) *
+                      (index - lowerIndex);
+
+            const y =
+                yScale.getPixelForValue(event.value);
+
+            const isHigh =
+                event.type === "H";
+
+            const markerColor =
+                isHigh
+                    ? "#1479c9"
+                    : "#c2762b";
+
+
+            /*
+            Dot at the event's exact time and height.
+            */
+            ctx.beginPath();
+
+            ctx.fillStyle =
+                markerColor;
+
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+
+            ctx.fill();
+
+            ctx.lineWidth = 1.5;
+
+            ctx.strokeStyle =
+                "#ffffff";
+
+            ctx.stroke();
+
+
+            /*
+            Time label - flipped below the dot when there
+            isn't enough room above it for the text.
+            */
+            const label =
+                (isHigh ? "H " : "L ") +
+                formatClockTime(event.date);
+
+            ctx.font =
+                "10px Arial";
+
+            const textWidth =
+                ctx.measureText(label).width;
+
+            const clampedX =
+                Math.max(
+                    chartArea.left + textWidth / 2,
+                    Math.min(
+                        x,
+                        chartArea.right - textWidth / 2
+                    )
+                );
+
+            const labelAbove =
+                (y - chartArea.top) > 18;
+
+            ctx.textAlign =
+                "center";
+
+            ctx.textBaseline =
+                labelAbove
+                    ? "bottom"
+                    : "top";
+
+            ctx.fillStyle =
+                isDarkMode
+                    ? "#e2e8f0"
+                    : "#334155";
+
+            ctx.fillText(
+                label,
+                clampedX,
+                labelAbove
+                    ? y - 8
+                    : y + 8
+            );
+
+        });
+
+
+        ctx.restore();
+
+    }
+
+};
+
+
 function createWindChart(
     sustainedData,
     gustData,
@@ -4945,6 +5119,182 @@ function createPrecipChart(data){
 
 
 /*
+Builds the Tides chart from a day's hourly height
+predictions plus the day's high/low tide events. hourly
+predictions may be null/unavailable, in which case the
+chart still renders (empty) and the summary line explains
+why.
+*/
+function createTideChart(hourlyPredictions, highLowEvents){
+
+    if(tideChart){
+        tideChart.destroy();
+    }
+
+
+    const heights =
+        new Array(24).fill(null);
+
+    if(Array.isArray(hourlyPredictions)){
+
+        hourlyPredictions.forEach(point => {
+
+            const index =
+                Math.round(point.hour);
+
+            if(
+                index >= 0 &&
+                index <= 23 &&
+                Number.isFinite(point.value)
+            ){
+                heights[index] = point.value;
+            }
+
+        });
+
+    }
+
+
+    const events =
+        Array.isArray(highLowEvents)
+            ? highLowEvents.map(event => ({
+
+                hour:
+                    event.date.getHours() +
+                    event.date.getMinutes() / 60,
+
+                type:
+                    event.type,
+
+                value:
+                    event.value,
+
+                date:
+                    event.date
+
+            }))
+            : [];
+
+
+    const tideSummaryElement =
+        document.getElementById("tideSummary");
+
+    if(tideSummaryElement){
+
+        if(events.length){
+
+            tideSummaryElement.innerHTML =
+                events
+                    .map(event =>
+                        (
+                            event.type === "H"
+                                ? "H "
+                                : "L "
+                        ) +
+                        escapeHTML(
+                            formatClockTime(event.date)
+                        )
+                    )
+                    .join(" &nbsp;|&nbsp; ");
+
+        }
+        else if(heights.some(value => value !== null)){
+
+            tideSummaryElement.textContent =
+                "No high/low tide events today";
+
+        }
+        else{
+
+            tideSummaryElement.textContent =
+                "Tide data unavailable";
+
+        }
+
+    }
+
+
+    const options =
+        simpleChartOptions();
+
+    options.scales.y =
+        {
+            ticks: {
+                callback: value =>
+                    Number(value).toFixed(1) + " ft"
+            }
+        };
+
+
+    const nightShadingHours =
+        getNightShadingHours();
+
+    if(nightShadingHours){
+
+        options.plugins.nightShading = {
+            ...nightShadingHours,
+            hoursPerBar: 1
+        };
+
+    }
+
+
+    if(Number.isFinite(lastCurrentTimeHour)){
+
+        options.plugins.currentTimeLine = {
+            currentHour: lastCurrentTimeHour,
+            hoursPerBar: 1
+        };
+
+    }
+
+
+    options.plugins.tideMarkers =
+        {
+            events: events
+        };
+
+
+    tideChart =
+        new Chart(
+            document.getElementById("tideChart"),
+            {
+
+                type: "line",
+
+                plugins: [
+                    nightShadingPlugin,
+                    tideMarkersPlugin,
+                    currentTimeLinePlugin
+                ],
+
+                data: {
+
+                    labels: hourLabels(),
+
+                    datasets: [
+                        {
+                            data: heights,
+                            borderColor: "#1479c9",
+                            backgroundColor: "rgba(20, 121, 201, 0.15)",
+                            fill: true,
+                            tension: 0.3,
+                            spanGaps: true,
+                            pointRadius: 0
+                        }
+                    ]
+
+                },
+
+                options: options
+
+            }
+        );
+
+}
+
+
+/*
 Shows an x-axis tick label only every 3rd hour (12a, 3a,
 6a, 9a, ...), matching the spacing used by the main
 24-hour timeline above the charts, instead of letting
@@ -5747,128 +6097,18 @@ function determineDailyResult(results){
 }
 
 
-function setupTideToggle(){
-
-    const toggle =
-        document.getElementById(
-            "tideToggle"
-        );
-
-
-    if(!toggle){
-        return;
-    }
-
-
-    const savedPreference =
-        localStorage.getItem(
-            "showTideOverlay"
-        );
-
-
-    toggle.checked =
-        savedPreference !== "false";
-
-
-    toggle.addEventListener(
-        "change",
-        function(){
-
-            localStorage.setItem(
-                "showTideOverlay",
-                String(toggle.checked)
-            );
-
-            updateTideOverlayVisibility();
-
-            renderDailyEventTimes(
-                toggle.checked
-                    ? lastTideEvents
-                    : [],
-                lastSunData
-            );
-
-        }
-    );
-
-}
-
-
-function updateTideOverlayVisibility(){
-
-    const toggle =
-        document.getElementById(
-            "tideToggle"
-        );
-
-    const overlay =
-        document.getElementById(
-            "tideOverlay"
-        );
-
-
-    if(!toggle || !overlay){
-        return;
-    }
-
-
-    const shouldShow =
-        toggle.checked &&
-        lastTidePoints.length > 1;
-
-
-    overlay.classList.toggle(
-        "hidden",
-        !shouldShow
-    );
-
-}
-
-
-function clearTideOverlay(){
-
-    lastTidePoints = [];
-
-    const tidePath =
-        document.getElementById(
-            "tidePath"
-        );
-
-    const tidePathOutline =
-        document.getElementById(
-            "tidePathOutline"
-        );
-
-
-    if(tidePath){
-        tidePath.setAttribute("d", "");
-    }
-
-    if(tidePathOutline){
-        tidePathOutline.setAttribute("d", "");
-    }
-
-
-    updateTideOverlayVisibility();
-
-}
-
-
 async function renderTideOverlay(
     selectedLocation,
     selectedDate,
     sun
 ){
 
-    clearTideOverlay();
-
     lastSunData = sun;
-    lastTideEvents = [];
 
 
     /*
     Always render sunrise and sunset, even if tide
-    data is hidden or unavailable.
+    data is unavailable.
     */
 
     renderDailyEventTimes(
@@ -5882,6 +6122,9 @@ async function renderTideOverlay(
 
 
     if(!coords){
+
+        createTideChart(null, []);
+
         return;
     }
 
@@ -5896,6 +6139,9 @@ async function renderTideOverlay(
 
 
         if(!station){
+
+            createTideChart(null, []);
+
             return;
         }
 
@@ -5918,38 +6164,14 @@ async function renderTideOverlay(
         ]);
 
 
-        const now = new Date();
-        const selectedDateObject = new Date(selectedDate + "T00:00:00");
-        const isToday = selectedDateObject.toDateString() === now.toDateString();
-        const currentHour = now.getHours();
-
-        const visibleTidePredictions = isToday
-            ? hourlyPredictions.filter(point => point.hour >= currentHour)
-            : hourlyPredictions;
-
-        if(visibleTidePredictions.length >= 2){
-
-            drawTidePath(
-                visibleTidePredictions
-            );
-
-        }
-
-
-        lastTideEvents =
-            highLowEvents;
-
-
-        const tideToggle =
-            document.getElementById(
-                "tideToggle"
-            );
+        createTideChart(
+            hourlyPredictions,
+            highLowEvents
+        );
 
 
         renderDailyEventTimes(
-            tideToggle?.checked
-                ? highLowEvents
-                : [],
+            highLowEvents,
             sun
         );
 
@@ -5966,7 +6188,7 @@ async function renderTideOverlay(
             error
         );
 
-        clearTideOverlay();
+        createTideChart(null, []);
 
         renderDailyEventTimes(
             [],
@@ -6473,152 +6695,6 @@ function renderDailyEventTimes(
 
 }
 
-
-function drawTidePath(predictions){
-
-    const tidePath =
-        document.getElementById(
-            "tidePath"
-        );
-
-    const tidePathOutline =
-        document.getElementById(
-            "tidePathOutline"
-        );
-
-
-    if(!tidePath || !tidePathOutline){
-        return;
-    }
-
-
-    const values =
-        predictions.map(point => point.value);
-
-    const minimum =
-        Math.min(...values);
-
-    const maximum =
-        Math.max(...values);
-
-    const range =
-        Math.max(maximum - minimum, 0.01);
-
-
-    /*
-    Keep the line away from the rounded top and bottom
-    edges of the 28px timeline bar.
-    */
-
-    const topPadding = 14;
-    const drawableHeight = 72;
-
-
-    const points =
-        predictions.map(point => ({
-            x:
-                point.hour / 24 * 1000,
-            y:
-                topPadding +
-                (maximum - point.value) /
-                range *
-                drawableHeight
-        }));
-
-
-    /*
-    NOAA's final hourly value is normally 11 PM.
-    Project one additional point to midnight so the
-    curve reaches the full right edge of the bar.
-    */
-
-    if(points.length >= 2){
-
-        const lastPoint =
-            points[points.length - 1];
-
-        const previousPoint =
-            points[points.length - 2];
-
-        const projectedY =
-            lastPoint.y +
-            (
-                lastPoint.y -
-                previousPoint.y
-            );
-
-
-        points.push({
-            x: 1000,
-            y:
-                Math.max(
-                    topPadding,
-                    Math.min(
-                        topPadding + drawableHeight,
-                        projectedY
-                    )
-                )
-        });
-
-    }
-
-
-    const pathData =
-        createSmoothSvgPath(points);
-
-
-    tidePath.setAttribute(
-        "d",
-        pathData
-    );
-
-    tidePathOutline.setAttribute(
-        "d",
-        pathData
-    );
-
-
-    lastTidePoints = points;
-
-    updateTideOverlayVisibility();
-
-}
-
-
-function createSmoothSvgPath(points){
-
-    if(points.length < 2){
-        return "";
-    }
-
-
-    let path =
-        `M ${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`;
-
-
-    for(let index = 1; index < points.length; index++){
-
-        const previous =
-            points[index - 1];
-
-        const current =
-            points[index];
-
-        const midpointX =
-            (previous.x + current.x) / 2;
-
-
-        path +=
-            ` C ${midpointX.toFixed(2)} ${previous.y.toFixed(2)},` +
-            ` ${midpointX.toFixed(2)} ${current.y.toFixed(2)},` +
-            ` ${current.x.toFixed(2)} ${current.y.toFixed(2)}`;
-
-    }
-
-
-    return path;
-
-}
 
 
 function addDaysToDateString(dateString, daysToAdd){
