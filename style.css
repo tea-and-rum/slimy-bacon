@@ -750,6 +750,55 @@ button:hover {
 }
 
 
+.current-time-marker {
+
+    position: absolute;
+
+    top: -14px;
+
+    bottom: 0;
+
+    width: 2px;
+
+    transform: translateX(-50%);
+
+    background: rgb(230, 30, 30);
+
+    pointer-events: none;
+
+    z-index: 6;
+
+}
+
+.current-time-flag {
+
+    position: absolute;
+
+    top: 0;
+
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    background: rgb(230, 30, 30);
+
+    color: #ffffff;
+
+    font-size: 10px;
+
+    font-weight: 600;
+
+    line-height: 14px;
+
+    padding: 0 6px;
+
+    border-radius: 3px;
+
+    white-space: nowrap;
+
+}
+
+
 /* Full-width 24-hour condition charts */
 
 .conditions-charts {
