@@ -179,28 +179,11 @@
 
     <div class="timeline-heading-row">
         <h2>24-Hour Timeline</h2>
-
-        <label class="tide-toggle" for="tideToggle">
-            <span>Tides</span>
-            <input id="tideToggle" type="checkbox" checked>
-        </label>
     </div>
 
     <div class="timeline-container">
         <div class="timeline-wrapper">
             <div id="timelineBar"></div>
-
-            <svg
-                id="tideOverlay"
-                class="tide-overlay hidden"
-                viewBox="0 0 1000 100"
-                preserveAspectRatio="none"
-                role="img"
-                aria-label="Predicted tide movement across the selected day"
-            >
-                <path id="tidePathOutline" class="tide-path-outline"></path>
-                <path id="tidePath" class="tide-path"></path>
-            </svg>
 
             <div id="sunriseMarker" class="sun-marker">☀</div>
             <div id="sunsetMarker" class="sun-marker">🌙</div>
@@ -257,6 +240,14 @@
                     <div class="evidence-summary" id="precipSummary">Peak: --%</div>
                 </div>
                 <canvas id="precipChart"></canvas>
+            </div>
+
+            <div class="evidence-card">
+                <div class="evidence-header">
+                    <h3>Tides</h3>
+                    <div class="evidence-summary" id="tideSummary">Tide data unavailable</div>
+                </div>
+                <canvas id="tideChart"></canvas>
             </div>
 
             <div class="evidence-card advisory-breakdown">
@@ -367,7 +358,7 @@
 </button>
   <footer class="disclaimer">
     <strong>⚠️ Boating Safety Disclaimer</strong><br>
-    This tool is provided for informational purposes only and is intended to assist with trip planning. Forecasts, recommendations, and conditions may be inaccurate, incomplete, or delayed. Always review official NOAA marine forecasts, weather warnings, navigation information, and current conditions before leaving the dock. Use your own judgment based on your vessel, experience, crew, and local conditions. By using this website, you acknowledge that you are solely responsible for your boating decisions. The creator of this website assumes no liability for any accidents, injuries, damages, or losses resulting from the use of this information. Version 7.3.
+    This tool is provided for informational purposes only and is intended to assist with trip planning. Forecasts, recommendations, and conditions may be inaccurate, incomplete, or delayed. Always review official NOAA marine forecasts, weather warnings, navigation information, and current conditions before leaving the dock. Use your own judgment based on your vessel, experience, crew, and local conditions. By using this website, you acknowledge that you are solely responsible for your boating decisions. The creator of this website assumes no liability for any accidents, injuries, damages, or losses resulting from the use of this information. Version 7.4.
 </footer>
 </body>
 
