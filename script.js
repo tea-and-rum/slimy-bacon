@@ -1,5 +1,5 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.12.0
+// Version 1.13.0
 
 
 let windChart;
@@ -6899,16 +6899,54 @@ else{
     });
 
 
-    document
-        .getElementById("sunriseMarker")
-        .style.left =
-        sun.sunrisePercent + "%";
+    /*
+    Shade the portions of the bar before sunrise and
+    after sunset. Appending these as children of the bar
+    itself (rather than the wrapper) means they inherit
+    its rounded-pill clipping for free.
+    */
+    if(
+        sun &&
+        Number.isFinite(sun.sunrisePercent)
+    ){
 
+        const beforeSunrise =
+            document.createElement("div");
 
-    document
-        .getElementById("sunsetMarker")
-        .style.left =
-        sun.sunsetPercent + "%";
+        beforeSunrise.classList.add(
+            "timeline-night-shade"
+        );
+
+        beforeSunrise.style.left = "0%";
+
+        beforeSunrise.style.width =
+            sun.sunrisePercent + "%";
+
+        bar.appendChild(beforeSunrise);
+
+    }
+
+    if(
+        sun &&
+        Number.isFinite(sun.sunsetPercent)
+    ){
+
+        const afterSunset =
+            document.createElement("div");
+
+        afterSunset.classList.add(
+            "timeline-night-shade"
+        );
+
+        afterSunset.style.left =
+            sun.sunsetPercent + "%";
+
+        afterSunset.style.width =
+            (100 - sun.sunsetPercent) + "%";
+
+        bar.appendChild(afterSunset);
+
+    }
 
 
     const currentTimeMarker =

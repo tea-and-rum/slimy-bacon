@@ -562,17 +562,32 @@ button:hover {
 
     display: flex;
 
-    height: 28px;
+    height: 14px;
 
     width: 100%;
 
     overflow: hidden;
 
-    border-radius: 14px;
+    border-radius: 7px;
 
     position: absolute;
 
     bottom: 0;
+
+}
+
+
+.timeline-night-shade {
+
+    position: absolute;
+
+    top: 0;
+
+    bottom: 0;
+
+    background: rgba(0, 0, 0, 0.4);
+
+    pointer-events: none;
 
 }
 
@@ -677,40 +692,17 @@ button:hover {
 }
 
 
-.sun-marker {
-
-    position: absolute;
-
-    top: -26px;
-
-    transform: translateX(-50%);
-
-    text-align: center;
-
-}
-
-
-
-.sun-marker span {
-
-    display: block;
-
-    font-size: 11px;
-
-}
-
-
 .current-time-marker {
 
     position: absolute;
 
     /*
-    Spans from just above the 28px timeline bar (room for
+    Spans from just above the 14px timeline bar (room for
     the flag) down through the full height of the bar, so
     the line actually crosses the bar instead of floating
     above it.
     */
-    top: -42px;
+    top: -28px;
 
     bottom: 0;
 
