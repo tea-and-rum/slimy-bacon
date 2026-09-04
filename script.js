@@ -4611,9 +4611,9 @@ const wavePeriodLabelPlugin = {
 
 
                 ctx.fillStyle =
-                    getWaveConditionColor(
-                        waveCondition.status
-                    );
+    isDarkMode
+        ? "#cbd5e1"
+        : "#475569";
 
 
                 ctx.fillText(
