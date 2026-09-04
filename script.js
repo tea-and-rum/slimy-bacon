@@ -1,5 +1,5 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.10.3
+// Version 1.10.4
 
 
 let windChart;
@@ -3828,6 +3828,193 @@ function getWindTravelDirection(direction){
 };
 
 
+/*
+Shades the parts of a chart's plot area that fall before
+sunrise or after sunset with a light gray overlay, so it's
+clear at a glance which hours are in darkness.
+*/
+const nightShadingPlugin = {
+
+    id: "nightShading",
+
+    beforeDatasetsDraw(chart, args, options){
+
+        const sunriseHour =
+            options?.sunriseHour;
+
+        const sunsetHour =
+            options?.sunsetHour;
+
+        if(
+            !Number.isFinite(sunriseHour) ||
+            !Number.isFinite(sunsetHour)
+        ){
+            return;
+        }
+
+
+        const xScale =
+            chart.scales.x;
+
+        const chartArea =
+            chart.chartArea;
+
+        if(!xScale || !chartArea){
+            return;
+        }
+
+
+        const hoursPerBar =
+            options?.hoursPerBar || 1;
+
+        const lastIndex =
+            (chart.data.labels || []).length - 1;
+
+        if(lastIndex < 0){
+            return;
+        }
+
+
+        /*
+        Converts a decimal hour-of-day (e.g. 6.25 for
+        6:15am) into an x-pixel position, interpolating
+        between the two nearest category indices - since
+        each point/bar can represent more than one hour
+        on the narrow-screen binned wave chart.
+        */
+        const pixelForHour = hour => {
+
+            const index =
+                Math.max(
+                    0,
+                    Math.min(
+                        hour / hoursPerBar,
+                        lastIndex
+                    )
+                );
+
+            const lowerIndex =
+                Math.floor(index);
+
+            const upperIndex =
+                Math.min(
+                    lowerIndex + 1,
+                    lastIndex
+                );
+
+            const lowerPixel =
+                xScale.getPixelForValue(lowerIndex);
+
+            const upperPixel =
+                xScale.getPixelForValue(upperIndex);
+
+            if(upperIndex === lowerIndex){
+                return lowerPixel;
+            }
+
+            const fraction =
+                index - lowerIndex;
+
+            return (
+                lowerPixel +
+                (upperPixel - lowerPixel) * fraction
+            );
+
+        };
+
+
+        const sunrisePixel =
+            pixelForHour(sunriseHour);
+
+        const sunsetPixel =
+            pixelForHour(sunsetHour);
+
+        const isDarkMode =
+            document.body.classList.contains(
+                "dark-mode"
+            );
+
+        const ctx =
+            chart.ctx;
+
+
+        ctx.save();
+
+        ctx.fillStyle =
+            isDarkMode
+                ? "rgba(0, 0, 0, 0.25)"
+                : "rgba(100, 116, 139, 0.12)";
+
+
+        /*
+        Before sunrise.
+        */
+        if(sunrisePixel > chartArea.left){
+
+            ctx.fillRect(
+                chartArea.left,
+                chartArea.top,
+                sunrisePixel - chartArea.left,
+                chartArea.bottom - chartArea.top
+            );
+
+        }
+
+
+        /*
+        After sunset.
+        */
+        if(sunsetPixel < chartArea.right){
+
+            ctx.fillRect(
+                sunsetPixel,
+                chartArea.top,
+                chartArea.right - sunsetPixel,
+                chartArea.bottom - chartArea.top
+            );
+
+        }
+
+
+        ctx.restore();
+
+    }
+
+};
+
+
+/*
+Reads the most recently computed sunrise/sunset times
+(cached in lastSunData by renderTideOverlay) as decimal
+hours-of-day, for the nightShadingPlugin. Returns null
+when no valid sun data is available yet.
+*/
+function getNightShadingHours(){
+
+    if(
+        !lastSunData ||
+        !(lastSunData.sunriseDate instanceof Date) ||
+        !(lastSunData.sunsetDate instanceof Date) ||
+        Number.isNaN(lastSunData.sunriseDate.getTime()) ||
+        Number.isNaN(lastSunData.sunsetDate.getTime())
+    ){
+        return null;
+    }
+
+    const toDecimalHour = date =>
+        date.getHours() +
+        date.getMinutes() / 60;
+
+    return {
+        sunriseHour:
+            toDecimalHour(lastSunData.sunriseDate),
+        sunsetHour:
+            toDecimalHour(lastSunData.sunsetDate)
+    };
+
+}
+
+
 function createWindChart(
     sustainedData,
     gustData,
@@ -3901,6 +4088,19 @@ function createWindChart(
     };
 
 
+    const nightShadingHours =
+        getNightShadingHours();
+
+    if(nightShadingHours){
+
+        options.plugins.nightShading = {
+            ...nightShadingHours,
+            hoursPerBar: 1
+        };
+
+    }
+
+
     const selectedBoatSize =
         document.getElementById("boatSize")?.value ||
         "medium";
@@ -3940,6 +4140,7 @@ function createWindChart(
                 type: "line",
 
                 plugins: [
+                    nightShadingPlugin,
                     windDirectionArrowPlugin
                 ],
 
@@ -4313,6 +4514,19 @@ function createWaveChart(
         };
 
 
+    const nightShadingHours =
+        getNightShadingHours();
+
+    if(nightShadingHours){
+
+        options.plugins.nightShading = {
+            ...nightShadingHours,
+            hoursPerBar: hoursPerBar
+        };
+
+    }
+
+
     options.plugins.tooltip =
         {
             callbacks: {
@@ -4395,6 +4609,7 @@ function createWaveChart(
                     "bar",
 
                 plugins: [
+                    nightShadingPlugin,
                     wavePeriodLabelPlugin
                 ],
 
@@ -4533,12 +4748,59 @@ function createPrecipChart(data){
     if(precipChart)
         precipChart.destroy();
 
+
+    const options = {
+
+        ...simpleChartOptions(),
+
+        scales:{
+
+            x:{
+                ticks:
+                    everyThirdHourTickOptions()
+            },
+
+            y:{
+
+                min:0,
+
+                max:100,
+
+                ticks:{
+                    stepSize:20,
+                    callback:value => value + "%"
+                }
+
+            }
+
+        }
+
+    };
+
+
+    const nightShadingHours =
+        getNightShadingHours();
+
+    if(nightShadingHours){
+
+        options.plugins.nightShading = {
+            ...nightShadingHours,
+            hoursPerBar: 1
+        };
+
+    }
+
+
     precipChart =
     new Chart(
         document.getElementById("precipChart"),
         {
 
         type:"line",
+
+        plugins: [
+            nightShadingPlugin
+        ],
 
         data:{
 
@@ -4556,33 +4818,7 @@ function createPrecipChart(data){
 
         },
 
-        options:{
-
-            ...simpleChartOptions(),
-
-            scales:{
-
-                x:{
-                    ticks:
-                        everyThirdHourTickOptions()
-                },
-
-                y:{
-
-                    min:0,
-
-                    max:100,
-
-                    ticks:{
-                        stepSize:20,
-                        callback:value => value + "%"
-                    }
-
-                }
-
-            }
-
-        }
+        options: options
 
     });
 
