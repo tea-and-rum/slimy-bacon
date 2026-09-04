@@ -857,6 +857,55 @@ button:hover {
     height: 130px !important;
 }
 
+.info-tooltip {
+    position: relative;
+    display: inline-flex;
+    vertical-align: middle;
+    margin-left: 6px;
+}
+
+.info-tooltip-trigger {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 15px;
+    line-height: 1;
+    font-weight: normal;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.info-tooltip-trigger:hover,
+.info-tooltip-trigger:focus {
+    color: #1479c9;
+}
+
+.info-tooltip-content {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 8px;
+    width: 220px;
+    max-width: 70vw;
+    background: #1e293b;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 1.4;
+    text-align: left;
+    padding: 8px 10px;
+    border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    z-index: 20;
+}
+
+.info-tooltip:hover .info-tooltip-content,
+.info-tooltip.info-tooltip-open .info-tooltip-content {
+    display: block;
+}
+
 #advisoryText {
     max-height: 205px;
     overflow-y: auto;
