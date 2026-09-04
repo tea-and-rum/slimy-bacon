@@ -1,5 +1,5 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.10.4
+// Version 1.11.0
 
 
 let windChart;
@@ -14,6 +14,7 @@ let tideStationCache = null;
 let lastTidePoints = [];
 let lastTideEvents = [];
 let lastSunData = null;
+let lastCurrentTimeHour = null;
 let nextSixDaysRequestId = 0;
 
 const locations = {};
@@ -1050,7 +1051,7 @@ function renderForecastConfidence(confidence){
 }
 
 function getHumanDecisionSummaryHTML(
-    weatherData,
+    forecast,
     boatSize,
     selectedDate,
     timeline,
@@ -1073,25 +1074,19 @@ function getHumanDecisionSummaryHTML(
 
     const hours = [];
 
-    weatherData.forEach(locationForecast => {
-        if(!Array.isArray(locationForecast)){
+    forecast.forEach((hour, hourIndex) => {
+        if(!hour){
             return;
         }
 
-        locationForecast.forEach((hour, hourIndex) => {
-            if(!hour){
-                return;
-            }
+        if(
+            selectedDate === todayString &&
+            hourIndex < now.getHours()
+        ){
+            return;
+        }
 
-            if(
-                selectedDate === todayString &&
-                hourIndex < now.getHours()
-            ){
-                return;
-            }
-
-            hours.push(hour);
-        });
+        hours.push(hour);
     });
 
     if(!hours.length){
@@ -1286,13 +1281,13 @@ function getHumanDecisionSummaryHTML(
         concerns.push("Rain");
     }
 
-    // Do not show a concern unless the timeline actually contains
-    // Sporty or Poor conditions. This prevents isolated forecast values
-    // from creating a concern on an otherwise all-day calm forecast.
+    // Do not show a concern unless the remaining timeline actually
+    // contains Sporty or Poor conditions. This prevents isolated
+    // forecast values from creating a concern on an otherwise
+    // all-day calm forecast.
     const hasUnfavorableTimeline =
-        document.querySelector(
-            "#timelineBar .timeline-sporty, #timelineBar .timeline-no-go"
-        ) !== null;
+        timeline.includes("SPORTY") ||
+        timeline.includes("POOR");
 
     const primary =
         hasUnfavorableTimeline && concerns.length
@@ -2650,6 +2645,7 @@ function clearSelections(){
     lastTidePoints = [];
     lastTideEvents = [];
     lastSunData = null;
+    lastCurrentTimeHour = null;
 
     window.scrollTo({
     top: 0,
@@ -2735,15 +2731,11 @@ function formatSearchedDateLabel(dateString){
 
 async function checkConditions(){
 
-    const selectedLocations =
-        selectedMapLocationName
-            ? [
-                selectedMapLocationName
-            ]
-            : [];
+    const selectedLocation =
+        selectedMapLocationName;
 
 
-    if(selectedLocations.length === 0){
+    if(!selectedLocation){
 
         document.getElementById("message").innerHTML =
             "Please click a boating location on the map.";
@@ -2795,7 +2787,7 @@ async function checkConditions(){
         ?.classList.add("hidden");
 
     getForecastConfidence(
-        selectedLocations[0],
+        selectedLocation,
         selectedDate
     )
     .then(confidence => {
@@ -2835,89 +2827,63 @@ async function checkConditions(){
 
         const sun =
             getSunTimes(
-                selectedLocations,
+                selectedLocation,
                 selectedDate
             );
         document.getElementById("checked").innerHTML =
             new Date().toLocaleString();
 
 
-        const allResults = [];
+        const [
+            forecast,
+            allAlerts
+        ] = await Promise.all([
 
-        const allWeather = [];
+            getHourlyWeather(
+                selectedLocation,
+                selectedDate
+            ),
 
-        let allAlerts=[];
+            getActiveAlerts(
+                selectedLocation
+            )
 
-
-
-        for(const location of selectedLocations){
-
-            const [
-    forecast,
-    alerts
-] = await Promise.all([
-
-    getHourlyWeather(
-        location,
-        selectedDate
-    ),
-
-    getActiveAlerts(
-        location
-    )
-
-]);
+        ]);
 
 
-if(!forecast){
+        if(!forecast){
 
-    document.getElementById("message").innerHTML =
-        "Weather data unavailable. Please try again.";
+            document.getElementById("message").innerHTML =
+                "Weather data unavailable. Please try again.";
 
-    return;
+            return;
 
-}
-
-
-applyAlertsToForecast(
-    forecast,
-    alerts
-);
+        }
 
 
-allWeather.push(forecast);
+        applyAlertsToForecast(
+            forecast,
+            allAlerts
+        );
 
 
-alerts.forEach(alert => {
-
-    allAlerts.push({
-        ...alert,
-        location: location
-    });
-
-});
-
-
-            const evaluated =
-                evaluateLocation(
-                    forecast,
-                    boatSize
-                );
-
-
-            allResults.push(
-                evaluated.hourlyResults
+        const evaluated =
+            evaluateLocation(
+                forecast,
+                boatSize
             );
-}
 
 
         const timeline =
-    combineTimelineResults(allResults);
+            evaluated.hourlyResults;
 
 
 /*
 For today's forecast, remove elapsed hours
-from all recommendations and summaries.
+from recommendations and summaries (though not
+from the timeline display itself - the whole
+day is always shown there, with the current-time
+line marking where "now" falls).
 
 The current hour remains included because
 conditions for that hour are still relevant.
@@ -2931,12 +2897,15 @@ const todayString = [
     String(now.getDate()).padStart(2, "0")
 ].join("-");
 
+const isToday =
+    selectedDate === todayString;
+
 
 const relevantTimeline =
     timeline.map((status, hourIndex) => {
 
         if(
-            selectedDate === todayString &&
+            isToday &&
             hourIndex < now.getHours()
         ){
             return "PAST";
@@ -2970,9 +2939,21 @@ const validTimeline =
             determineDailyResult(validTimeline);
 
 
+        lastCurrentTimeHour =
+            isToday
+                ? (
+                    now.getHours() +
+                    now.getMinutes() / 60
+                )
+                : null;
+
+
         createTimeline(
-    relevantTimeline,
-    sun
+    timeline,
+    sun,
+    isToday
+        ? timeToPercent(now)
+        : null
 );
 
 
@@ -3036,7 +3017,7 @@ const validTimeline =
 
         decisionSummaryElement.innerHTML =
             getHumanDecisionSummaryHTML(
-                allWeather,
+                forecast,
                 boatSize,
                 selectedDate,
                 validTimeline,
@@ -3056,39 +3037,35 @@ const validTimeline =
 
 
         await renderTideOverlay(
-            selectedLocations,
+            selectedLocation,
             selectedDate,
             sun
         );
 
 
-createEvidenceCharts(allWeather);
+createEvidenceCharts(forecast);
 const alertsForSelectedTime =
-    getAlertsFromForecast(allWeather);
-function getAlertsFromForecast(weatherData){
+    getAlertsFromForecast(forecast);
+function getAlertsFromForecast(hourlyForecast){
 
     const matchingAlerts = [];
 
 
-    weatherData.forEach(locationForecast => {
+    hourlyForecast.forEach(hour => {
 
-        locationForecast.forEach(hour => {
-
-            if(
-                !hour ||
-                !Array.isArray(hour.alerts)
-            ){
-                return;
-            }
+        if(
+            !hour ||
+            !Array.isArray(hour.alerts)
+        ){
+            return;
+        }
 
 
-            hour.alerts.forEach(alert => {
+        hour.alerts.forEach(alert => {
 
-                matchingAlerts.push(
-                    alert
-                );
-
-            });
+            matchingAlerts.push(
+                alert
+            );
 
         });
 
@@ -3103,7 +3080,7 @@ renderAdvisoryTile(
 );
 
 renderNextSixDays(
-    selectedLocations,
+    selectedLocation,
     selectedDate,
     boatSize,
     allAlerts
@@ -3338,7 +3315,7 @@ function renderAdvisoryTile(alerts){
 
 
 
-function createEvidenceCharts(weatherData){
+function createEvidenceCharts(forecast){
 
     const maxWind = [];
     const maxGust = [];
@@ -3346,31 +3323,20 @@ function createEvidenceCharts(weatherData){
     const maxWavePeriods = [];
     const maxPrecip = [];
 
-    /*
-Only use wind directions when exactly
-one location has been selected.
-*/
-const windDirections =
-    weatherData.length === 1
-        ? weatherData[0].map(hour =>
+    const windDirections =
+        forecast.map(hour =>
             hour
                 ? hour.windDirection || null
                 : null
-        )
-        : null;
+        );
 
     for(let hour = 0; hour < 24; hour++){
 
-        const availableHours =
-            weatherData
-                .map(location => location[hour])
-                .filter(hourData =>
-                    hourData !== null &&
-                    hourData !== undefined
-                );
+        const hourData =
+            forecast[hour];
 
 
-        if(availableHours.length === 0){
+        if(!hourData){
 
             maxWind.push(null);
             maxGust.push(null);
@@ -3382,107 +3348,60 @@ const windDirections =
         }
 
 
-        const hourlyWindValues =
-            availableHours
-                .map(hourData =>
-                    Number(hourData.wind)
-                )
-                .filter(value =>
-                    Number.isFinite(value)
-                );
-
-
-        const hourlyGustValues =
-            availableHours
-                .map(hourData =>
-                    Number(hourData.gust)
-                )
-                .filter(value =>
-                    Number.isFinite(value)
-                );
-
-
-        const hourlyWaveEntries =
-            availableHours
-                .map(hourData => ({
-
-                    height:
-                        Number(hourData.waves),
-
-                    period:
-                        Number(hourData.wavePeriod),
-
-                    originalHeight:
-                        hourData.waves,
-
-                    originalPeriod:
-                        hourData.wavePeriod
-
-                }))
-                .filter(entry => (
-
-                    entry.originalHeight !== null &&
-                    entry.originalHeight !== undefined &&
-                    Number.isFinite(entry.height)
-
-                ));
-
-
-        const maxWaveEntry =
-            hourlyWaveEntries.length
-                ? hourlyWaveEntries.reduce(
-                    (highest, entry) =>
-                        entry.height > highest.height
-                            ? entry
-                            : highest
-                )
-                : null;
-
-
-        const hourlyPrecipValues =
-            availableHours
-                .map(hourData =>
-                    Number(hourData.precip)
-                )
-                .filter(value =>
-                    Number.isFinite(value)
-                );
-
+        const windValue =
+            Number(hourData.wind);
 
         maxWind.push(
-            hourlyWindValues.length
-                ? Math.max(...hourlyWindValues)
+            Number.isFinite(windValue)
+                ? windValue
                 : null
         );
 
+
+        const gustValue =
+            Number(hourData.gust);
 
         maxGust.push(
-            hourlyGustValues.length
-                ? Math.max(...hourlyGustValues)
+            Number.isFinite(gustValue)
+                ? gustValue
                 : null
         );
 
+
+        const waveHeight =
+            Number(hourData.waves);
+
+        const hasWaveHeight =
+            hourData.waves !== null &&
+            hourData.waves !== undefined &&
+            Number.isFinite(waveHeight);
 
         maxWaves.push(
-            maxWaveEntry
-                ? maxWaveEntry.height
+            hasWaveHeight
+                ? waveHeight
                 : null
         );
 
+
+        const wavePeriod =
+            Number(hourData.wavePeriod);
 
         maxWavePeriods.push(
-            maxWaveEntry &&
-            maxWaveEntry.originalPeriod !== null &&
-            maxWaveEntry.originalPeriod !== undefined &&
-            Number.isFinite(maxWaveEntry.period)
-                ? maxWaveEntry.period
+            hasWaveHeight &&
+            hourData.wavePeriod !== null &&
+            hourData.wavePeriod !== undefined &&
+            Number.isFinite(wavePeriod)
+                ? wavePeriod
                 : null
         );
 
 
+        const precipValue =
+            Number(hourData.precip);
+
         maxPrecip.push(
-            hourlyPrecipValues.length
-                ? Math.max(...hourlyPrecipValues)
+            Number.isFinite(precipValue)
+                ? precipValue
                 : null
         );
 
@@ -4015,6 +3934,173 @@ function getNightShadingHours(){
 }
 
 
+/*
+Draws a vertical red line marking the current time on a
+chart, with a small "Now" flag at the top of the line. Only
+draws when lastCurrentTimeHour is set - i.e. when the
+selected forecast date is today.
+*/
+const currentTimeLinePlugin = {
+
+    id: "currentTimeLine",
+
+    afterDatasetsDraw(chart, args, options){
+
+        const currentHour =
+            options?.currentHour;
+
+        if(!Number.isFinite(currentHour)){
+            return;
+        }
+
+
+        const xScale =
+            chart.scales.x;
+
+        const chartArea =
+            chart.chartArea;
+
+        if(!xScale || !chartArea){
+            return;
+        }
+
+
+        const hoursPerBar =
+            options?.hoursPerBar || 1;
+
+        const lastIndex =
+            (chart.data.labels || []).length - 1;
+
+        if(lastIndex < 0){
+            return;
+        }
+
+
+        const index =
+            Math.max(
+                0,
+                Math.min(
+                    currentHour / hoursPerBar,
+                    lastIndex
+                )
+            );
+
+        const lowerIndex =
+            Math.floor(index);
+
+        const upperIndex =
+            Math.min(
+                lowerIndex + 1,
+                lastIndex
+            );
+
+        const lowerPixel =
+            xScale.getPixelForValue(lowerIndex);
+
+        const upperPixel =
+            xScale.getPixelForValue(upperIndex);
+
+        const x =
+            lowerIndex === upperIndex
+                ? lowerPixel
+                : lowerPixel +
+                  (upperPixel - lowerPixel) *
+                  (index - lowerIndex);
+
+
+        const ctx =
+            chart.ctx;
+
+        const lineColor =
+            "rgb(230, 30, 30)";
+
+
+        ctx.save();
+
+
+        /*
+        Vertical line marking the current time.
+        */
+        ctx.strokeStyle =
+            lineColor;
+
+        ctx.lineWidth =
+            1.5;
+
+        ctx.beginPath();
+
+        ctx.moveTo(x, chartArea.top);
+
+        ctx.lineTo(x, chartArea.bottom);
+
+        ctx.stroke();
+
+
+        /*
+        Small flag label at the top of the line, clamped
+        so it stays fully inside the chart even when the
+        line itself sits near an edge.
+        */
+        const label = "Now";
+
+        ctx.font = "bold 10px Arial";
+
+        const textWidth =
+            ctx.measureText(label).width;
+
+        const flagPaddingX = 5;
+
+        const flagWidth =
+            textWidth + flagPaddingX * 2;
+
+        const flagHeight = 14;
+
+        const flagX =
+            Math.max(
+                chartArea.left,
+                Math.min(
+                    x - flagWidth / 2,
+                    chartArea.right - flagWidth
+                )
+            );
+
+        const flagY =
+            chartArea.top;
+
+
+        ctx.fillStyle =
+            lineColor;
+
+        ctx.fillRect(
+            flagX,
+            flagY,
+            flagWidth,
+            flagHeight
+        );
+
+        ctx.fillStyle =
+            "#ffffff";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+        ctx.fillText(
+            label,
+            flagX + flagWidth / 2,
+            flagY + flagHeight / 2 + 0.5
+        );
+
+
+        ctx.restore();
+
+    }
+
+};
+
+
 function createWindChart(
     sustainedData,
     gustData,
@@ -4101,6 +4187,16 @@ function createWindChart(
     }
 
 
+    if(Number.isFinite(lastCurrentTimeHour)){
+
+        options.plugins.currentTimeLine = {
+            currentHour: lastCurrentTimeHour,
+            hoursPerBar: 1
+        };
+
+    }
+
+
     const selectedBoatSize =
         document.getElementById("boatSize")?.value ||
         "medium";
@@ -4141,7 +4237,8 @@ function createWindChart(
 
                 plugins: [
                     nightShadingPlugin,
-                    windDirectionArrowPlugin
+                    windDirectionArrowPlugin,
+                    currentTimeLinePlugin
                 ],
 
                 data: {
@@ -4527,6 +4624,16 @@ function createWaveChart(
     }
 
 
+    if(Number.isFinite(lastCurrentTimeHour)){
+
+        options.plugins.currentTimeLine = {
+            currentHour: lastCurrentTimeHour,
+            hoursPerBar: hoursPerBar
+        };
+
+    }
+
+
     options.plugins.tooltip =
         {
             callbacks: {
@@ -4610,7 +4717,8 @@ function createWaveChart(
 
                 plugins: [
                     nightShadingPlugin,
-                    wavePeriodLabelPlugin
+                    wavePeriodLabelPlugin,
+                    currentTimeLinePlugin
                 ],
 
                 data: {
@@ -4791,6 +4899,16 @@ function createPrecipChart(data){
     }
 
 
+    if(Number.isFinite(lastCurrentTimeHour)){
+
+        options.plugins.currentTimeLine = {
+            currentHour: lastCurrentTimeHour,
+            hoursPerBar: 1
+        };
+
+    }
+
+
     precipChart =
     new Chart(
         document.getElementById("precipChart"),
@@ -4799,7 +4917,8 @@ function createPrecipChart(data){
         type:"line",
 
         plugins: [
-            nightShadingPlugin
+            nightShadingPlugin,
+            currentTimeLinePlugin
         ],
 
         data:{
@@ -5627,81 +5746,6 @@ function determineDailyResult(results){
 
 }
 
-function combineTimelineResults(allResults){
-
-    const timeline = [];
-
-
-    for(let i = 0; i < 24; i++){
-
-        const hourlyValues =
-            allResults.map(location => location[i]);
-
-
-        const validValues =
-            hourlyValues.filter(value =>
-                value !== "PAST" &&
-                value !== null &&
-                value !== undefined
-            );
-
-
-        if(validValues.length === 0){
-
-            timeline.push("PAST");
-
-            continue;
-
-        }
-
-
-        if(validValues.includes("POOR")){
-
-            timeline.push("POOR");
-
-            continue;
-
-        }
-
-
-        if(validValues.includes("SPORTY")){
-
-            timeline.push("SPORTY");
-
-            continue;
-
-        }
-
-
-        /*
-When multiple locations are selected,
-use the most restrictive condition.
-
-If one location is CALM and another is FLAT,
-the combined result is CALM.
-
-The combined result is FLAT only when every
-available selected location is FLAT.
-*/
-
-if(validValues.includes("CALM")){
-
-    timeline.push("CALM");
-
-    continue;
-
-}
-
-
-timeline.push("FLAT");
-
-    }
-
-
-    return timeline;
-
-}
-
 
 function setupTideToggle(){
 
@@ -5811,7 +5855,7 @@ function clearTideOverlay(){
 
 
 async function renderTideOverlay(
-    selectedLocations,
+    selectedLocation,
     selectedDate,
     sun
 ){
@@ -5824,8 +5868,7 @@ async function renderTideOverlay(
 
     /*
     Always render sunrise and sunset, even if tide
-    data is hidden, unavailable, or multiple locations
-    are selected.
+    data is hidden or unavailable.
     */
 
     renderDailyEventTimes(
@@ -5834,25 +5877,8 @@ async function renderTideOverlay(
     );
 
 
-    /*
-    A single tide curve only makes sense for one
-    selected location. Different locations can use
-    different tide-prediction stations and timing.
-    */
-
-    if(
-        !Array.isArray(selectedLocations) ||
-        selectedLocations.length !== 1
-    ){
-        return;
-    }
-
-
-    const locationName =
-        selectedLocations[0];
-
     const coords =
-        locations[locationName];
+        locations[selectedLocation];
 
 
     if(!coords){
@@ -5936,7 +5962,7 @@ async function renderTideOverlay(
         */
 
         console.warn(
-            `Tide data unavailable for ${locationName}:`,
+            `Tide data unavailable for ${selectedLocation}:`,
             error
         );
 
@@ -6662,7 +6688,7 @@ function setupNextSixDaysClickHandlers(){
 }
 
 async function renderNextSixDays(
-    selectedLocations,
+    selectedLocation,
     selectedDate,
     boatSize,
     currentAlerts = []
@@ -6688,20 +6714,14 @@ async function renderNextSixDays(
     const dayResults = await Promise.all(
         dates.map(async date => {
             try {
-                const locationResults = await Promise.all(
-                    selectedLocations.map(async location => {
-                        const forecast = await getHourlyWeather(location, date);
-                        const locationAlerts = currentAlerts.filter(alert =>
-                            !alert.location || alert.location === location
-                        );
-                        applyAlertsToForecast(forecast, locationAlerts);
-                        return evaluateLocation(forecast, boatSize).hourlyResults;
-                    })
-                );
+                const forecast =
+                    await getHourlyWeather(selectedLocation, date);
+
+                applyAlertsToForecast(forecast, currentAlerts);
 
                 return {
                     date,
-                    timeline: combineTimelineResults(locationResults)
+                    timeline: evaluateLocation(forecast, boatSize).hourlyResults
                 };
             }
             catch(error){
@@ -6741,7 +6761,7 @@ async function renderNextSixDays(
 }
 
 
-function createTimeline(results, sun){
+function createTimeline(results, sun, currentTimePercent){
 
     const bar =
         document.getElementById("timelineBar");
@@ -6813,6 +6833,34 @@ else{
         .getElementById("sunsetMarker")
         .style.left =
         sun.sunsetPercent + "%";
+
+
+    const currentTimeMarker =
+        document.getElementById(
+            "currentTimeMarker"
+        );
+
+    if(currentTimeMarker){
+
+        if(Number.isFinite(currentTimePercent)){
+
+            currentTimeMarker.classList.remove(
+                "hidden"
+            );
+
+            currentTimeMarker.style.left =
+                currentTimePercent + "%";
+
+        }
+        else{
+
+            currentTimeMarker.classList.add(
+                "hidden"
+            );
+
+        }
+
+    }
 
 }
 
@@ -8521,130 +8569,49 @@ function applyAlertsToForecast(forecast, alerts){
     });
 
 }
-function getSunTimes(selectedLocations, selectedDate){
+function getSunTimes(selectedLocation, selectedDate){
 
 
     const date =
         new Date(selectedDate + "T12:00:00");
 
 
-    const sunriseTimes = [];
-
-    const sunsetTimes = [];
-
-
-    selectedLocations.forEach(location => {
+    const coords =
+        locations[selectedLocation];
 
 
-        const coords =
-            locations[location];
-
-
-        const times =
-            SunCalc.getTimes(
-                date,
-                coords.lat,
-                coords.lon
-            );
-
-
-        sunriseTimes.push(times.sunrise);
-
-        sunsetTimes.push(times.sunset);
-
-
-    });
-
-
-
-    const earliestSunrise =
-        new Date(
-            Math.min(
-                ...sunriseTimes.map(time => time.getTime())
-            )
+    const times =
+        SunCalc.getTimes(
+            date,
+            coords.lat,
+            coords.lon
         );
-
-
-    const latestSunrise =
-        new Date(
-            Math.max(
-                ...sunriseTimes.map(time => time.getTime())
-            )
-        );
-
-
-    const earliestSunset =
-        new Date(
-            Math.min(
-                ...sunsetTimes.map(time => time.getTime())
-            )
-        );
-
-
-    const latestSunset =
-        new Date(
-            Math.max(
-                ...sunsetTimes.map(time => time.getTime())
-            )
-        );
-
 
 
     return {
 
         sunrise:
-            formatTimeRange(
-                earliestSunrise,
-                latestSunrise
-            ),
+            formatClockTime(times.sunrise),
 
         sunset:
-            formatTimeRange(
-                earliestSunset,
-                latestSunset
-            ),
+            formatClockTime(times.sunset),
 
         sunriseDate:
-            earliestSunrise,
+            times.sunrise,
 
         sunsetDate:
-            latestSunset,
+            times.sunset,
 
         sunrisePercent:
-            timeToPercent(earliestSunrise),
+            timeToPercent(times.sunrise),
 
         sunsetPercent:
-            timeToPercent(latestSunset)
+            timeToPercent(times.sunset)
 
     };
 
 
 }
-
-
-function formatTimeRange(earliest, latest){
-
-
-    const earliestText =
-        formatClockTime(earliest);
-
-
-    const latestText =
-        formatClockTime(latest);
-
-
-    if(earliestText === latestText){
-
-        return earliestText;
-
-    }
-
-
-    return earliestText + " - " + latestText;
-
-
-}
-
 
 
 function formatClockTime(date){
