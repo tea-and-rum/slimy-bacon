@@ -1,11 +1,13 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.13.1
+// Version 1.14.0
 
 
 let windChart;
 let waveChart;
 let precipChart;
 let tideChart;
+let crabbingChart;
+let fishingChart;
 
 let lastWaveHeightsRaw = null;
 let lastWavePeriodsRaw = null;
@@ -2463,7 +2465,9 @@ function updateChartAppearance(isDarkMode){
         windChart,
         waveChart,
         precipChart,
-        tideChart
+        tideChart,
+        crabbingChart,
+        fishingChart
     ].forEach(chart => {
 
         if(!chart){
@@ -4602,18 +4606,10 @@ const wavePeriodLabelPlugin = {
                 }
 
 
-                const waveCondition =
-                    getWaveCondition(
-                        waveHeight,
-                        period,
-                        options?.boatSize || "medium"
-                    );
-
-
                 ctx.fillStyle =
-    isDarkMode
-        ? "#cbd5e1"
-        : "#475569";
+                    isDarkMode
+                        ? "#cbd5e1"
+                        : "#475569";
 
 
                 ctx.fillText(
@@ -5119,18 +5115,11 @@ function createPrecipChart(data){
 
 
 /*
-Builds the Tides chart from a day's hourly height
-predictions plus the day's high/low tide events. hourly
-predictions may be null/unavailable, in which case the
-chart still renders (empty) and the summary line explains
-why.
+Builds a 24-length array of tide heights (feet), one
+entry per hour of the day, from NOAA's hourly prediction
+points. Missing hours stay null.
 */
-function createTideChart(hourlyPredictions, highLowEvents){
-
-    if(tideChart){
-        tideChart.destroy();
-    }
-
+function buildHourlyTideHeights(hourlyPredictions){
 
     const heights =
         new Array(24).fill(null);
@@ -5153,6 +5142,282 @@ function createTideChart(hourlyPredictions, highLowEvents){
         });
 
     }
+
+    return heights;
+
+}
+
+
+/*
+Estimates how fast the tide is moving at each hour, from
+the numerical rate of change of the day's actual NOAA
+height curve - near zero at slack (high/low tide), and at
+its steepest between a high and a low. Normalized against
+that day's own steepest point, so it always spans a full
+0-100% range. This is a rule-of-thumb signal, not a
+calibrated current-speed measurement.
+*/
+function computeTideMovement(heights){
+
+    const rates =
+        new Array(24).fill(null);
+
+    for(let hour = 0; hour < 24; hour++){
+
+        const previous =
+            hour > 0 ? heights[hour - 1] : null;
+
+        const next =
+            hour < 23 ? heights[hour + 1] : null;
+
+        const current =
+            heights[hour];
+
+
+        if(previous !== null && next !== null){
+            rates[hour] = (next - previous) / 2;
+        }
+        else if(next !== null && current !== null){
+            rates[hour] = next - current;
+        }
+        else if(previous !== null && current !== null){
+            rates[hour] = current - previous;
+        }
+
+    }
+
+
+    const maxAbsRate =
+        Math.max(
+            0,
+            ...rates
+                .filter(rate => rate !== null)
+                .map(Math.abs)
+        );
+
+
+    return rates.map(rate => {
+
+        if(rate === null){
+            return null;
+        }
+
+        return {
+            movementPercent:
+                maxAbsRate > 0
+                    ? Math.max(
+                        0,
+                        Math.min(
+                            100,
+                            (Math.abs(rate) / maxAbsRate) * 100
+                        )
+                    )
+                    : 0,
+            isIncoming:
+                rate > 0
+        };
+
+    });
+
+}
+
+
+/*
+Real solar altitude (degrees above/below the horizon) for
+every hour of the selected day at this location, using the
+same SunCalc library already used for sunrise/sunset.
+Positive = daytime, negative = below the horizon.
+*/
+function computeHourlySolarAltitudes(lat, lon, selectedDate){
+
+    const altitudes =
+        new Array(24).fill(null);
+
+    for(let hour = 0; hour < 24; hour++){
+
+        const date =
+            new Date(
+                `${selectedDate}T${String(hour).padStart(2, "0")}:00:00`
+            );
+
+        if(Number.isNaN(date.getTime())){
+            continue;
+        }
+
+        const position =
+            SunCalc.getPosition(date, lat, lon);
+
+        altitudes[hour] =
+            position.altitude * (180 / Math.PI);
+
+    }
+
+    return altitudes;
+
+}
+
+
+/*
+Crabbing score (0-100%) for each hour between sunrise and
+sunset only. Combines tide movement with how close the sun
+is to the horizon (peaking right at sunrise/sunset, dipping
+at midday), plus a mild bonus for incoming over outgoing
+tide. This is a stylized rule-of-thumb, not a validated
+prediction - real crab activity also depends on water
+temperature, salinity, and other factors this doesn't
+account for.
+*/
+function computeCrabbingScores(
+    heights,
+    altitudes,
+    sunriseHour,
+    sunsetHour
+){
+
+    const movement =
+        computeTideMovement(heights);
+
+    const maxAltitude =
+        Math.max(
+            0,
+            ...altitudes.filter(Number.isFinite)
+        );
+
+    const scores =
+        new Array(24).fill(null);
+
+    const firstDaylightHour =
+        Math.floor(sunriseHour);
+
+    const lastDaylightHour =
+        Math.floor(sunsetHour);
+
+
+    for(let hour = 0; hour < 24; hour++){
+
+        if(
+            hour < firstDaylightHour ||
+            hour > lastDaylightHour ||
+            !movement[hour] ||
+            !Number.isFinite(altitudes[hour])
+        ){
+            continue;
+        }
+
+
+        const brightness =
+            maxAltitude > 0
+                ? Math.max(
+                    0,
+                    Math.min(1, altitudes[hour] / maxAltitude)
+                )
+                : 0;
+
+        const lightFactor =
+            1 - brightness;
+
+        const incomingBonus =
+            movement[hour].isIncoming
+                ? 1
+                : 0.8;
+
+        const rawScore =
+            (movement[hour].movementPercent / 100) *
+            lightFactor *
+            incomingBonus *
+            100;
+
+        scores[hour] =
+            Math.max(0, Math.min(100, rawScore));
+
+    }
+
+    return scores;
+
+}
+
+
+/*
+Fishing scores (0-100%) across the full 24 hours, split
+into two techniques: topwater (favored in low light - dawn,
+dusk, night) and jigging/deep (favored in bright daylight).
+The two always add up to the tide-movement percentage for
+that hour, so a slack tide is 0% regardless of time of day,
+and a strong moving tide splits between the two colors
+based on how bright it is at that hour.
+*/
+function computeFishingScores(heights, altitudes){
+
+    const movement =
+        computeTideMovement(heights);
+
+    const maxAltitude =
+        Math.max(
+            0,
+            ...altitudes.filter(Number.isFinite)
+        );
+
+    const topwater =
+        new Array(24).fill(null);
+
+    const jig =
+        new Array(24).fill(null);
+
+
+    for(let hour = 0; hour < 24; hour++){
+
+        if(
+            !movement[hour] ||
+            !Number.isFinite(altitudes[hour])
+        ){
+            continue;
+        }
+
+
+        const darkness =
+            altitudes[hour] <= 0
+                ? 1
+                : (
+                    maxAltitude > 0
+                        ? Math.max(
+                            0,
+                            Math.min(
+                                1,
+                                1 - altitudes[hour] / maxAltitude
+                            )
+                        )
+                        : 1
+                );
+
+        const total =
+            movement[hour].movementPercent;
+
+        topwater[hour] = total * darkness;
+        jig[hour] = total * (1 - darkness);
+
+    }
+
+    return { topwater, jig };
+
+}
+
+
+/*
+Builds the Tides chart from a day's hourly height
+predictions plus the day's high/low tide events. Hourly
+predictions may be null/unavailable, in which case the
+chart still renders (empty) and the summary line explains
+why.
+*/
+function createTideChart(hourlyPredictions, highLowEvents){
+
+    if(tideChart){
+        tideChart.destroy();
+    }
+
+
+    const heights =
+        buildHourlyTideHeights(hourlyPredictions);
 
 
     const events =
@@ -5281,6 +5546,285 @@ function createTideChart(hourlyPredictions, highLowEvents){
                             tension: 0.3,
                             spanGaps: true,
                             pointRadius: 0
+                        }
+                    ]
+
+                },
+
+                options: options
+
+            }
+        );
+
+}
+
+
+/*
+Renders the crabbing-likelihood bar chart from per-hour
+0-100% scores. Hours outside sunrise-sunset are left null
+so no bar is drawn for them.
+*/
+function createCrabbingChart(scores){
+
+    if(crabbingChart){
+        crabbingChart.destroy();
+    }
+
+
+    const validScores =
+        (scores || []).filter(Number.isFinite);
+
+
+    const summaryElement =
+        document.getElementById("crabbingSummary");
+
+    if(summaryElement){
+
+        if(validScores.length){
+
+            const bestIndex =
+                scores.indexOf(
+                    Math.max(...validScores)
+                );
+
+            summaryElement.textContent =
+                `Best around ${formatHour(bestIndex)} ` +
+                `(${Math.round(scores[bestIndex])}%)`;
+
+        }
+        else{
+
+            summaryElement.textContent =
+                "Crabbing data unavailable";
+
+        }
+
+    }
+
+
+    const options =
+        simpleChartOptions();
+
+    options.scales.y =
+        {
+            min: 0,
+            max: 100,
+            ticks: {
+                stepSize: 20,
+                callback: value => value + "%"
+            }
+        };
+
+
+    const nightShadingHours =
+        getNightShadingHours();
+
+    if(nightShadingHours){
+
+        options.plugins.nightShading = {
+            ...nightShadingHours,
+            hoursPerBar: 1
+        };
+
+    }
+
+
+    if(Number.isFinite(lastCurrentTimeHour)){
+
+        options.plugins.currentTimeLine = {
+            currentHour: lastCurrentTimeHour,
+            hoursPerBar: 1
+        };
+
+    }
+
+
+    crabbingChart =
+        new Chart(
+            document.getElementById("crabbingChart"),
+            {
+
+                type: "bar",
+
+                plugins: [
+                    nightShadingPlugin,
+                    currentTimeLinePlugin
+                ],
+
+                data: {
+
+                    labels: hourLabels(),
+
+                    datasets: [
+                        {
+                            data: scores || new Array(24).fill(null),
+                            backgroundColor: "#0f9b6c",
+                            borderRadius: 3
+                        }
+                    ]
+
+                },
+
+                options: options
+
+            }
+        );
+
+}
+
+
+/*
+Renders the fishing-likelihood chart as a stacked bar:
+total bar height is the tide-movement percentage for that
+hour (so slack tide is always 0%, day or night), split by
+color into topwater (favored in low light) and jigging/deep
+(favored in bright daylight).
+*/
+function createFishingChart(topwater, jig){
+
+    if(fishingChart){
+        fishingChart.destroy();
+    }
+
+
+    const combinedTotals =
+        (topwater || []).map((value, index) => {
+
+            const jigValue =
+                (jig || [])[index];
+
+            if(!Number.isFinite(value) && !Number.isFinite(jigValue)){
+                return null;
+            }
+
+            return (
+                (Number.isFinite(value) ? value : 0) +
+                (Number.isFinite(jigValue) ? jigValue : 0)
+            );
+
+        });
+
+    const validTotals =
+        combinedTotals
+            .map((value, index) => ({ value, index }))
+            .filter(entry => Number.isFinite(entry.value));
+
+
+    const summaryElement =
+        document.getElementById("fishingSummary");
+
+    if(summaryElement){
+
+        if(validTotals.length){
+
+            const best =
+                validTotals.reduce((top, entry) =>
+                    entry.value > top.value ? entry : top
+                );
+
+            const technique =
+                (topwater[best.index] || 0) >=
+                (jig[best.index] || 0)
+                    ? "Topwater"
+                    : "Jig/Deep";
+
+            summaryElement.textContent =
+                `Best around ${formatHour(best.index)} - ` +
+                `${technique} (${Math.round(best.value)}%)`;
+
+        }
+        else{
+
+            summaryElement.textContent =
+                "Fishing data unavailable";
+
+        }
+
+    }
+
+
+    const options =
+        simpleChartOptions();
+
+    options.plugins.legend.display =
+        true;
+
+    options.plugins.legend.labels =
+        {
+            boxWidth: 12,
+            font: {
+                size: 11
+            }
+        };
+
+    options.scales.x.stacked =
+        true;
+
+    options.scales.y =
+        {
+            stacked: true,
+            min: 0,
+            max: 100,
+            ticks: {
+                stepSize: 20,
+                callback: value => value + "%"
+            }
+        };
+
+
+    const nightShadingHours =
+        getNightShadingHours();
+
+    if(nightShadingHours){
+
+        options.plugins.nightShading = {
+            ...nightShadingHours,
+            hoursPerBar: 1
+        };
+
+    }
+
+
+    if(Number.isFinite(lastCurrentTimeHour)){
+
+        options.plugins.currentTimeLine = {
+            currentHour: lastCurrentTimeHour,
+            hoursPerBar: 1
+        };
+
+    }
+
+
+    fishingChart =
+        new Chart(
+            document.getElementById("fishingChart"),
+            {
+
+                type: "bar",
+
+                plugins: [
+                    nightShadingPlugin,
+                    currentTimeLinePlugin
+                ],
+
+                data: {
+
+                    labels: hourLabels(),
+
+                    datasets: [
+                        {
+                            label: "Topwater",
+                            data: topwater || new Array(24).fill(null),
+                            backgroundColor: "#f59e0b",
+                            stack: "fishing",
+                            borderRadius: 3
+                        },
+                        {
+                            label: "Jig/Deep",
+                            data: jig || new Array(24).fill(null),
+                            backgroundColor: "#1479c9",
+                            stack: "fishing",
+                            borderRadius: 3
                         }
                     ]
 
@@ -6124,6 +6668,8 @@ async function renderTideOverlay(
     if(!coords){
 
         createTideChart(null, []);
+        createCrabbingChart(null);
+        createFishingChart(null, null);
 
         return;
     }
@@ -6141,6 +6687,8 @@ async function renderTideOverlay(
         if(!station){
 
             createTideChart(null, []);
+            createCrabbingChart(null);
+            createFishingChart(null, null);
 
             return;
         }
@@ -6170,6 +6718,62 @@ async function renderTideOverlay(
         );
 
 
+        /*
+        Best crabbing/fishing times: derived from the same
+        tide-height curve plus the real solar position
+        across the day - a rule-of-thumb visualization, not
+        a validated prediction.
+        */
+        const heights =
+            buildHourlyTideHeights(hourlyPredictions);
+
+        const altitudes =
+            computeHourlySolarAltitudes(
+                coords.lat,
+                coords.lon,
+                selectedDate
+            );
+
+        if(
+            sun?.sunriseDate instanceof Date &&
+            sun?.sunsetDate instanceof Date &&
+            !Number.isNaN(sun.sunriseDate.getTime()) &&
+            !Number.isNaN(sun.sunsetDate.getTime())
+        ){
+
+            const sunriseHour =
+                sun.sunriseDate.getHours() +
+                sun.sunriseDate.getMinutes() / 60;
+
+            const sunsetHour =
+                sun.sunsetDate.getHours() +
+                sun.sunsetDate.getMinutes() / 60;
+
+            createCrabbingChart(
+                computeCrabbingScores(
+                    heights,
+                    altitudes,
+                    sunriseHour,
+                    sunsetHour
+                )
+            );
+
+        }
+        else{
+
+            createCrabbingChart(null);
+
+        }
+
+        const fishingScores =
+            computeFishingScores(heights, altitudes);
+
+        createFishingChart(
+            fishingScores.topwater,
+            fishingScores.jig
+        );
+
+
         renderDailyEventTimes(
             highLowEvents,
             sun
@@ -6189,6 +6793,8 @@ async function renderTideOverlay(
         );
 
         createTideChart(null, []);
+        createCrabbingChart(null);
+        createFishingChart(null, null);
 
         renderDailyEventTimes(
             [],
