@@ -1,5 +1,5 @@
 // Chesapeake Bay Boating Conditions
-// Version 1.14.0
+// Version 1.15.1
 
 
 let windChart;
@@ -206,6 +206,8 @@ window.onload = function(){
     setupForecastConfidenceUI();
 
     setupWaveChartResizeHandling();
+
+    setupInfoTooltips();
 
 };
 
@@ -5258,21 +5260,19 @@ function computeHourlySolarAltitudes(lat, lon, selectedDate){
 
 
 /*
-Crabbing score (0-100%) for each hour between sunrise and
-sunset only. Combines tide movement with how close the sun
-is to the horizon (peaking right at sunrise/sunset, dipping
-at midday), plus a mild bonus for incoming over outgoing
-tide. This is a stylized rule-of-thumb, not a validated
-prediction - real crab activity also depends on water
-temperature, salinity, and other factors this doesn't
-account for.
+Crabbing score (0-100%) for every hour of the day.
+Combines tide movement with how close the sun is to the
+horizon (peaking right at sunrise/sunset and staying high
+overnight, dipping at midday), plus a mild bonus for
+incoming over outgoing tide. Plotted across the full 24
+hours rather than sunrise-to-sunset only, since Maryland's
+legal crabbing hours vary by season and location - this
+chart doesn't assume any particular cutoff. This is a
+stylized rule-of-thumb, not a validated prediction - real
+crab activity also depends on water temperature, salinity,
+and other factors this doesn't account for.
 */
-function computeCrabbingScores(
-    heights,
-    altitudes,
-    sunriseHour,
-    sunsetHour
-){
+function computeCrabbingScores(heights, altitudes){
 
     const movement =
         computeTideMovement(heights);
@@ -5286,18 +5286,10 @@ function computeCrabbingScores(
     const scores =
         new Array(24).fill(null);
 
-    const firstDaylightHour =
-        Math.floor(sunriseHour);
-
-    const lastDaylightHour =
-        Math.floor(sunsetHour);
-
 
     for(let hour = 0; hour < 24; hour++){
 
         if(
-            hour < firstDaylightHour ||
-            hour > lastDaylightHour ||
             !movement[hour] ||
             !Number.isFinite(altitudes[hour])
         ){
@@ -5561,8 +5553,7 @@ function createTideChart(hourlyPredictions, highLowEvents){
 
 /*
 Renders the crabbing-likelihood bar chart from per-hour
-0-100% scores. Hours outside sunrise-sunset are left null
-so no bar is drawn for them.
+0-100% scores, across the full 24 hours.
 */
 function createCrabbingChart(scores){
 
@@ -5851,6 +5842,12 @@ function everyThirdHourTickOptions(){
         autoSkip:
             false,
 
+        maxRotation:
+            0,
+
+        minRotation:
+            0,
+
         callback(value, index){
 
             return (
@@ -6073,6 +6070,79 @@ function setupWaveChartResizeHandling(){
                     },
                     200
                 );
+
+        }
+    );
+
+}
+
+
+/*
+Wires up the small "ⓘ" info buttons next to chart titles.
+Works as a hover on desktop (handled purely by CSS) and as
+a tap-to-toggle on touch devices, closing again when the
+person taps anywhere else on the page.
+*/
+function setupInfoTooltips(){
+
+    const triggers =
+        document.querySelectorAll(
+            ".info-tooltip-trigger"
+        );
+
+    triggers.forEach(trigger => {
+
+        trigger.addEventListener(
+            "click",
+            function(event){
+
+                event.stopPropagation();
+
+                const tooltip =
+                    trigger.closest(".info-tooltip");
+
+                if(!tooltip){
+                    return;
+                }
+
+                const isOpen =
+                    tooltip.classList.contains(
+                        "info-tooltip-open"
+                    );
+
+                document
+                    .querySelectorAll(".info-tooltip-open")
+                    .forEach(open => {
+                        open.classList.remove(
+                            "info-tooltip-open"
+                        );
+                    });
+
+                if(!isOpen){
+
+                    tooltip.classList.add(
+                        "info-tooltip-open"
+                    );
+
+                }
+
+            }
+        );
+
+    });
+
+
+    document.addEventListener(
+        "click",
+        function(){
+
+            document
+                .querySelectorAll(".info-tooltip-open")
+                .forEach(open => {
+                    open.classList.remove(
+                        "info-tooltip-open"
+                    );
+                });
 
         }
     );
@@ -6734,36 +6804,9 @@ async function renderTideOverlay(
                 selectedDate
             );
 
-        if(
-            sun?.sunriseDate instanceof Date &&
-            sun?.sunsetDate instanceof Date &&
-            !Number.isNaN(sun.sunriseDate.getTime()) &&
-            !Number.isNaN(sun.sunsetDate.getTime())
-        ){
-
-            const sunriseHour =
-                sun.sunriseDate.getHours() +
-                sun.sunriseDate.getMinutes() / 60;
-
-            const sunsetHour =
-                sun.sunsetDate.getHours() +
-                sun.sunsetDate.getMinutes() / 60;
-
-            createCrabbingChart(
-                computeCrabbingScores(
-                    heights,
-                    altitudes,
-                    sunriseHour,
-                    sunsetHour
-                )
-            );
-
-        }
-        else{
-
-            createCrabbingChart(null);
-
-        }
+        createCrabbingChart(
+            computeCrabbingScores(heights, altitudes)
+        );
 
         const fishingScores =
             computeFishingScores(heights, altitudes);
