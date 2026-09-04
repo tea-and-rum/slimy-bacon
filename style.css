@@ -3,6 +3,7 @@ body {
     background: #f5f5f5;
     margin: 0;
     padding: 20px;
+    overflow-x: hidden;
 }
 
 h1,
@@ -1526,10 +1527,15 @@ body.dark-mode .location-map-section {
 }
 
 .location-map {
-    width: 100%;
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
     height: 500px;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
+    border: none;
+    border-radius: 0;
     overflow: hidden;
     box-sizing: border-box;
 }
@@ -1556,10 +1562,6 @@ body.dark-mode .location-map-section {
 
 body.dark-mode .map-instructions {
     color: #94a3b8;
-}
-
-body.dark-mode .location-map {
-    border-color: #475569;
 }
 
 body.dark-mode .map-selection-status {
