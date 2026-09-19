@@ -8,63 +8,63 @@
     "airTempF": 76.1
   },
   "44042": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 13.42164,
-    "gustMph": 17.89552,
+    "observedAt": "4026-09-19T17:18:00.000Z",
+    "windSpeedMph": 6.71082,
+    "gustMph": 8.94776,
     "waveHeightFt": 0.6561680000000001,
     "wavePeriodSec": null,
-    "airTempF": 74.12
+    "airTempF": 76.28
   },
   "44058": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 11.184700000000001,
-    "gustMph": 17.89552,
+    "observedAt": "4026-09-19T17:18:00.000Z",
+    "windSpeedMph": 6.71082,
+    "gustMph": 8.94776,
     "waveHeightFt": null,
+    "wavePeriodSec": null,
+    "airTempF": 76.28
+  },
+  "44062": {
+    "observedAt": "4026-09-19T17:18:00.000Z",
+    "windSpeedMph": 4.47388,
+    "gustMph": 8.94776,
+    "waveHeightFt": 0.6561680000000001,
+    "wavePeriodSec": null,
+    "airTempF": 73.04
+  },
+  "44063": {
+    "observedAt": "4026-09-19T17:18:00.000Z",
+    "windSpeedMph": 2.23694,
+    "gustMph": 4.47388,
+    "waveHeightFt": 0.6561680000000001,
+    "wavePeriodSec": null,
+    "airTempF": 76.28
+  },
+  "44072": {
+    "observedAt": "4026-09-19T17:18:00.000Z",
+    "windSpeedMph": 4.47388,
+    "gustMph": 8.94776,
+    "waveHeightFt": 0.9842519999999999,
+    "wavePeriodSec": 2,
+    "airTempF": 78.44
+  },
+  "44080": {
+    "observedAt": "4026-09-19T17:18:00.000Z",
+    "windSpeedMph": 6.71082,
+    "gustMph": 8.94776,
+    "waveHeightFt": 0.32808400000000004,
     "wavePeriodSec": null,
     "airTempF": 75.2
   },
-  "44062": {
-    "observedAt": "4026-09-19T14:06:00.000Z",
-    "windSpeedMph": 11.184700000000001,
-    "gustMph": 15.65858,
-    "waveHeightFt": 0.9842519999999999,
-    "wavePeriodSec": 3,
-    "airTempF": 69.25999999999999
-  },
-  "44063": {
-    "observedAt": "4026-09-19T14:12:00.000Z",
-    "windSpeedMph": 13.42164,
-    "gustMph": 15.65858,
-    "waveHeightFt": 0.9842519999999999,
-    "wavePeriodSec": 2,
-    "airTempF": 68.72
-  },
-  "44072": {
-    "observedAt": "4026-09-19T14:06:00.000Z",
-    "windSpeedMph": 13.42164,
-    "gustMph": 17.89552,
-    "waveHeightFt": 0.9842519999999999,
-    "wavePeriodSec": 2,
-    "airTempF": 75.74000000000001
-  },
-  "44080": {
-    "observedAt": "4026-09-19T14:06:00.000Z",
-    "windSpeedMph": 6.71082,
-    "gustMph": 15.65858,
-    "waveHeightFt": 0.32808400000000004,
-    "wavePeriodSec": null,
-    "airTempF": 69.25999999999999
-  },
   "44084": {
-    "observedAt": "4026-09-19T13:56:00.000Z",
+    "observedAt": "4026-09-19T16:56:00.000Z",
     "windSpeedMph": null,
     "gustMph": null,
-    "waveHeightFt": 2.952756,
-    "wavePeriodSec": 4,
+    "waveHeightFt": 3.28084,
+    "wavePeriodSec": 5,
     "airTempF": null
   },
   "44087": {
-    "observedAt": "4026-09-19T13:56:00.000Z",
+    "observedAt": "4026-09-19T16:56:00.000Z",
     "windSpeedMph": null,
     "gustMph": null,
     "waveHeightFt": 1.64042,
@@ -72,223 +72,223 @@
     "airTempF": null
   },
   "44088": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
+    "observedAt": "4026-09-19T17:00:00.000Z",
     "windSpeedMph": null,
     "gustMph": null,
-    "waveHeightFt": 3.6089240000000005,
+    "waveHeightFt": 4.265092,
     "wavePeriodSec": 5,
-    "airTempF": 78.08
+    "airTempF": 77.9
   },
   "44091": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
+    "observedAt": "4026-09-19T17:00:00.000Z",
     "windSpeedMph": null,
     "gustMph": null,
-    "waveHeightFt": 5.249344000000001,
+    "waveHeightFt": 4.593176,
     "wavePeriodSec": 6,
-    "airTempF": 69.98
+    "airTempF": 68.9
   },
   "44099": {
-    "observedAt": "4026-09-19T13:56:00.000Z",
+    "observedAt": "4026-09-19T16:56:00.000Z",
     "windSpeedMph": null,
     "gustMph": null,
-    "waveHeightFt": 2.6246720000000003,
+    "waveHeightFt": 2.952756,
     "wavePeriodSec": 4,
     "airTempF": null
   },
   "sdhn4": {
-    "observedAt": "4026-09-19T13:54:00.000Z",
-    "windSpeedMph": 11.408394,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 13.869028000000002,
     "gustMph": 16.105968,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 65.12
+    "airTempF": 68.72
   },
   "acyn4": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
+    "observedAt": "4026-09-19T17:00:00.000Z",
     "windSpeedMph": null,
     "gustMph": null,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 70.7
+    "airTempF": 70.34
   },
   "cman4": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 16.105968,
-    "gustMph": 21.922012000000002,
-    "waveHeightFt": null,
-    "wavePeriodSec": null,
-    "airTempF": 72.68
-  },
-  "sjsn4": {
-    "observedAt": "4026-09-19T13:54:00.000Z",
+    "observedAt": "4026-09-19T17:00:00.000Z",
     "windSpeedMph": 13.869028000000002,
     "gustMph": 18.342908,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 69.98
+    "airTempF": 72.86
   },
-  "brnd1": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 17.224438000000003,
-    "gustMph": 19.685072,
-    "waveHeightFt": null,
-    "wavePeriodSec": null,
-    "airTempF": 71.06
-  },
-  "lwsd1": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 18.342908,
-    "gustMph": 21.922012000000002,
+  "sjsn4": {
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 10.289924,
+    "gustMph": 13.869028000000002,
     "waveHeightFt": null,
     "wavePeriodSec": null,
     "airTempF": 73.22
   },
-  "deld1": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 11.408394,
-    "gustMph": 19.685072,
+  "brnd1": {
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 17.224438000000003,
+    "gustMph": 18.342908,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 69.8
+    "airTempF": 72.86
+  },
+  "lwsd1": {
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 20.803542000000004,
+    "gustMph": 24.158952000000003,
+    "waveHeightFt": null,
+    "wavePeriodSec": null,
+    "airTempF": 73.75999999999999
+  },
+  "deld1": {
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 8.052984,
+    "gustMph": 11.408394,
+    "waveHeightFt": null,
+    "wavePeriodSec": null,
+    "airTempF": 72.32
   },
   "ocim2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
+    "observedAt": "4026-09-19T17:00:00.000Z",
     "windSpeedMph": null,
     "gustMph": null,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 75.56
+    "airTempF": 75.74000000000001
   },
   "tplm2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 8.052984,
-    "gustMph": 10.289924,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 3.35541,
+    "gustMph": 4.697574,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 69.98
+    "airTempF": 74.66
   },
   "tcbm2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 8.052984,
-    "gustMph": 12.750558000000002,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 3.35541,
+    "gustMph": 11.408394,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 70.52
+    "airTempF": 77.72
   },
   "covm2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 6.934514000000001,
-    "gustMph": 12.750558000000002,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 5.816044000000001,
+    "gustMph": 5.816044000000001,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 72.14
+    "airTempF": 75.38
   },
   "slim2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 8.052984,
-    "gustMph": 12.750558000000002,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 5.816044000000001,
+    "gustMph": 6.934514000000001,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 72.68
+    "airTempF": 75.2
   },
   "pptm2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 9.171454,
-    "gustMph": 13.869028000000002,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 4.697574,
+    "gustMph": 6.934514000000001,
     "waveHeightFt": null,
     "wavePeriodSec": null,
     "airTempF": null
   },
   "camm2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 13.869028000000002,
-    "gustMph": 16.105968,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 3.35541,
+    "gustMph": 5.816044000000001,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 72.32
+    "airTempF": 78.25999999999999
   },
   "bism2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 9.171454,
-    "gustMph": 12.750558000000002,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 3.35541,
+    "gustMph": 5.816044000000001,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 73.75999999999999
+    "airTempF": 78.08
   },
   "fskm2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 9.171454,
-    "gustMph": 10.289924,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 5.816044000000001,
+    "gustMph": 8.052984,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 68.54
+    "airTempF": 73.4
   },
   "bcfm2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 6.934514000000001,
-    "gustMph": 11.408394,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 4.697574,
+    "gustMph": 5.816044000000001,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 87.61999999999999
+    "airTempF": 93.38000000000001
   },
   "cxlm2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 6.934514000000001,
-    "gustMph": 13.869028000000002,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 3.35541,
+    "gustMph": 8.052984,
     "waveHeightFt": null,
     "wavePeriodSec": null,
     "airTempF": null
   },
   "ncdv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 1.11847,
-    "gustMph": 4.697574,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 3.35541,
+    "gustMph": 6.934514000000001,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 75.38
+    "airTempF": 76.64
   },
   "wasd2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 3.35541,
-    "gustMph": 8.052984,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 4.697574,
+    "gustMph": 5.816044000000001,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 72.32
+    "airTempF": 77.18
   },
   "lwtv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
+    "observedAt": "4026-09-19T17:00:00.000Z",
     "windSpeedMph": 8.052984,
-    "gustMph": 12.750558000000002,
+    "gustMph": 10.289924,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 75.38
+    "airTempF": 76.46
   },
   "rplv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 10.289924,
-    "gustMph": 12.750558000000002,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 8.052984,
+    "gustMph": 10.289924,
     "waveHeightFt": null,
     "wavePeriodSec": null,
     "airTempF": null
   },
   "chbv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 13.869028000000002,
-    "gustMph": 17.224438000000003,
-    "waveHeightFt": null,
-    "wavePeriodSec": null,
-    "airTempF": 77
-  },
-  "cryv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 13.869028000000002,
-    "gustMph": 19.685072,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 10.289924,
+    "gustMph": 12.750558000000002,
     "waveHeightFt": null,
     "wavePeriodSec": null,
     "airTempF": 77.36
   },
+  "cryv2": {
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 13.869028000000002,
+    "gustMph": 16.105968,
+    "waveHeightFt": null,
+    "wavePeriodSec": null,
+    "airTempF": 78.44
+  },
   "swpv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
+    "observedAt": "4026-09-19T17:00:00.000Z",
     "windSpeedMph": null,
     "gustMph": null,
     "waveHeightFt": null,
@@ -296,62 +296,62 @@
     "airTempF": 78.25999999999999
   },
   "mnpv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 3.35541,
-    "gustMph": 10.289924,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 5.816044000000001,
+    "gustMph": 12.750558000000002,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 79.34
+    "airTempF": 80.96
   },
   "yktv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 12.750558000000002,
-    "gustMph": 17.224438000000003,
-    "waveHeightFt": null,
-    "wavePeriodSec": null,
-    "airTempF": 76.64
-  },
-  "kptv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 10.289924,
-    "gustMph": 18.342908,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 9.171454,
+    "gustMph": 12.750558000000002,
     "waveHeightFt": null,
     "wavePeriodSec": null,
     "airTempF": 77.72
   },
-  "domv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
+  "kptv2": {
+    "observedAt": "4026-09-19T17:00:00.000Z",
     "windSpeedMph": 11.408394,
     "gustMph": 14.987498000000002,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 77.54
+    "airTempF": 78.25999999999999
   },
-  "wdsv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 13.869028000000002,
-    "gustMph": 16.105968,
+  "domv2": {
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 10.289924,
+    "gustMph": 14.987498000000002,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 76.46
+    "airTempF": 78.08
+  },
+  "wdsv2": {
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 12.750558000000002,
+    "gustMph": 14.987498000000002,
+    "waveHeightFt": null,
+    "wavePeriodSec": null,
+    "airTempF": 76.28
   },
   "yrsv2": {
-    "observedAt": "4026-09-19T13:30:00.000Z",
+    "observedAt": "4026-09-19T16:30:00.000Z",
     "windSpeedMph": 2.23694,
     "gustMph": null,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 76.82
+    "airTempF": 82.4
   },
   "wahv2": {
-    "observedAt": "4026-09-19T14:00:00.000Z",
-    "windSpeedMph": 11.408394,
-    "gustMph": 16.105968,
+    "observedAt": "4026-09-19T17:00:00.000Z",
+    "windSpeedMph": 9.171454,
+    "gustMph": 12.750558000000002,
     "waveHeightFt": null,
     "wavePeriodSec": null,
-    "airTempF": 76.46
+    "airTempF": 76.82
   },
   "_meta": {
-    "generatedAt": "2026-09-19T14:40:41.838Z"
+    "generatedAt": "2026-09-19T17:49:23.295Z"
   }
 }
